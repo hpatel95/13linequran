@@ -154,5 +154,22 @@ final class QuranIntegrityTests: XCTestCase {
         guard let first = results.first else { return }
         XCTAssertEqual(first.pageNumber, 1, "Al-Fatihah 1:1 match must indicate page 1 directly from FTS5 index")
     }
+
+    func testFinalPageAndSurahAnNas() async throws {
+        let anNas = try await repository.fetchAyahs(forSurah: 114)
+        XCTAssertEqual(anNas.count, 6, "Surah An-Nas has 6 canonical ayahs")
+
+        let surahs = try await repository.fetchSurahs()
+        let surah114 = surahs.first { $0.id == 114 }
+        XCTAssertEqual(surah114?.startPage, 849, "Surah An-Nas must start on page 849 in the 13-line Qudratullah edition")
+
+        let p849Lines = try await repository.fetchLines(forPage: 849)
+        XCTAssertEqual(p849Lines.count, 13, "Page 849 must contain exactly 13 lines")
+
+        // Final Ayah of the Quran (6236) must be on Page 849
+        let lastAyah = anNas.last
+        XCTAssertEqual(lastAyah?.id, 6236, "Final Ayah global ID must be 6236")
+        XCTAssertEqual(lastAyah?.pageNumber, 849, "Final Ayah of the Quran (114:6) must reside on Page 849")
+    }
 }
 

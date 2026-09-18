@@ -43,7 +43,7 @@ Throwing away this working, highly-tuned native code to rebuild it behind a Java
 * **Deciders**: Domain Expert, iOS Architect
 
 ### Context
-The 13-line Mushaf format has an immutable physical lithographic geometry (848 pages). Hafiz (memorizer) users rely on photographic spatial memory. We must decide how to render the 848 pages.
+The 13-line Mushaf format has an immutable physical lithographic geometry: exactly **849 pages** in the canonical Qudratullah Company (Lahore) edition. Hafiz (memorizer) users rely on photographic spatial memory. We must decide how to render the 849 pages.
 
 ### Alternatives Considered
 1. **Dynamic Font Layout via CoreText**: Render verses dynamically into 13 lines using Indo-Pak fonts and line layout data.
@@ -53,17 +53,17 @@ The 13-line Mushaf format has an immutable physical lithographic geometry (848 p
 3. **Hybrid Digital Tile Engine**: Clean, vector-rasterized high-definition page tiles in AVIF/WebP format paired with an immutable SQLite database of normalized Ayah Bounding Boxes `(min_x, min_y, max_x, max_y)` and an invisible Unicode text accessibility mirror.
 
 ### Decision
-Adopt the **Hybrid Digital Tile Engine**.
+Adopt the **Hybrid Digital Tile Engine** calibrated across all **849 pages**.
 
 ### Consequences
 * **Positive**:
-  * Total page asset size for all 848 pages compressed to **~75–85 MB**.
+  * Total page asset size for all 849 pages compressed to **~75–85 MB**.
   * Perfect visual fidelity identical to the traditional printed 13-line lithograph.
   * Instant tap-to-select ayah, golden highlight tinting, and synchronized audio playback highlights.
   * Full Apple VoiceOver accessibility via the underlying Unicode mirror.
   * Custom dark and sepia shaders can re-tint the ink and paper layers cleanly.
 * **Negative**:
-  * Requires building and verifying the 848-page coordinate mapping database upfront.
+  * Requires building and verifying the 849-page coordinate mapping database upfront.
 
 ---
 

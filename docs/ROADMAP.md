@@ -75,7 +75,7 @@ Phase 12: App Store Connect, TestFlight & Public Release
   * Assert `surahs.count == 114`.
   * Assert `ayahs.count == 6236`.
   * Assert canonical ayah counts for all 114 Surahs (Surah 1 = 7, Surah 2 = 286 ... Surah 114 = 6).
-  * Assert all 848 pages have normalized coordinates $(0.0 \le min < max \le 1.0)$.
+  * Assert all 849 pages have normalized coordinates $(0.0 \le min < max \le 1.0)$.
 * **Definition of Done**: Integrity test suite passes 100% in Xcode Test Navigator; throwaway debug view successfully queries and prints any ayah.
 
 ---
@@ -88,8 +88,8 @@ Phase 12: App Store Connect, TestFlight & Public Release
   * `Features/Reader/MushafPageView.swift` (High-res tile loader with pinch-to-zoom and double-tap zoom reset).
   * `Features/Reader/ReaderOverlayView.swift` (Top and bottom chrome that auto-hides on tap).
   * `Features/Reader/MushafReaderViewModel.swift` (`@Observable` state tracker for current page, surah, and juz).
-* **Tests**: Navigation unit tests verifying edge transitions (Page 1, Page 848, Juz boundaries).
-* **Definition of Done**: User can swipe through pages 1 to 848 smoothly with zero frame drops; tapping toggles UI chrome; pinch-to-zoom scales up to 2.5x and snaps back.
+* **Tests**: Navigation unit tests verifying edge transitions (Page 1, Page 849, Juz boundaries).
+* **Definition of Done**: User can swipe through pages 1 to 849 smoothly with zero frame drops; tapping toggles UI chrome; pinch-to-zoom scales up to 2.5x and snaps back.
 
 ---
 

@@ -183,9 +183,8 @@ This document tracks all actionable tasks across the lifecycle of the 13-Line Qu
 
 ## 14. Quality Assurance & Integrity Testing
 - [ ] **Automated Test Suite**:
-  - [ ] Run `QuranIntegrityTests` asserting 114 Surahs, 6,236 Ayahs, and 848 pages.
+  - [ ] Run `QuranIntegrityTests` asserting 114 Surahs, 6,236 Ayahs, and 849 pages (Qudratullah edition).
   - [ ] Run bounding box coordinate range audit.
-  - [ ] Run StoreKit sandbox purchase and restore tests.
 - [ ] **Device Testing Matrix**:
   - [ ] Test on iPhone SE (4.7" compact screen).
   - [ ] Test on standard iPhone (6.1").
