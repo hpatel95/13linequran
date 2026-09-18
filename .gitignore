@@ -53,3 +53,4 @@ temp/
 tmp/
 raw_scans/
 *.tmp
+pipeline/temp_*
