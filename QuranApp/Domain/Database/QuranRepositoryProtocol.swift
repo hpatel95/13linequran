@@ -13,6 +13,15 @@ public protocol QuranRepositoryProtocol: Sendable {
     
     /// Fetches a specific Surah by its ID (1 ... 114)
     func fetchSurah(id: Int) async throws -> Surah?
+
+    /// Fetches all 30 canonical Juzs ordered by number (1 ... 30)
+    func fetchJuzs() async throws -> [Juz]
+
+    /// Fetches a specific Juz by its number (1 ... 30)
+    func fetchJuz(number: Int) async throws -> Juz?
+
+    /// Fetches a dictionary of Surah ID to Juz span string (e.g. [2: "Juz 1–3", 1: "Juz 1"])
+    func fetchSurahJuzSpans() async throws -> [Int: String]
     
     /// Fetches the exactly 13 physical lines for an Indo-Pak Mushaf page (1 ... 849)
     func fetchLines(forPage pageNumber: Int) async throws -> [MushafLine]

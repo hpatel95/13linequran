@@ -185,12 +185,48 @@ public struct Translation: Identifiable, Hashable, Sendable, Codable {
     }
 }
 
+// MARK: - Juz (Part 1 ... 30)
+public struct Juz: Identifiable, Hashable, Sendable, Codable {
+    public let id: Int                   // 1 ... 30
+    public let nameArabic: String        // e.g. "الم", "سَيَقُولُ"
+    public let nameTransliteration: String // e.g. "Alif Lam Meem", "Sayaqool"
+    public let startSurahId: Int
+    public let startVerseNumber: Int
+    public let startPage: Int            // 13-line start page (1 ... 849)
+    public let firstVerseId: Int
+    public let lastVerseId: Int
+    public let totalVerses: Int
+
+    public init(
+        id: Int,
+        nameArabic: String,
+        nameTransliteration: String,
+        startSurahId: Int,
+        startVerseNumber: Int,
+        startPage: Int,
+        firstVerseId: Int,
+        lastVerseId: Int,
+        totalVerses: Int
+    ) {
+        self.id = id
+        self.nameArabic = nameArabic
+        self.nameTransliteration = nameTransliteration
+        self.startSurahId = startSurahId
+        self.startVerseNumber = startVerseNumber
+        self.startPage = startPage
+        self.firstVerseId = firstVerseId
+        self.lastVerseId = lastVerseId
+        self.totalVerses = totalVerses
+    }
+}
+
 // MARK: - Search Result (FTS5 Match)
 public struct SearchResult: Identifiable, Hashable, Sendable, Codable {
     public var id: Int { ayahId }
     public let ayahId: Int
     public let surahId: Int
     public let verseNumber: Int
+    public let pageNumber: Int
     public let arabicClean: String
     public let translationEnSaheeh: String
     public let translationEnHilali: String
@@ -204,6 +240,7 @@ public struct SearchResult: Identifiable, Hashable, Sendable, Codable {
         ayahId: Int,
         surahId: Int,
         verseNumber: Int,
+        pageNumber: Int,
         arabicClean: String,
         translationEnSaheeh: String,
         translationEnHilali: String,
@@ -212,9 +249,11 @@ public struct SearchResult: Identifiable, Hashable, Sendable, Codable {
         self.ayahId = ayahId
         self.surahId = surahId
         self.verseNumber = verseNumber
+        self.pageNumber = pageNumber
         self.arabicClean = arabicClean
         self.translationEnSaheeh = translationEnSaheeh
         self.translationEnHilali = translationEnHilali
         self.translationFrHamidullah = translationFrHamidullah
     }
 }
+

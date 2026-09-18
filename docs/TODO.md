@@ -119,15 +119,17 @@ This document tracks all actionable tasks across the lifecycle of the 13-Line Qu
 ---
 
 ## 8. Navigation & Search
-- [ ] **Index Hub**:
-  - [ ] Segmented control: [Surah, Juz, Page].
-  - [ ] Surah List: 114 rows showing number, Arabic name, English title, revelation type, and start page.
-  - [ ] Juz List: 30 rows showing Juz title, starting verse snippet, and start page.
-- [ ] **Local Search**:
-  - [ ] Connect search field to `translations_fts` SQLite FTS5 index.
-  - [ ] Implement debounced search query execution (<15ms response).
-  - [ ] Render matched verses with highlighted keywords.
-  - [ ] Tapping a search result immediately opens the reader to that exact page and ayah.
+- [x] **Index Hub**:
+  - [x] Segmented control: [Surahs (114), Juz (30), Pages (849)].
+  - [x] Surah List: 114 rows showing circular number badge, Arabic calligraphy, English title & meaning, distinct Meccan/Medinan pills, Juz spans, start page, and "Currently Reading" indicator.
+  - [x] Juz List: 30 rows showing canonical opening title (Arabic & transliterated), starting Surah/Ayah, and start page.
+  - [x] Pages View: Direct numeric jump to any page (1–849) plus 30-Juz rapid milestone grid.
+- [x] **Local Search**:
+  - [x] Connect search field to `search_index` SQLite FTS5 table with unicode61 tokenizer.
+  - [x] Implement 300ms debounced search query execution with task cancellation (<15ms response).
+  - [x] Render matched verses with golden highlighted keywords using `AttributedString`.
+  - [x] Include `page_number` in `search_index` to open reader directly on tap without redundant secondary fetch.
+  - [x] Tapping a search result switches to Read tab, navigates to exact 13-line page, and selects & highlights the ayah.
 
 ---
 

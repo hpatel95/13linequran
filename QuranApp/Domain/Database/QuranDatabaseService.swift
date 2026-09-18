@@ -139,6 +139,109 @@ public actor QuranDatabaseService: QuranRepositoryProtocol {
         return nil
     }
 
+    // MARK: - Juzs
+    public func fetchJuzs() async throws -> [Juz] {
+        let sql = """
+        SELECT id, name_arabic, name_transliteration, start_surah_id, start_verse_number, start_page, first_verse_id, last_verse_id, total_verses
+        FROM juzs
+        ORDER BY id ASC;
+        """
+        return try executeQuery(sql: sql) { statement in
+            let id = Int(sqlite3_column_int(statement, 0))
+            let nameArabic = String(cString: sqlite3_column_text(statement, 1))
+            let nameTrans = String(cString: sqlite3_column_text(statement, 2))
+            let startSurah = Int(sqlite3_column_int(statement, 3))
+            let startVerse = Int(sqlite3_column_int(statement, 4))
+            let startPage = Int(sqlite3_column_int(statement, 5))
+            let firstVerseId = Int(sqlite3_column_int(statement, 6))
+            let lastVerseId = Int(sqlite3_column_int(statement, 7))
+            let totalVerses = Int(sqlite3_column_int(statement, 8))
+
+            return Juz(
+                id: id,
+                nameArabic: nameArabic,
+                nameTransliteration: nameTrans,
+                startSurahId: startSurah,
+                startVerseNumber: startVerse,
+                startPage: startPage,
+                firstVerseId: firstVerseId,
+                lastVerseId: lastVerseId,
+                totalVerses: totalVerses
+            )
+        }
+    }
+
+    public func fetchJuz(number: Int) async throws -> Juz? {
+        let sql = """
+        SELECT id, name_arabic, name_transliteration, start_surah_id, start_verse_number, start_page, first_verse_id, last_verse_id, total_verses
+        FROM juzs
+        WHERE id = ?
+        LIMIT 1;
+        """
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+            throw DatabaseError.statementPreparationFailed(lastErrorMessage())
+        }
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_int(statement, 1, Int32(number))
+
+        if sqlite3_step(statement) == SQLITE_ROW {
+            let id = Int(sqlite3_column_int(statement, 0))
+            let nameArabic = String(cString: sqlite3_column_text(statement, 1))
+            let nameTrans = String(cString: sqlite3_column_text(statement, 2))
+            let startSurah = Int(sqlite3_column_int(statement, 3))
+            let startVerse = Int(sqlite3_column_int(statement, 4))
+            let startPage = Int(sqlite3_column_int(statement, 5))
+            let firstVerseId = Int(sqlite3_column_int(statement, 6))
+            let lastVerseId = Int(sqlite3_column_int(statement, 7))
+            let totalVerses = Int(sqlite3_column_int(statement, 8))
+
+            return Juz(
+                id: id,
+                nameArabic: nameArabic,
+                nameTransliteration: nameTrans,
+                startSurahId: startSurah,
+                startVerseNumber: startVerse,
+                startPage: startPage,
+                firstVerseId: firstVerseId,
+                lastVerseId: lastVerseId,
+                totalVerses: totalVerses
+            )
+        }
+        return nil
+    }
+
+    public func fetchSurahJuzSpans() async throws -> [Int: String] {
+        let sql = """
+        SELECT surah_id, MIN(juz_number) as min_j, MAX(juz_number) as max_j
+        FROM ayahs
+        GROUP BY surah_id;
+        """
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+            throw DatabaseError.statementPreparationFailed(lastErrorMessage())
+        }
+        defer { sqlite3_finalize(statement) }
+
+        var spans: [Int: String] = [:]
+        while sqlite3_step(statement) == SQLITE_ROW {
+            let surahId = Int(sqlite3_column_int(statement, 0))
+            let minJ = Int(sqlite3_column_int(statement, 1))
+            let maxJ = Int(sqlite3_column_int(statement, 2))
+
+            if minJ == maxJ {
+                if minJ == 30 {
+                    spans[surahId] = "Juz 30 (Amma)"
+                } else {
+                    spans[surahId] = "Juz \(minJ)"
+                }
+            } else {
+                spans[surahId] = "Juz \(minJ)–\(maxJ)"
+            }
+        }
+        return spans
+    }
+
     // MARK: - Mushaf Lines (13-Line physical page)
     public func fetchLines(forPage pageNumber: Int) async throws -> [MushafLine] {
         let sql = """
@@ -269,7 +372,7 @@ public actor QuranDatabaseService: QuranRepositoryProtocol {
         let ftsQuery = "\"\(sanitized)\"*"
 
         let sql = """
-        SELECT ayah_id, surah_id, verse_number, arabic_clean, translation_en_saheeh, translation_en_hilali, translation_fr_hamidullah
+        SELECT ayah_id, surah_id, verse_number, page_number, arabic_clean, translation_en_saheeh, translation_en_hilali, translation_fr_hamidullah
         FROM search_index
         WHERE search_index MATCH ?
         LIMIT ?;
@@ -287,15 +390,17 @@ public actor QuranDatabaseService: QuranRepositoryProtocol {
             let ayahId = Int(sqlite3_column_int(statement, 0))
             let surahId = Int(sqlite3_column_int(statement, 1))
             let verseNum = Int(sqlite3_column_int(statement, 2))
-            let arClean = String(cString: sqlite3_column_text(statement, 3))
-            let enSaheeh = String(cString: sqlite3_column_text(statement, 4))
-            let enHilali = String(cString: sqlite3_column_text(statement, 5))
-            let frHamid = String(cString: sqlite3_column_text(statement, 6))
+            let pageNum = Int(sqlite3_column_int(statement, 3))
+            let arClean = String(cString: sqlite3_column_text(statement, 4))
+            let enSaheeh = String(cString: sqlite3_column_text(statement, 5))
+            let enHilali = String(cString: sqlite3_column_text(statement, 6))
+            let frHamid = String(cString: sqlite3_column_text(statement, 7))
 
             results.append(SearchResult(
                 ayahId: ayahId,
                 surahId: surahId,
                 verseNumber: verseNum,
+                pageNumber: pageNum,
                 arabicClean: arClean,
                 translationEnSaheeh: enSaheeh,
                 translationEnHilali: enHilali,

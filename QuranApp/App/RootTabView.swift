@@ -33,8 +33,16 @@ public struct RootTabView: View {
             // Tab 2: Index & Search
             IndexHubView(
                 repository: readerViewModel.repository,
+                currentReadingPage: readerViewModel.currentPage,
                 onSelectPage: { targetPage in
                     readerViewModel.jumpToPage(targetPage)
+                    selectedTab = .read
+                },
+                onSelectAyah: { surahId, verseNumber, pageNumber in
+                    readerViewModel.jumpToPage(pageNumber)
+                    Task {
+                        await readerViewModel.selectAyah(surahId: surahId, verseNumber: verseNumber)
+                    }
                     selectedTab = .read
                 }
             )

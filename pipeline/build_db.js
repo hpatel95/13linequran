@@ -89,6 +89,36 @@ async function downloadMetadata() {
     fs.writeFileSync(imlaeiPath, JSON.stringify(res.data.verses, null, 2));
   }
 
+  // Verse-level metadata: juz_number, rub_el_hizb_number, sajdah_number for all 114 surahs
+  const verseMetaPath = path.join(META_DIR, 'verse_metadata.json');
+  if (!fs.existsSync(verseMetaPath)) {
+    console.log('Downloading verse-level metadata (juz, hizb, sajdah) for all 114 surahs...');
+    const allVerses = [];
+    const CONCURRENCY = 10;
+    for (let s = 1; s <= 114; s += CONCURRENCY) {
+      const chunk = [];
+      for (let c = s; c < s + CONCURRENCY && c <= 114; c++) {
+        chunk.push(c);
+      }
+      const results = await Promise.all(chunk.map(async (surahId) => {
+        let retries = 3;
+        while (retries > 0) {
+          try {
+            const res = await axios.get(`https://api.quran.com/api/v4/verses/by_chapter/${surahId}?language=en&fields=verse_key,juz_number,rub_el_hizb_number,sajdah_number&per_page=300`, { timeout: 15000 });
+            return res.data.verses;
+          } catch (e) {
+            retries--;
+            if (retries === 0) throw e;
+            await sleep(500);
+          }
+        }
+      }));
+      results.forEach(verses => allVerses.push(...verses));
+      console.log(`Fetched verse metadata for surahs ${s}..${Math.min(s + CONCURRENCY - 1, 114)} (verses: ${allVerses.length}/6236)`);
+    }
+    fs.writeFileSync(verseMetaPath, JSON.stringify(allVerses, null, 2));
+  }
+
   console.log('Metadata ready.');
 }
 
@@ -255,10 +285,25 @@ async function buildDatabase() {
   `);
 
   await run(`
+    CREATE TABLE juzs (
+      id INTEGER PRIMARY KEY,
+      name_arabic TEXT NOT NULL,
+      name_transliteration TEXT NOT NULL,
+      start_surah_id INTEGER NOT NULL,
+      start_verse_number INTEGER NOT NULL,
+      start_page INTEGER NOT NULL,
+      first_verse_id INTEGER NOT NULL,
+      last_verse_id INTEGER NOT NULL,
+      total_verses INTEGER NOT NULL
+    );
+  `);
+
+  await run(`
     CREATE VIRTUAL TABLE search_index USING fts5(
       ayah_id UNINDEXED,
       surah_id UNINDEXED,
       verse_number UNINDEXED,
+      page_number UNINDEXED,
       arabic_clean,
       translation_en_saheeh,
       translation_en_hilali,
@@ -273,9 +318,19 @@ async function buildDatabase() {
   const chEn = JSON.parse(fs.readFileSync(path.join(META_DIR, 'chapters_en.json'), 'utf8'));
   const chFr = JSON.parse(fs.readFileSync(path.join(META_DIR, 'chapters_fr.json'), 'utf8'));
   const imlaeiList = JSON.parse(fs.readFileSync(path.join(META_DIR, 'imlaei_simple.json'), 'utf8'));
+  const verseMetaList = JSON.parse(fs.readFileSync(path.join(META_DIR, 'verse_metadata.json'), 'utf8'));
 
   const imlaeiMap = new Map();
   imlaeiList.forEach(v => imlaeiMap.set(v.verse_key, v.text_imlaei_simple));
+
+  const verseMetaMap = new Map();
+  verseMetaList.forEach(v => {
+    verseMetaMap.set(v.verse_key, {
+      juzNumber: v.juz_number,
+      hizbQuarter: v.rub_el_hizb_number || 1,
+      sajdah: v.sajdah_number ? 1 : 0
+    });
+  });
 
   // Parse Translations
   function loadTranslationFile(filename) {
@@ -354,6 +409,7 @@ async function buildDatabase() {
     const en = chEn[i];
     const fr = chFr[i];
     const startPage = surahStartPages.get(en.id) || 1;
+    const startJuz = verseMetaMap.get(`${en.id}:1`)?.juzNumber || 1;
     insertSurahStmt.run(
       en.id,
       en.name_arabic,
@@ -363,7 +419,7 @@ async function buildDatabase() {
       en.revelation_place === 'makkah' ? 'Meccan' : 'Medinan',
       en.verses_count,
       startPage,
-      1 // Juz will be updated per ayah
+      startJuz
     );
   }
   await new Promise(res => insertSurahStmt.finalize(res));
@@ -385,8 +441,8 @@ async function buildDatabase() {
   `);
 
   const insertFtsStmt = db.prepare(`
-    INSERT INTO search_index (ayah_id, surah_id, verse_number, arabic_clean, translation_en_saheeh, translation_en_hilali, translation_fr_hamidullah)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO search_index (ayah_id, surah_id, verse_number, page_number, arabic_clean, translation_en_saheeh, translation_en_hilali, translation_fr_hamidullah)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   let globalAyahId = 0;
@@ -401,6 +457,7 @@ async function buildDatabase() {
       const tSaheeh = saheehMap.get(vKey) || '';
       const tHilali = hilaliMap.get(vKey) || '';
       const tHamidullah = hamidullahMap.get(vKey) || '';
+      const vMeta = verseMetaMap.get(vKey) || { juzNumber: 1, hizbQuarter: 1, sajdah: 0 };
 
       // Ayah record
       insertAyahStmt.run(
@@ -408,9 +465,9 @@ async function buildDatabase() {
         surah.id,
         v,
         pageNumber,
-        1, // juz default
-        1, // hizb default
-        0, // sajdah default
+        vMeta.juzNumber,
+        vMeta.hizbQuarter,
+        vMeta.sajdah,
         indoPakText,
         cleanArabic
       );
@@ -420,11 +477,12 @@ async function buildDatabase() {
       insertTransStmt.run(globalAyahId, 'en', 'hilali_khan', tHilali);
       insertTransStmt.run(globalAyahId, 'fr', 'hamidullah', tHamidullah);
 
-      // FTS5 Virtual Index
+      // FTS5 Virtual Index with page_number
       insertFtsStmt.run(
         globalAyahId,
         surah.id,
         v,
+        pageNumber,
         cleanArabic,
         tSaheeh,
         tHilali,
@@ -438,12 +496,81 @@ async function buildDatabase() {
   await new Promise(res => insertFtsStmt.finalize(res));
   await run('COMMIT');
 
+  // Populate Juzs table
+  console.log('Populating juzs table...');
+  const juzsMeta = JSON.parse(fs.readFileSync(path.join(META_DIR, 'juzs.json'), 'utf8'));
+  const CANONICAL_JUZS = [
+    { id: 1, name_arabic: 'الم', name_transliteration: 'Alif Lam Meem' },
+    { id: 2, name_arabic: 'سَيَقُولُ', name_transliteration: 'Sayaqool' },
+    { id: 3, name_arabic: 'تِلْكَ الرُّسُلُ', name_transliteration: 'Tilkar Rusul' },
+    { id: 4, name_arabic: 'لَنْ تَنَالُوا', name_transliteration: 'Lan Tanaaloo' },
+    { id: 5, name_arabic: 'وَالْمُحْصَنَاتُ', name_transliteration: 'Wal Mohsanat' },
+    { id: 6, name_arabic: 'لَا يُحِبُّ اللَّهُ', name_transliteration: 'La Yuhibbullah' },
+    { id: 7, name_arabic: 'وَإِذَا سَمِعُوا', name_transliteration: 'Wa Iza Sami\'oo' },
+    { id: 8, name_arabic: 'وَلَوْ أَنَّنَا', name_transliteration: 'Wa Law Annana' },
+    { id: 9, name_arabic: 'قَالَ الْمَلَأُ', name_transliteration: 'Qalal Mala\'o' },
+    { id: 10, name_arabic: 'وَاعْلَمُوا', name_transliteration: 'Wa\'lamoo' },
+    { id: 11, name_arabic: 'يَعْتَذِرُونَ', name_transliteration: 'Ya\'taziroon' },
+    { id: 12, name_arabic: 'وَمَا مِنْ دَابَّةٍ', name_transliteration: 'Wa Mamin Da\'abbah' },
+    { id: 13, name_arabic: 'وَمَا أُبَرِّئُ', name_transliteration: 'Wa Ma Obarri\'o' },
+    { id: 14, name_arabic: 'رُبَمَا', name_transliteration: 'Rubama' },
+    { id: 15, name_arabic: 'سُبْحَانَ الَّذِي', name_transliteration: 'Subhanallazi' },
+    { id: 16, name_arabic: 'قَالَ أَلَمْ', name_transliteration: 'Qal Alam' },
+    { id: 17, name_arabic: 'اقْتَرَبَ لِلنَّاسِ', name_transliteration: 'Iqtaraba Linnaas' },
+    { id: 18, name_arabic: 'قَدْ أَفْلَحَ', name_transliteration: 'Qadd Aflaha' },
+    { id: 19, name_arabic: 'وَقَالَ الَّذِينَ', name_transliteration: 'Wa Qalal Lazeena' },
+    { id: 20, name_arabic: 'أَمَّنْ خَلَقَ', name_transliteration: 'Amman Khalaqa' },
+    { id: 21, name_arabic: 'اتْلُ مَا أُوحِيَ', name_transliteration: 'Otlo Ma Oohiya' },
+    { id: 22, name_arabic: 'وَمَنْ يَقْنُتْ', name_transliteration: 'Wa Manyaqnut' },
+    { id: 23, name_arabic: 'وَمَا لِيَ', name_transliteration: 'Wa Maliya' },
+    { id: 24, name_arabic: 'فَمَنْ أَظْلَمُ', name_transliteration: 'Faman Azlamo' },
+    { id: 25, name_arabic: 'إِلَيْهِ يُرَدُّ', name_transliteration: 'Elahe Yuraddo' },
+    { id: 26, name_arabic: 'حـم', name_transliteration: 'Ha-Meem' },
+    { id: 27, name_arabic: 'قَالَ فَمَا خَطْبُكُمْ', name_transliteration: 'Qala Fama Khatbukum' },
+    { id: 28, name_arabic: 'قَدْ سَمِعَ اللَّهُ', name_transliteration: 'Qadd Sami Allah' },
+    { id: 29, name_arabic: 'تَبَارَكَ الَّذِي', name_transliteration: 'Tabarakallazi' },
+    { id: 30, name_arabic: 'عَمَّ يَتَسَاءَلُونَ', name_transliteration: '\'Amma Yatasa\'aloon' }
+  ];
+
+  await run('BEGIN TRANSACTION');
+  const insertJuzStmt = db.prepare(`
+    INSERT INTO juzs (id, name_arabic, name_transliteration, start_surah_id, start_verse_number, start_page, first_verse_id, last_verse_id, total_verses)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  for (const cj of CANONICAL_JUZS) {
+    const jData = juzsMeta.find(j => j.juz_number === cj.id);
+    if (jData) {
+      const surahKeys = Object.keys(jData.verse_mapping).map(k => parseInt(k, 10)).sort((a, b) => a - b);
+      const startSurah = surahKeys[0];
+      const startVerse = parseInt(jData.verse_mapping[startSurah].split('-')[0], 10);
+      const startPage = verseToPageMap.get(`${startSurah}:${startVerse}`) || 1;
+
+      insertJuzStmt.run(
+        cj.id,
+        cj.name_arabic,
+        cj.name_transliteration,
+        startSurah,
+        startVerse,
+        startPage,
+        jData.first_verse_id,
+        jData.last_verse_id,
+        jData.verses_count
+      );
+    }
+  }
+  await new Promise(res => insertJuzStmt.finalize(res));
+  await run('COMMIT');
+  console.log('juzs table populated.');
+
   // Create fast lookup indexes
   console.log('Creating database indexes...');
   await run('CREATE INDEX idx_ayahs_surah_verse ON ayahs(surah_id, verse_number);');
   await run('CREATE INDEX idx_ayahs_page ON ayahs(page_number);');
+  await run('CREATE INDEX idx_ayahs_juz ON ayahs(juz_number);');
   await run('CREATE INDEX idx_mushaf_lines_page ON mushaf_lines(page_number, line_number);');
   await run('CREATE INDEX idx_translations_ayah ON translations(ayah_id, author_code);');
+  await run('CREATE INDEX idx_juzs_start_page ON juzs(start_page);');
 
   await new Promise(res => db.close(res));
   console.log('Database successfully compiled and closed.');

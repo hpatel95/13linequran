@@ -106,4 +106,53 @@ final class QuranIntegrityTests: XCTestCase {
         let totalWords = line6Ayah7Words.count + line7Ayah7Words.count + line8Ayah7Words.count
         XCTAssertEqual(totalWords, 10, "Al-Fatihah Ayah 7 contains exactly 10 words/tokens")
     }
+
+    func testJuzTableIntegrity() async throws {
+        let juzs = try await repository.fetchJuzs()
+        XCTAssertEqual(juzs.count, 30, "The Holy Quran contains exactly 30 canonical Juzs.")
+
+        let juz1 = juzs.first
+        XCTAssertEqual(juz1?.id, 1)
+        XCTAssertEqual(juz1?.nameTransliteration, "Alif Lam Meem")
+        XCTAssertEqual(juz1?.startPage, 1)
+        XCTAssertEqual(juz1?.startSurahId, 1)
+        XCTAssertEqual(juz1?.startVerseNumber, 1)
+
+        let juz30 = juzs.last
+        XCTAssertEqual(juz30?.id, 30)
+        XCTAssertEqual(juz30?.nameTransliteration, "'Amma Yatasa'aloon")
+        XCTAssertEqual(juz30?.startPage, 818)
+        XCTAssertEqual(juz30?.startSurahId, 78)
+        XCTAssertEqual(juz30?.startVerseNumber, 1)
+
+        // Monotonically increasing start pages
+        for i in 1..<juzs.count {
+            XCTAssertGreaterThanOrEqual(juzs[i].startPage, juzs[i - 1].startPage, "Juz \(juzs[i].id) start page must be >= previous Juz start page")
+        }
+    }
+
+    func testSurahJuzSpansAndSurahJuzIntegrity() async throws {
+        let surahs = try await repository.fetchSurahs()
+        let spans = try await repository.fetchSurahJuzSpans()
+
+        XCTAssertEqual(spans.count, 114, "All 114 Surahs must have a computed Juz span.")
+        XCTAssertEqual(spans[1], "Juz 1", "Al-Fatihah is in Juz 1")
+        XCTAssertEqual(spans[2], "Juz 1–3", "Al-Baqarah spans Juz 1 to 3")
+        XCTAssertEqual(spans[78], "Juz 30 (Amma)", "An-Naba is in Juz 30 (Amma)")
+
+        // Check Surah starting Juz integrity
+        let anNaba = surahs.first { $0.id == 78 }
+        XCTAssertEqual(anNaba?.juzNumber, 30, "An-Naba must start in Juz 30")
+
+        let anNas = surahs.first { $0.id == 114 }
+        XCTAssertEqual(anNas?.juzNumber, 30, "An-Nas must be in Juz 30")
+    }
+
+    func testFTS5SearchIncludesPageNumber() async throws {
+        let results = try await repository.search(query: "Merciful", limit: 5)
+        XCTAssertFalse(results.isEmpty)
+        guard let first = results.first else { return }
+        XCTAssertEqual(first.pageNumber, 1, "Al-Fatihah 1:1 match must indicate page 1 directly from FTS5 index")
+    }
 }
+

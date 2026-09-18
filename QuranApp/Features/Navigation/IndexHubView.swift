@@ -2,244 +2,367 @@
 //  IndexHubView.swift
 //  QuranApp
 //
-//  Surah & Juz navigation index based directly on the Stitch "Index Hub" screen.
-//  Provides instant search via FTS5 full-text search.
+//  Complete, Stitch-accurate Surahs & Juz Navigation Index with FTS5 live search,
+//  debounced query execution, 44pt touch targets, and full accessibility compliance.
 //
 
 import SwiftUI
 
 public struct IndexHubView: View {
-    @State private var selectedTab: IndexTab = .surahs
-    @State private var searchText: String = ""
-    @State private var searchResults: [SearchResult] = []
-    @State private var surahs: [Surah] = []
-    @State private var isLoading: Bool = false
-
-    public let repository: QuranRepositoryProtocol
+    @State private var viewModel: IndexViewModel
+    public let currentReadingPage: Int
     public let onSelectPage: (Int) -> Void
-
-    public enum IndexTab: String, CaseIterable {
-        case surahs = "Surahs"
-        case juz = "Juz"
-        case search = "Search"
-    }
+    public let onSelectAyah: ((Int, Int, Int) -> Void)?
 
     public init(
         repository: QuranRepositoryProtocol,
-        onSelectPage: @escaping (Int) -> Void
+        currentReadingPage: Int = 1,
+        onSelectPage: @escaping (Int) -> Void,
+        onSelectAyah: ((Int, Int, Int) -> Void)? = nil
     ) {
-        self.repository = repository
+        _viewModel = State(wrappedValue: IndexViewModel(repository: repository))
+        self.currentReadingPage = currentReadingPage
         self.onSelectPage = onSelectPage
+        self.onSelectAyah = onSelectAyah
     }
 
     public var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Header & Segment Picker
-                VStack(spacing: 12) {
-                    Picker("Category", selection: $selectedTab) {
-                        ForEach(IndexTab.allCases, id: \.self) { tab in
-                            Text(tab.rawValue).tag(tab)
-                        }
-                    }
-                    .pickerStyle(.segmented)
+                // MARK: - Top Header & Controls
+                VStack(spacing: 10) {
+                    // Header Title Bar
+                    headerTitleBar
 
-                    // Search field (always visible or in search tab)
-                    HStack {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundStyle(AppColors.sepiaMuted)
-                        TextField("Search Surah, text or meaning...", text: $searchText)
-                            .font(AppTypography.body)
-                            .foregroundStyle(AppColors.inkUmber)
-                            .onChange(of: searchText) { _, newValue in
-                                Task { await performSearch(query: newValue) }
-                            }
-                        if !searchText.isEmpty {
-                            Button(action: { searchText = ""; searchResults = [] }) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundStyle(AppColors.sepiaMuted)
-                            }
-                        }
+                    // Recessed Search Pill
+                    searchBar
+
+                    // 3-Pill Segmented Control (Surahs / Juz / Pages)
+                    if viewModel.searchText.isEmpty {
+                        segmentedControl
+                        metadataBar
                     }
-                    .padding(10)
-                    .background(AppColors.surfacePapyrus)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(AppColors.borderSepia, lineWidth: 1)
-                    )
                 }
                 .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.top, 8)
+                .padding(.bottom, 10)
                 .background(AppColors.canvasVellum)
 
                 Divider().overlay(AppColors.borderSepia)
 
-                // Tab Content
-                if !searchText.isEmpty || selectedTab == .search {
-                    searchListView
-                } else if selectedTab == .surahs {
-                    surahListView
-                } else {
-                    juzListView
+                // MARK: - Main Content Area
+                ZStack {
+                    AppColors.canvasVellum.ignoresSafeArea()
+
+                    if !viewModel.searchText.isEmpty {
+                        searchContent
+                    } else {
+                        switch viewModel.selectedTab {
+                        case .surahs:
+                            surahContent
+                        case .juz:
+                            juzContent
+                        case .pages:
+                            PageJumpView(juzs: viewModel.juzs) { targetPage in
+                                onSelectPage(targetPage)
+                            }
+                        }
+                    }
                 }
             }
-            .background(AppColors.paperAged)
-            .navigationTitle("Index")
-            .navigationBarTitleDisplayMode(.inline)
+            .background(AppColors.canvasVellum)
+            .navigationBarHidden(true)
             .task {
-                if surahs.isEmpty {
-                    surahs = (try? await repository.fetchSurahs()) ?? []
-                }
+                await viewModel.onAppear()
             }
         }
     }
 
-    // MARK: - Surahs List
-    private var surahListView: some View {
-        List {
-            ForEach(surahs) { surah in
-                Button(action: { onSelectPage(surah.startPage) }) {
-                    HStack(spacing: 14) {
-                        // Surah Number Pill
-                        Text(String(format: "%03d", surah.id))
-                            .font(.system(size: 13, weight: .bold, design: .monospaced))
-                            .foregroundStyle(AppColors.saddleAmber)
-                            .frame(width: 36, height: 36)
-                            .background(AppColors.surfacePapyrus)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
+    // MARK: - Header Title Bar
+    private var headerTitleBar: some View {
+        HStack {
+            // Left ornamental space (for centering)
+            Color.clear.frame(width: 44, height: 44)
 
-                        // English Details
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(surah.englishName)
-                                .font(AppTypography.headline)
-                                .foregroundStyle(AppColors.inkUmber)
-                            Text("\(surah.englishMeaning) • \(surah.totalVerses) verses")
-                                .font(AppTypography.caption)
-                                .foregroundStyle(AppColors.sepiaMuted)
-                        }
+            Spacer()
 
-                        Spacer()
+            // Center Title
+            VStack(spacing: 2) {
+                HStack(spacing: 6) {
+                    Text("❖")
+                        .font(.system(size: 11))
+                        .foregroundStyle(AppColors.saddleAmber)
+                    Text("Surahs & Juz")
+                        .font(.system(size: 18, weight: .semibold, design: .serif))
+                        .foregroundStyle(AppColors.inkUmber)
+                    Text("❖")
+                        .font(.system(size: 11))
+                        .foregroundStyle(AppColors.saddleAmber)
+                }
 
-                        // Arabic Title & Page
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text(surah.arabicName)
-                                .font(AppTypography.surahHeader)
-                                .foregroundStyle(AppColors.inkUmber)
-                            Text("Page \(surah.startPage)")
-                                .font(AppTypography.caption)
-                                .foregroundStyle(AppColors.saddleAmber)
-                        }
+                Text("فِهْرِسُ المُصْحَفِ الشَّرِيف")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(AppColors.sepiaMuted)
+            }
+
+            Spacer()
+
+            // Right: Sort Menu Button (44x44pt)
+            Menu {
+                Picker("Sort Order", selection: $viewModel.sortOrder) {
+                    ForEach(IndexViewModel.SortOrder.allCases, id: \.self) { order in
+                        Text(order.rawValue).tag(order)
                     }
-                    .padding(.vertical, 4)
                 }
-                .listRowBackground(AppColors.paperAged)
+            } label: {
+                Image(systemName: "line.3.horizontal.decrease.circle")
+                    .font(.system(size: 20))
+                    .foregroundStyle(AppColors.saddleAmber)
+                    .frame(minWidth: 44, minHeight: 44)
             }
+            .accessibilityLabel("Sort options")
         }
-        .listStyle(.plain)
+        .frame(height: 44)
     }
 
-    // MARK: - Juz List
-    private var juzListView: some View {
-        List {
-            ForEach(1...30, id: \.self) { juzNum in
-                let surah = surahs.first(where: { $0.juzNumber == juzNum }) ?? surahs.first
-                let page = surah?.startPage ?? 1
+    // MARK: - Search Bar
+    private var searchBar: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 15))
+                .foregroundStyle(AppColors.sepiaMuted)
 
-                Button(action: { onSelectPage(page) }) {
-                    HStack(spacing: 14) {
-                        Text("\(juzNum)")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(AppColors.saddleAmber)
-                            .frame(width: 36, height: 36)
-                            .background(AppColors.surfacePapyrus)
-                            .clipShape(Circle())
+            TextField("Search surah, meaning, or verse...", text: Binding(
+                get: { viewModel.searchText },
+                set: { viewModel.updateSearch($0) }
+            ))
+            .font(AppTypography.body)
+            .foregroundStyle(AppColors.inkUmber)
+            .autocorrectionDisabled()
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Juz \(juzNum)")
-                                .font(AppTypography.headline)
-                                .foregroundStyle(AppColors.inkUmber)
-                            Text(surah?.englishName ?? "Al-Quran")
-                                .font(AppTypography.caption)
-                                .foregroundStyle(AppColors.sepiaMuted)
-                        }
-
-                        Spacer()
-
-                        Text("Page \(page)")
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.saddleAmber)
-                    }
-                    .padding(.vertical, 6)
-                }
-                .listRowBackground(AppColors.paperAged)
-            }
-        }
-        .listStyle(.plain)
-    }
-
-    // MARK: - Search Results
-    private var searchListView: some View {
-        List {
-            if searchResults.isEmpty {
-                VStack(spacing: 8) {
-                    Spacer().frame(height: 40)
-                    Image(systemName: "text.magnifyingglass")
-                        .font(.system(size: 36))
+            if !viewModel.searchText.isEmpty {
+                Button(action: { viewModel.clearSearch() }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16))
                         .foregroundStyle(AppColors.sepiaMuted)
-                    Text(searchText.isEmpty ? "Type a word to search across the Quran" : "No verses found matching \"\(searchText)\"")
-                        .font(AppTypography.body)
+                        .frame(minWidth: 44, minHeight: 44)
+                }
+                .accessibilityLabel("Clear search")
+            } else {
+                Text("13-line")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(AppColors.sepiaMuted)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(AppColors.paperAged)
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                    .overlay(RoundedRectangle(cornerRadius: 4).stroke(AppColors.borderSepia, lineWidth: 0.5))
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 4)
+        .background(AppColors.surfacePapyrus.opacity(0.9))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppColors.borderSepia, lineWidth: 1))
+    }
+
+    // MARK: - Segmented Control (Pill Switcher)
+    private var segmentedControl: some View {
+        HStack(spacing: 4) {
+            ForEach(IndexViewModel.IndexTab.allCases, id: \.self) { tab in
+                let isSelected = viewModel.selectedTab == tab
+                Button(action: {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
+                        viewModel.selectedTab = tab
+                    }
+                }) {
+                    HStack(spacing: 5) {
+                        Image(systemName: iconName(for: tab))
+                            .font(.system(size: 12))
+
+                        Text(tab.rawValue)
+                            .font(.system(size: 13, weight: isSelected ? .bold : .medium))
+
+                        Text(badgeCount(for: tab))
+                            .font(.system(size: 10, weight: .semibold))
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .background(isSelected ? Color.white.opacity(0.25) : AppColors.borderSepia.opacity(0.6))
+                            .clipShape(Capsule())
+                    }
+                    .foregroundStyle(isSelected ? Color.white : AppColors.sepiaMuted)
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 38)
+                    .background(
+                        Group {
+                            if isSelected {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(AppColors.saddleAmber)
+                                    .shadow(color: AppColors.saddleAmber.opacity(0.25), radius: 3, y: 1)
+                            } else {
+                                Color.clear
+                            }
+                        }
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+                .frame(minHeight: 44) // 44pt touch target standard
+                .accessibilityLabel("\(tab.rawValue) tab, \(badgeCount(for: tab)) items")
+            }
+        }
+        .padding(3)
+        .background(AppColors.surfacePapyrus)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(AppColors.borderSepia, lineWidth: 1))
+    }
+
+    // MARK: - Metadata Bar
+    private var metadataBar: some View {
+        HStack {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(AppColors.saddleAmber)
+                    .frame(width: 6, height: 6)
+                Text("114 SURAHS • CLASSICAL LITHOGRAPH")
+                    .font(.system(size: 10, weight: .bold))
+                    .tracking(0.5)
+                    .foregroundStyle(AppColors.sepiaMuted)
+            }
+
+            Spacer()
+
+            Text("Sort: \(viewModel.sortOrder.rawValue)")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(AppColors.saddleAmber)
+        }
+        .padding(.horizontal, 4)
+        .padding(.top, 2)
+    }
+
+    // MARK: - Surah List Content
+    private var surahContent: some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            LazyVStack(spacing: 8) {
+                ForEach(viewModel.sortedSurahs) { surah in
+                    let isReading = isSurahCurrentlyReading(surah)
+                    SurahRowView(
+                        surah: surah,
+                        juzSpan: viewModel.juzSpan(for: surah.id),
+                        isCurrentlyReading: isReading,
+                        onSelect: {
+                            onSelectPage(surah.startPage)
+                        }
+                    )
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .padding(.bottom, 24)
+        }
+    }
+
+    // MARK: - Juz List Content
+    private var juzContent: some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            LazyVStack(spacing: 8) {
+                ForEach(viewModel.juzs) { juz in
+                    let surahName = viewModel.surahs.first(where: { $0.id == juz.startSurahId })?.englishName ?? "Quran"
+                    JuzRowView(
+                        juz: juz,
+                        startingSurahName: surahName,
+                        onSelect: {
+                            onSelectPage(juz.startPage)
+                        }
+                    )
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .padding(.bottom, 24)
+        }
+    }
+
+    // MARK: - Search Content
+    private var searchContent: some View {
+        Group {
+            if viewModel.isSearching {
+                VStack(spacing: 12) {
+                    Spacer().frame(height: 60)
+                    ProgressView()
+                        .tint(AppColors.saddleAmber)
+                    Text("Searching across the Holy Quran...")
+                        .font(AppTypography.caption)
                         .foregroundStyle(AppColors.sepiaMuted)
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
-                .listRowBackground(Color.clear)
+            } else if viewModel.searchResults.isEmpty {
+                VStack(spacing: 10) {
+                    Spacer().frame(height: 60)
+                    Image(systemName: "text.magnifyingglass")
+                        .font(.system(size: 38))
+                        .foregroundStyle(AppColors.sepiaMuted.opacity(0.6))
+                    Text("No verses found matching \"\(viewModel.searchText)\"")
+                        .font(AppTypography.headline)
+                        .foregroundStyle(AppColors.inkUmber)
+                    Text("Try searching in English, French, or normalized Arabic")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.sepiaMuted)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
             } else {
-                ForEach(searchResults) { result in
-                    Button(action: {
-                        // Look up page for verse
-                        Task {
-                            if let ayah = try? await repository.fetchAyah(surah: result.surahId, verse: result.verseNumber) {
-                                onSelectPage(ayah.pageNumber)
-                            }
-                        }
-                    }) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack {
-                                Text("Surah \(result.surahId):\(result.verseNumber)")
-                                    .font(AppTypography.caption)
-                                    .foregroundStyle(AppColors.saddleAmber)
-                                Spacer()
-                            }
-
-                            Text(result.arabicClean)
-                                .font(AppTypography.arabic13Line)
-                                .foregroundStyle(AppColors.inkUmber)
-                                .frame(maxWidth: .infinity, alignment: .trailing)
-                                .environment(\.layoutDirection, .rightToLeft)
-
-                            Text(result.translationEnSaheeh)
-                                .font(AppTypography.body)
+                ScrollView(.vertical, showsIndicators: false) {
+                    LazyVStack(spacing: 10) {
+                        HStack {
+                            Text("\(viewModel.searchResults.count) results found")
+                                .font(.system(size: 11, weight: .bold))
                                 .foregroundStyle(AppColors.sepiaMuted)
-                                .lineLimit(3)
+                            Spacer()
                         }
-                        .padding(.vertical, 6)
+                        .padding(.horizontal, 4)
+
+                        ForEach(viewModel.searchResults) { result in
+                            SearchResultRowView(
+                                result: result,
+                                searchQuery: viewModel.searchText,
+                                onSelect: {
+                                    if let onSelectAyah = onSelectAyah {
+                                        onSelectAyah(result.surahId, result.verseNumber, result.pageNumber)
+                                    } else {
+                                        onSelectPage(result.pageNumber)
+                                    }
+                                }
+                            )
+                        }
                     }
-                    .listRowBackground(AppColors.paperAged)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .padding(.bottom, 24)
                 }
             }
         }
-        .listStyle(.plain)
     }
 
-    private func performSearch(query: String) async {
-        guard query.count >= 2 else {
-            searchResults = []
-            return
+    // MARK: - Helpers
+    private func iconName(for tab: IndexViewModel.IndexTab) -> String {
+        switch tab {
+        case .surahs: return "book.pages"
+        case .juz: return "bookmark"
+        case .pages: return "square.grid.3x3"
         }
-        do {
-            searchResults = try await repository.search(query: query, limit: 25)
-        } catch {
-            searchResults = []
+    }
+
+    private func badgeCount(for tab: IndexViewModel.IndexTab) -> String {
+        switch tab {
+        case .surahs: return "\(viewModel.surahs.count)"
+        case .juz: return "\(viewModel.juzs.count)"
+        case .pages: return "849"
         }
+    }
+
+    private func isSurahCurrentlyReading(_ surah: Surah) -> Bool {
+        guard let nextSurah = viewModel.surahs.first(where: { $0.id == surah.id + 1 }) else {
+            return currentReadingPage >= surah.startPage
+        }
+        return currentReadingPage >= surah.startPage && currentReadingPage < nextSurah.startPage
     }
 }
