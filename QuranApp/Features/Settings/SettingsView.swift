@@ -12,7 +12,11 @@ public struct SettingsView: View {
     @AppStorage("selectedTheme") private var selectedTheme: String = "sepia"
     @AppStorage("autoPlayNextAyah") private var autoPlayNextAyah: Bool = true
 
-    public init() {}
+    public let downloadManager: DownloadManager
+
+    public init(downloadManager: DownloadManager) {
+        self.downloadManager = downloadManager
+    }
 
     public var body: some View {
         NavigationStack {
@@ -55,6 +59,24 @@ public struct SettingsView: View {
 
                     Toggle("Auto-Advance Verses During Playback", isOn: $autoPlayNextAyah)
                         .tint(AppColors.saddleAmber)
+                }
+
+                // MARK: - Offline Storage
+                Section("Offline Storage") {
+                    NavigationLink {
+                        OfflineStorageView(downloadManager: downloadManager)
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Offline Audio Recitation Packs")
+                                    .font(.system(size: 15))
+                                Text("\(downloadManager.formattedStorageSize()) used • \(downloadManager.downloadedSurahsCount) Surahs")
+                                    .font(AppTypography.caption)
+                                    .foregroundStyle(AppColors.sepiaMuted)
+                            }
+                            Spacer()
+                        }
+                    }
                 }
 
                 // MARK: - Mushaf & Typography Specs

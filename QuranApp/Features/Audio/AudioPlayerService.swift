@@ -87,13 +87,12 @@ public final class AudioPlayerService: NSObject {
             self.currentSurahName = surahName
         }
 
-        let urlString = String(
-            format: "https://everyayah.com/data/khalefa_al_tunaiji_64kbps/%03d%03d.mp3",
-            surahId,
-            verseNumber
-        )
-
-        guard let url = URL(string: urlString) else { return }
+        let url: URL
+        if AudioStorageLocator.fileExists(surahId: surahId, verseNumber: verseNumber) {
+            url = AudioStorageLocator.localFileURL(surahId: surahId, verseNumber: verseNumber)
+        } else {
+            url = AudioStorageLocator.remoteFileURL(surahId: surahId, verseNumber: verseNumber)
+        }
 
         // Notify reader to update highlight and page viewport
         onVerseChanged?(surahId, verseNumber)

@@ -12,6 +12,7 @@ import SwiftUI
 struct ThirteenLineQuranApp: App {
     @State private var databaseService: QuranDatabaseService?
     @State private var userDatabaseService: UserDatabaseService?
+    @State private var downloadManager: DownloadManager?
     @State private var initialPage: Int = 1
     @State private var initError: String?
 
@@ -23,10 +24,11 @@ struct ThirteenLineQuranApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
-                if let service = databaseService, let userDb = userDatabaseService {
+                if let service = databaseService, let userDb = userDatabaseService, let dm = downloadManager {
                     RootTabView(
                         repository: service,
                         userDatabase: userDb,
+                        downloadManager: dm,
                         initialPage: initialPage
                     )
                 } else if let error = initError {
@@ -62,9 +64,11 @@ struct ThirteenLineQuranApp: App {
                     let quranService = try QuranDatabaseService()
                     let userDb = try UserDatabaseService()
                     let lastRead = await userDb.getLastReadPage()
+                    let dm = DownloadManager(repository: quranService)
 
                     self.databaseService = quranService
                     self.userDatabaseService = userDb
+                    self.downloadManager = dm
                     self.initialPage = lastRead
                 } catch {
                     self.initError = error.localizedDescription

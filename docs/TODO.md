@@ -147,10 +147,12 @@ This document tracks all actionable tasks across the lifecycle of the 13-Line Qu
 ---
 
 ## 10. Offline Download Manager
-- [ ] **Background URLSession**: Implement `DownloadManager` using background session configuration.
-- [ ] **Download Storage**: Save downloaded audio files into `Application Support/Downloads/` and mark with `.isExcludedFromBackup = true`.
-- [ ] **Surah/Juz Audio Packs**: Enable one-tap download of all MP3s for a chosen Surah or Juz.
-- [ ] **Offline Storage UI**: Settings screen showing disk usage breakdown (App size, Page tiles, Audio cache) with "Clear Cache" action.
+- [x] **Background Download Manager**: Implement `@Observable @MainActor DownloadManager` for Sheikh Khalifa Al Tunaiji audio recitation (64kbps).
+- [x] **Download Storage & Apple Guideline Compliance**: Save MP3s into `Application Support/13LineQuran/Downloads/` and mark with `isExcludedFromBackup = true`.
+- [x] **Surah Audio Packs**: One-tap download of all verses for any Surah with concurrent chunking (4 verses at a time) and cancellation.
+- [x] **Seamless Local Playback**: Coordinate `AudioPlayerService` to check local disk first, providing zero-latency offline playback with streaming fallback.
+- [x] **Offline Storage UI**: Settings screen showing disk usage metrics (MB used, Surah count), download list, and "Clear All Audio" action with confirmation.
+
 
 ---
 

@@ -11,6 +11,8 @@ public struct RootTabView: View {
     @State private var selectedTab: TabItem = .read
     @State private var readerViewModel: MushafReaderViewModel
 
+    public let downloadManager: DownloadManager
+
     public enum TabItem: Hashable {
         case read
         case index
@@ -20,8 +22,10 @@ public struct RootTabView: View {
     public init(
         repository: QuranRepositoryProtocol,
         userDatabase: UserDatabaseServiceProtocol,
+        downloadManager: DownloadManager,
         initialPage: Int = 1
     ) {
+        self.downloadManager = downloadManager
         _readerViewModel = State(wrappedValue: MushafReaderViewModel(
             repository: repository,
             userDatabase: userDatabase,
@@ -60,7 +64,7 @@ public struct RootTabView: View {
             .tag(TabItem.index)
 
             // Tab 3: Settings
-            SettingsView()
+            SettingsView(downloadManager: downloadManager)
                 .tabItem {
                     Label("Settings", systemImage: "gearshape.fill")
                 }
