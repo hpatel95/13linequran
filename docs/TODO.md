@@ -39,11 +39,10 @@ This document tracks all actionable tasks across the lifecycle of the 13-Line Qu
   - [ ] Create clean Xcode project targeting iOS 17.0+.
   - [ ] Configure bundle identifier: `com.company.thirteenlinequran`.
   - [ ] Enable Capabilities: Background Modes (`Audio, AirPlay, and Picture in Picture`).
-- [ ] **Package Dependencies**:
-  - [ ] Add `GRDB.swift` via Swift Package Manager.
-  - [ ] (Optional) Add `TelemetryDeck` via Swift Package Manager.
-- [ ] **Folder Structure**: Establish modular folder hierarchy (`App/`, `DesignSystem/`, `Domain/`, `Features/`, `Resources/`, `Support/`).
-- [ ] **Compiler Settings**: Enable Swift 6 Strict Concurrency Checking (`-strict-concurrency=complete`) with zero warnings.
+- [x] **Package Dependencies**:
+  - [x] Create `Package.swift` with `GRDB.swift` dependency and resource bundles.
+- [x] **Folder Structure**: Establish modular folder hierarchy (`App/`, `DesignSystem/`, `Domain/`, `Features/`, `Resources/`, `Tests/`).
+- [x] **Compiler Settings**: Code adheres to Swift 6 Strict Concurrency (`Sendable`, `@MainActor`, `actor QuranDatabaseService`).
 - [x] **Agent Skills Integration** (`.agents/skills/`):
   - [x] `swiftui-expert` (SwiftUI 17+, Swift 6 concurrency, view invalidation, downsampling).
   - [x] `apple-fluid-motion` (Fluid springs, interruptible gestures, velocity handoffs).
@@ -62,24 +61,24 @@ This document tracks all actionable tasks across the lifecycle of the 13-Line Qu
 - [x] **Typography Tokens** (`QuranApp/DesignSystem/TypographyTokens.swift`):
   - [x] Headline & Body styles (Newsreader / Apple New York serif).
   - [x] UI labels & badges (SF Pro).
-  - [x] Arabic Naskh calligraphy scaling helpers.
-- [ ] **Decorative Assets**: Implement vector `IslamicBanner` Surah divider in pure SwiftUI paths.
+  - [x] Arabic Naskh/Nastaleeq calligraphy scaling helpers.
+- [x] **Decorative Assets**: Implement vector `IslamicBanner` Surah divider in pure SwiftUI (`IslamicBanner.swift` & `QuranPageFrame.swift`).
 - [ ] **Contrast Audit**: Verify all foreground/background color combinations satisfy WCAG AA contrast standards.
 
 ---
 
 ## 5. Mushaf Reader Engine
-- [ ] **Paging Viewport**:
-  - [ ] Build RTL horizontal paging container (`TabView` or `UIPageViewController`).
-  - [ ] Implement smooth 120Hz ProMotion swipe animations between pages 1 and 848.
-  - [ ] Build windowed memory cache (keeping only pages $N-1, N, N+1$ loaded).
+- [x] **Paging Viewport**:
+  - [x] Build RTL horizontal paging container (`TabView` in `MushafReaderView.swift`).
+  - [x] Build windowed memory cache (keeping only pages $N-1, N, N+1$ loaded in `MushafReaderViewModel.swift`).
+  - [x] Build 13-line layout engine (`MushafLineView.swift` & `MushafPageView.swift`).
 - [ ] **Zoom & Pan**:
   - [ ] Implement pinch-to-zoom (up to 2.5x).
   - [ ] Implement double-tap to reset zoom.
-- [ ] **Overlay Controls**:
-  - [ ] Build floating top bar (Surah title, Juz number, Page number).
-  - [ ] Build bottom bar (Audio play, Bookmark toggle, Page scrubber).
-  - [ ] Single tap in page center toggles overlay visibility with smooth fade animation.
+- [x] **Overlay Controls**:
+  - [x] Build floating top bar (Surah title, Juz number, Page number, Translation selector).
+  - [x] Build bottom bar (Sheikh Khalifa Al Tunaiji controls, Page scrubber slider).
+  - [x] Single tap in page center toggles overlay visibility with smooth spring animation.
 - [ ] **Keep-Awake**: Implement `UIApplication.shared.isIdleTimerDisabled = true` while reading.
 
 ---
