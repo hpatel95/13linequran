@@ -20,22 +20,17 @@ This document tracks all actionable tasks across the lifecycle of the 13-Line Qu
 ---
 
 ## 2. Quran Content & Data Pipeline
-- [ ] **Reference Corpus**: Check in a verified, read-only golden reference dataset of 114 Surahs and 6,236 Ayahs.
-- [ ] **13-Line Bounding Box Dataset**: Construct and audit the SQLite database of Ayah Bounding Boxes for all 848 pages:
-  - [ ] Verify each page has exactly 13 lines.
-  - [ ] Verify bounding boxes cover every ayah without clipping.
-  - [ ] Confirm normalized coordinate bounds: $0.0 \le minX < maxX \le 1.0$ and $0.0 \le minY < maxY \le 1.0$.
-- [ ] **848-Page Image Optimization**:
-  - [ ] Process vector-rasterized 13-line pages into high-definition AVIF/WebP tiles ($1600 \times 2400$).
-  - [ ] Verify total uncompressed footprint is $\le 90$ MB for the entire 848-page set.
-  - [ ] Ensure dual-layer alpha separation so ink can be tinted dynamically by SwiftUI shaders.
-- [ ] **SQLite Build**: Compile `quran_content.sqlite` containing:
-  - [ ] `surahs` table.
-  - [ ] `ayahs` table.
-  - [ ] `ayah_bounds` table.
-  - [ ] `translations` table.
-  - [ ] `translations_fts` (FTS5 virtual full-text search table).
-- [ ] **SHA-256 Checksum**: Generate the cryptographic hash for `quran_content.sqlite` and record it in the app's build configuration.
+- [x] **Reference Corpus**: Check in a verified, read-only golden reference dataset of 114 Surahs and 6,236 Ayahs.
+- [x] **13-Line Layout Dataset**: Construct and audit the SQLite database of layout and word positions for all 849 pages:
+  - [x] Verify each page has exactly 13 lines (`mushaf_lines` contains 11,037 lines).
+  - [x] Integrate authentic IndoPak Nastaleeq TTF font asset.
+- [x] **SQLite Build**: Compile `quran_content.sqlite` containing:
+  - [x] `surahs` table (114 rows, English & French names).
+  - [x] `ayahs` table (6,236 canonical verses, IndoPak text & Imlaei search text).
+  - [x] `mushaf_lines` table (11,037 layout lines mapping 1:1 to printed 13-line pages).
+  - [x] `translations` table (18,708 rows: Saheeh International, Hilali & Muhsin Khan, and French Hamidullah).
+  - [x] `search_index` (FTS5 virtual full-text search table with unicode61 tokenizer).
+- [x] **SHA-256 Checksum**: Generate the cryptographic hash for `quran_content.sqlite` (`1b00779c9ae00ddca2232ec61a608a4cd9faf3d20e94d2f229d88df1b36f214b`) and record it in `QuranApp/Resources/Database/quran_content.sqlite.sha256`.
 
 ---
 
