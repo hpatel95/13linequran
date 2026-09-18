@@ -69,7 +69,9 @@ public struct SettingsView: View {
                                             .foregroundStyle(palette.saddleAmber)
                                     }
                                 }
-                                .padding(.vertical, 4)
+                                .frame(minHeight: 44)
+                                .contentShape(Rectangle())
+                                .padding(.vertical, 2)
                             }
                             .buttonStyle(PlainButtonStyle())
                             .accessibilityLabel("Select \(theme.title) theme")

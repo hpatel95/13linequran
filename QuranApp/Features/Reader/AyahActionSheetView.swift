@@ -264,7 +264,7 @@ public struct AyahActionSheetView: View {
                     }) {
                         Text("\(count)×")
                             .font(.system(size: 13, weight: .bold))
-                            .frame(maxWidth: .infinity, minHeight: 36)
+                            .frame(maxWidth: .infinity, minHeight: 44) // 44pt Apple HIG compliance
                             .background(repeatCount == count ? AppColors.saddleAmber : AppColors.surfacePapyrus)
                             .foregroundStyle(repeatCount == count ? Color.white : AppColors.inkUmber)
                             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))

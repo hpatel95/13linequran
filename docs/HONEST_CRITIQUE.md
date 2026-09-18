@@ -29,18 +29,18 @@ Document 04/05 recommends rendering the Mushaf using CoreText/Canvas from struct
 * **The Fatal Reality**: The 13-line Mushaf is not ordinary Arabic text; it is an intricate calligraphic lithograph. In South Asian Indo-Pak Naskh calligraphy, ligatures stack vertically (up to 3–4 letters high), diacritical marks (I'rab, Tashkeel, Sukun, Maddah) stack above ligatures, and Waqf stop signs (Qif, Saktah, La, Jeem, Zaa, Taa) stack above those.
 * Standard text layout engines (CoreText, HarfBuzz, Skia) struggle to render this vertical stacking with 100% mathematical determinism across all iOS dynamic rendering contexts without clipping glyph ascenders/descenders.
 * **The Hifz (Memorization) Imperative**: Memorizers of the Quran rely on eidetic/spatial visual memory. They remember that an ayah starts on the right side of line 4 and ends on the left of line 5. If a dynamic rendering engine wraps a word even by one pixel across different screen widths (iPhone SE vs iPhone 16 Pro Max), the page layout is altered, ruining the spatial memorization anchor.
-* King Fahd Quran Printing Complex spent millions developing 604 separate fonts (one font per page) for their 15-line Madinah Mushaf precisely because a single dynamic font could not guarantee identical page layouts. No such 848-font official set exists for 13-line Indo-Pak Mushaf.
+* King Fahd Quran Printing Complex spent millions developing 604 separate fonts (one font per page) for their 15-line Madinah Mushaf precisely because a single dynamic font could not guarantee identical page layouts. No such 849-font official set exists for 13-line Indo-Pak Mushaf.
 
 #### The Flaw in `brainsotorming_2.txt` (The "Naive Bitmap Scan" Trap)
 `brainsotorming_2.txt` argues for pre-rendered page images but glosses over the critical engineering challenges:
-* Raw, uncompressed high-resolution scans of 848 pages will bloat the app download size to **1.5 GB to 2.2 GB**, destroying conversion rates and violating App Store cellular download limits.
+* Raw, uncompressed high-resolution scans of 849 pages will bloat the app download size to **1.5 GB to 2.2 GB**, destroying conversion rates and violating App Store cellular download limits.
 * Scanned pages in dark mode look awful if simply inverted (creating negative halos, washed-out tones, and harsh contrast against white borders).
 * Raw bitmap images are completely invisible to Apple VoiceOver accessibility and cannot support native text selection, CoreSpotlight indexing, or copy/paste.
 
 #### The Authoritative Architectural Resolution: The Hybrid Digital Tile Engine
 We reject both extremes in favor of a **Triple-Layered Hybrid Engine**:
 1. **Visual Base Layer (High-Definition Digital Tiles)**:
-   * 848 digital 13-line pages rendered from cleaned, high-contrast vector-rasterized masters.
+   * 849 digital 13-line pages rendered from cleaned, high-contrast vector-rasterized masters.
    * Compressed into modern **AVIF or WebP** format at $1600 \times 2400$ resolution. Average file size: ~85–100 KB per page. Total footprint for the entire Quran: **~75–85 MB** (easily bundled or downloaded in seconds).
    * Rendered with an alpha-separated ink channel, allowing native GPU color tinting in SwiftUI shaders for Warm Sepia and True OLED Midnight Dark Mode without color-inversion artifacts.
 2. **Interactive Coordinate Layer (Ayah Bounding Boxes)**:
@@ -110,7 +110,7 @@ We reject both extremes in favor of a **Triple-Layered Hybrid Engine**:
   * In an AI-assisted vibe-coding workflow, attempting to build a 124-section product in one go leads to context window degradation, hallucinated API signatures, and broken build states.
 * **The Authoritative Resolution**:
   * Enforce a **strict V1 Sacred Core**:
-    1. High-definition 13-line Mushaf reading (all 848 pages) with smooth paging and zoom.
+    1. High-definition 13-line Mushaf reading (all 849 pages) with smooth paging and zoom.
     2. Interactive ayah tap -> golden highlight overlay -> translation bottom sheet.
     3. Seamless background audio recitation with lock-screen / AirPods controls.
     4. Fast Surah, Juz, and Page index navigation.

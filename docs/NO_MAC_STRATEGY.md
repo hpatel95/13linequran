@@ -152,7 +152,7 @@ The single riskiest, most iteration-heavy part of this entire build is **Phase 4
 ### Phase 0 (Now → Content Prep): 100% Windows — Free
 Everything we need to do is doable on Windows:
 - Build `quran_content.sqlite` with Python
-- Process 848 page tile images
+- Process 849 page tile images
 - Write all Swift source code as `.swift` files
 - Design the database schema
 - Draft all models, services, and views

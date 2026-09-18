@@ -309,38 +309,42 @@ public final class AudioPlayerService: NSObject {
     }
 
     @objc private func handleAudioInterruption(notification: Notification) {
-        #if canImport(AVFAudio)
-        guard let userInfo = notification.userInfo,
-              let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
-              let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
+        Task { @MainActor in
+            #if canImport(AVFAudio)
+            guard let userInfo = notification.userInfo,
+                  let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
+                  let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
 
-        switch type {
-        case .began:
-            isInterrupted = (state == .playing)
-            pause()
-        case .ended:
-            guard let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt else { return }
-            let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
-            if options.contains(.shouldResume) && isInterrupted {
-                resume()
+            switch type {
+            case .began:
+                isInterrupted = (state == .playing)
+                pause()
+            case .ended:
+                guard let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt else { return }
+                let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
+                if options.contains(.shouldResume) && isInterrupted {
+                    resume()
+                }
+                isInterrupted = false
+            @unknown default:
+                break
             }
-            isInterrupted = false
-        @unknown default:
-            break
+            #endif
         }
-        #endif
     }
 
     @objc private func handleRouteChange(notification: Notification) {
-        #if canImport(AVFAudio)
-        guard let userInfo = notification.userInfo,
-              let reasonValue = userInfo[AVAudioSessionRouteChangeReasonKey] as? UInt,
-              let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue) else { return }
+        Task { @MainActor in
+            #if canImport(AVFAudio)
+            guard let userInfo = notification.userInfo,
+                  let reasonValue = userInfo[AVAudioSessionRouteChangeReasonKey] as? UInt,
+                  let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue) else { return }
 
-        // When headphones or AirPods are unplugged/disconnected, pause audio
-        if reason == .oldDeviceUnavailable {
-            pause()
+            // When headphones or AirPods are unplugged/disconnected, pause audio
+            if reason == .oldDeviceUnavailable {
+                pause()
+            }
+            #endif
         }
-        #endif
     }
 }
