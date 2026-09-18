@@ -87,6 +87,26 @@ public struct Ayah: Identifiable, Hashable, Sendable, Codable {
     }
 }
 
+// MARK: - Mushaf Word
+public struct MushafWord: Identifiable, Hashable, Sendable, Codable {
+    public var id: String { location }
+    public let surah: Int
+    public let ayah: Int
+    public let word: Int
+    public let location: String
+    public let text: String
+
+    public var verseKey: String { "\(surah):\(ayah)" }
+
+    public init(surah: Int, ayah: Int, word: Int, location: String, text: String) {
+        self.surah = surah
+        self.ayah = ayah
+        self.word = word
+        self.location = location
+        self.text = text
+    }
+}
+
 // MARK: - Mushaf Line (13-Line Physical Page Structure)
 public struct MushafLine: Identifiable, Hashable, Sendable, Codable {
     public let id: Int
@@ -96,6 +116,7 @@ public struct MushafLine: Identifiable, Hashable, Sendable, Codable {
     public let surahId: Int?
     public let isCentered: Bool
     public let textIndopak: String
+    public let words: [MushafWord]
 
     public enum LineType: String, Sendable, Codable {
         case ayahText = "ayah_text"
@@ -110,7 +131,8 @@ public struct MushafLine: Identifiable, Hashable, Sendable, Codable {
         lineType: LineType,
         surahId: Int?,
         isCentered: Bool,
-        textIndopak: String
+        textIndopak: String,
+        words: [MushafWord] = []
     ) {
         self.id = id
         self.pageNumber = pageNumber
@@ -119,6 +141,7 @@ public struct MushafLine: Identifiable, Hashable, Sendable, Codable {
         self.surahId = surahId
         self.isCentered = isCentered
         self.textIndopak = textIndopak
+        self.words = words
     }
 }
 

@@ -12,17 +12,23 @@ public struct MushafPageView: View {
     public let lines: [MushafLine]
     public let surahName: String
     public let juzNumber: Int
+    public let selectedVerseKey: String?
+    public let onSelectAyah: ((Int, Int) -> Void)?
 
     public init(
         pageNumber: Int,
         lines: [MushafLine],
         surahName: String = "",
-        juzNumber: Int = 1
+        juzNumber: Int = 1,
+        selectedVerseKey: String? = nil,
+        onSelectAyah: ((Int, Int) -> Void)? = nil
     ) {
         self.pageNumber = pageNumber
         self.lines = lines
         self.surahName = surahName
         self.juzNumber = juzNumber
+        self.selectedVerseKey = selectedVerseKey
+        self.onSelectAyah = onSelectAyah
     }
 
     public var body: some View {
@@ -41,7 +47,11 @@ public struct MushafPageView: View {
                 .frame(minHeight: 500)
             } else {
                 ForEach(lines) { line in
-                    MushafLineView(line: line)
+                    MushafLineView(
+                        line: line,
+                        selectedVerseKey: selectedVerseKey,
+                        onSelectAyah: onSelectAyah
+                    )
                 }
             }
         }

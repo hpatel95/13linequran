@@ -85,4 +85,25 @@ final class QuranIntegrityTests: XCTestCase {
         XCTAssertFalse(results.isEmpty, "FTS5 search for 'Merciful' should return matches.")
         XCTAssertEqual(results.first?.ayahId, 1, "First match for 'Merciful' should be Al-Fatihah 1:1.")
     }
+
+    func testAyahSelectionAndMultiLineSpanning() async throws {
+        // Page 1 lines: Surah 1 Ayah 7 spans lines 6, 7, and 8
+        let p1Lines = try await repository.fetchLines(forPage: 1)
+        
+        let line6 = p1Lines[5] // 0-indexed line 6
+        let line7 = p1Lines[6] // 0-indexed line 7
+        let line8 = p1Lines[7] // 0-indexed line 8
+
+        let line6Ayah7Words = line6.words.filter { $0.surah == 1 && $0.ayah == 7 }
+        let line7Ayah7Words = line7.words.filter { $0.surah == 1 && $0.ayah == 7 }
+        let line8Ayah7Words = line8.words.filter { $0.surah == 1 && $0.ayah == 7 }
+
+        XCTAssertFalse(line6Ayah7Words.isEmpty, "Line 6 must contain the beginning of Ayah 7 (صِرَاطَ)")
+        XCTAssertFalse(line7Ayah7Words.isEmpty, "Line 7 must contain the middle words of Ayah 7")
+        XCTAssertFalse(line8Ayah7Words.isEmpty, "Line 8 must contain the concluding words of Ayah 7")
+
+        // Total words in Al-Fatihah Ayah 7 should sum to 10
+        let totalWords = line6Ayah7Words.count + line7Ayah7Words.count + line8Ayah7Words.count
+        XCTAssertEqual(totalWords, 10, "Al-Fatihah Ayah 7 contains exactly 10 words/tokens")
+    }
 }

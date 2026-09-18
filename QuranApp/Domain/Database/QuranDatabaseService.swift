@@ -142,7 +142,7 @@ public actor QuranDatabaseService: QuranRepositoryProtocol {
     // MARK: - Mushaf Lines (13-Line physical page)
     public func fetchLines(forPage pageNumber: Int) async throws -> [MushafLine] {
         let sql = """
-        SELECT id, page_number, line_number, line_type, surah_id, is_centered, text_indopak
+        SELECT id, page_number, line_number, line_type, surah_id, is_centered, text_indopak, words_json
         FROM mushaf_lines
         WHERE page_number = ?
         ORDER BY line_number ASC;
@@ -155,6 +155,8 @@ public actor QuranDatabaseService: QuranRepositoryProtocol {
         sqlite3_bind_int(statement, 1, Int32(pageNumber))
 
         var lines: [MushafLine] = []
+        let decoder = JSONDecoder()
+
         while sqlite3_step(statement) == SQLITE_ROW {
             let id = Int(sqlite3_column_int(statement, 0))
             let page = Int(sqlite3_column_int(statement, 1))
@@ -165,6 +167,12 @@ public actor QuranDatabaseService: QuranRepositoryProtocol {
             let isCentered = sqlite3_column_int(statement, 5) == 1
             let text = sqlite3_column_text(statement, 6).flatMap { String(cString: $0) } ?? ""
 
+            var words: [MushafWord] = []
+            if let wordsJsonText = sqlite3_column_text(statement, 7).flatMap({ String(cString: $0) }),
+               let data = wordsJsonText.data(using: .utf8) {
+                words = (try? decoder.decode([MushafWord].self, from: data)) ?? []
+            }
+
             lines.append(MushafLine(
                 id: id,
                 pageNumber: page,
@@ -172,7 +180,8 @@ public actor QuranDatabaseService: QuranRepositoryProtocol {
                 lineType: lineType,
                 surahId: surahId,
                 isCentered: isCentered,
-                textIndopak: text
+                textIndopak: text,
+                words: words
             ))
         }
         return lines

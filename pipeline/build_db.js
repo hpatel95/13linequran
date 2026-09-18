@@ -238,7 +238,8 @@ async function buildDatabase() {
       line_type TEXT NOT NULL,
       surah_id INTEGER,
       is_centered INTEGER DEFAULT 0,
-      text_indopak TEXT
+      text_indopak TEXT,
+      words_json TEXT
     );
   `);
 
@@ -310,8 +311,8 @@ async function buildDatabase() {
   await run('BEGIN TRANSACTION');
 
   const insertLineStmt = db.prepare(`
-    INSERT INTO mushaf_lines (page_number, line_number, line_type, surah_id, is_centered, text_indopak)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO mushaf_lines (page_number, line_number, line_type, surah_id, is_centered, text_indopak, words_json)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
 
   for (let p = 1; p <= 849; p++) {
@@ -319,7 +320,7 @@ async function buildDatabase() {
     const lines = parsePage(pageHtml, p);
 
     for (const l of lines) {
-      insertLineStmt.run(p, l.line_number, l.line_type, l.surah_header, l.is_centered, l.line_text);
+      insertLineStmt.run(p, l.line_number, l.line_type, l.surah_header, l.is_centered, l.line_text, JSON.stringify(l.words));
 
       if (l.surah_header && !surahStartPages.has(l.surah_header)) {
         surahStartPages.set(l.surah_header, p);

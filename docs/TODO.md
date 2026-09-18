@@ -83,18 +83,23 @@ This document tracks all actionable tasks across the lifecycle of the 13-Line Qu
 
 ---
 
-## 6. Interactive Ayah Bounding Boxes & Selection
-- [ ] **Coordinate Converter**: Map normalized `(min_x, min_y, max_x, max_y)` to actual rendered image coordinates inside `GeometryReader`.
-- [ ] **Highlight Overlay**: Render semi-transparent golden rounded rectangle (`#C5A059` at 22% opacity) over active ayah bounds.
-- [ ] **Multi-Line Handling**: Ensure ayahs spanning multiple lines highlight all matching line segments simultaneously.
-- [ ] **Touch Gestures**:
-  - [ ] Single tap: Selects ayah, plays audio or shows highlight.
-  - [ ] Long press: Triggers haptic feedback (`UIImpactFeedbackGenerator(style: .medium)`) and presents `TranslationSheetView`.
-- [ ] **Translation Bottom Sheet**:
-  - [ ] Display Surah name and Ayah number.
-  - [ ] Display Arabic text snippet.
-  - [ ] Display Pickthall/Yusuf Ali translation text.
-  - [ ] Action buttons: "Play from Here", "Bookmark Ayah", "Copy Verse".
+## 6. Interactive Ayah Highlighting & Selection (Phase 4)
+- [x] **Word & Line Ayah Clustering**: Each line parses words mapped directly to canonical `(surah, ayah)` keys.
+- [x] **Highlight Overlay**: Render semi-transparent golden rounded glaze (`AppColors.ayahHighlightGlaze` and `AppColors.ayahHighlightBorder`) over active ayah words with fluid spring animation (`.spring(response: 0.28, dampingFraction: 0.88)`).
+- [x] **Multi-Line Handling**: Verified that ayahs spanning multiple lines (e.g. Al-Fatihah 1:7 across lines 6, 7, and 8) highlight all segments simultaneously.
+- [x] **Touch Gestures & Haptics**:
+  - [x] Single tap: Selects ayah, triggers haptic feedback (`UISelectionFeedbackGenerator().selectionChanged()`).
+  - [x] Presents `AyahActionSheetView` with `.presentationDetents([.fraction(0.44), .medium, .large])`.
+- [x] **Ayah Action Sheet** (`AyahActionSheetView.swift`):
+  - [x] Display Surah name, Ayah number, page and juz badges.
+  - [x] Display authentic IndoPak calligraphy text.
+  - [x] In-sheet translation author picker (Saheeh, Hilali-Khan, French Hamidullah).
+  - [x] 5 Action Buttons (44x44pt HIG touch target standard):
+    - [x] "Play" (`play.circle.fill`).
+    - [x] "Bookmark" (`bookmark.fill` / `bookmark`).
+    - [x] "Copy" (`doc.on.doc` with clipboard toast).
+    - [x] "Share" (`square.and.arrow.up` with native iOS `ShareLink`).
+    - [x] "Hifdh Repeat Loop" ($1\times, 3\times, 5\times, 10\times$).
 
 ---
 

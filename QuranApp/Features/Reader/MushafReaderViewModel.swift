@@ -26,6 +26,12 @@ public final class MushafReaderViewModel {
     public var isTranslationSheetPresented: Bool = false
     public var activeAyahTranslation: Translation?
     public var selectedAyah: Ayah?
+    public var bookmarks: Set<Int> = []
+
+    public var selectedVerseKey: String? {
+        guard let ayah = selectedAyah else { return nil }
+        return "\(ayah.surahId):\(ayah.verseNumber)"
+    }
 
     // Windowed Cache: [PageNumber: [MushafLine]]
     public var pageLinesCache: [Int: [MushafLine]] = [:]
@@ -81,6 +87,24 @@ public final class MushafReaderViewModel {
             }
         } catch {
             self.errorMessage = error.localizedDescription
+        }
+    }
+
+    public func toggleBookmark(ayahId: Int) {
+        if bookmarks.contains(ayahId) {
+            bookmarks.remove(ayahId)
+        } else {
+            bookmarks.insert(ayahId)
+        }
+    }
+
+    public func changeTranslationAuthor(_ author: Translation.TranslationAuthor) async {
+        self.selectedTranslationAuthor = author
+        if let ayah = selectedAyah {
+            self.activeAyahTranslation = try? await repository.fetchTranslation(
+                ayahId: ayah.id,
+                authorCode: author
+            )
         }
     }
 

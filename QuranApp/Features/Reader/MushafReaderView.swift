@@ -29,7 +29,11 @@ public struct MushafReaderView: View {
                             pageNumber: pageNum,
                             lines: viewModel.pageLinesCache[pageNum] ?? [],
                             surahName: viewModel.currentSurahName,
-                            juzNumber: viewModel.currentJuzNumber
+                            juzNumber: viewModel.currentJuzNumber,
+                            selectedVerseKey: viewModel.selectedVerseKey,
+                            onSelectAyah: { surahId, ayahNumber in
+                                Task { await viewModel.selectAyah(surahId: surahId, verseNumber: ayahNumber) }
+                            }
                         )
                         .padding(.top, viewModel.isChromeVisible ? 60 : 16)
                         .padding(.bottom, viewModel.isChromeVisible ? 90 : 20)
@@ -65,9 +69,26 @@ public struct MushafReaderView: View {
             await viewModel.onAppear()
         }
         .sheet(isPresented: $viewModel.isTranslationSheetPresented) {
-            translationSheet
-                .presentationDetents([.fraction(0.38), .medium, .large])
+            if let ayah = viewModel.selectedAyah {
+                let surah = viewModel.surahs.first(where: { $0.id == ayah.surahId })
+                AyahActionSheetView(
+                    ayah: ayah,
+                    surah: surah,
+                    translation: viewModel.activeAyahTranslation,
+                    isBookmarked: viewModel.bookmarks.contains(ayah.id),
+                    onPlay: {
+                        // Playback integration in Phase 5
+                    },
+                    onBookmark: {
+                        viewModel.toggleBookmark(ayahId: ayah.id)
+                    },
+                    onSelectAuthor: { author in
+                        Task { await viewModel.changeTranslationAuthor(author) }
+                    }
+                )
+                .presentationDetents([.fraction(0.44), .medium, .large])
                 .presentationDragIndicator(.visible)
+            }
         }
     }
 
@@ -193,49 +214,5 @@ public struct MushafReaderView: View {
         .padding(.bottom, 8)
     }
 
-    // MARK: - Translation Bottom Sheet
-    private var translationSheet: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            if let ayah = viewModel.selectedAyah {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Surah \(ayah.surahId) : Ayah \(ayah.verseNumber)")
-                            .font(AppTypography.headline)
-                            .foregroundStyle(AppColors.inkUmber)
-                        Text("Page \(ayah.pageNumber) • Juz \(ayah.juzNumber)")
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.sepiaMuted)
-                    }
-                    Spacer()
-                    Text(viewModel.selectedTranslationAuthor.displayName)
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.saddleAmber)
-                }
-                .padding(.top, 16)
-
-                Divider()
-                    .overlay(AppColors.borderSepia)
-
-                // Arabic Verse
-                Text(ayah.textIndopak)
-                    .font(AppTypography.arabic13Line)
-                    .foregroundStyle(AppColors.inkUmber)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                    .environment(\.layoutDirection, .rightToLeft)
-                    .padding(.vertical, 4)
-
-                // Translation Text
-                if let trans = viewModel.activeAyahTranslation {
-                    Text(trans.text)
-                        .font(AppTypography.englishTranslation)
-                        .foregroundStyle(AppColors.inkUmber)
-                        .lineSpacing(4)
-                }
-
-                Spacer()
-            }
-        }
-        .padding(.horizontal, 20)
-        .background(AppColors.paperAged)
     }
 }
