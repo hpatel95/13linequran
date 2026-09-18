@@ -41,9 +41,38 @@ public final class MushafReaderViewModel {
 
     // MARK: - Dependencies
     public let repository: QuranRepositoryProtocol
+    public let audioService: AudioPlayerService
 
     public init(repository: QuranRepositoryProtocol) {
         self.repository = repository
+        self.audioService = AudioPlayerService(repository: repository)
+        setupAudioSync()
+    }
+
+    private func setupAudioSync() {
+        audioService.onVerseChanged = { [weak self] surahId, verseNumber in
+            Task { @MainActor in
+                await self?.handleAudioVerseChanged(surahId: surahId, verseNumber: verseNumber)
+            }
+        }
+    }
+
+    private func handleAudioVerseChanged(surahId: Int, verseNumber: Int) async {
+        do {
+            if let ayah = try await repository.fetchAyah(surah: surahId, verse: verseNumber) {
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
+                    self.selectedAyah = ayah
+                }
+                // Auto-advance page if recitation crossed page boundary
+                if ayah.pageNumber != currentPage {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 1.0)) {
+                        self.currentPage = ayah.pageNumber
+                    }
+                }
+            }
+        } catch {
+            print("Failed to sync verse with audio: \(error)")
+        }
     }
 
     // MARK: - Actions

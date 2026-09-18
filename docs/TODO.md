@@ -104,17 +104,17 @@ This document tracks all actionable tasks across the lifecycle of the 13-Line Qu
 ---
 
 ## 7. Audio Playback Engine
-- [ ] **AVFoundation Setup**: Configure `AVAudioSession` with `.playback` category and `.spokenAudio` mode.
-- [ ] **Sequential Playback**:
-  - [ ] Build `AudioPlaybackService` wrapping `AVQueuePlayer`.
-  - [ ] Load sequential ayah URLs: `https://everyayah.com/data/{reciter}/{surah:03d}{ayah:03d}.mp3`.
-  - [ ] Automatically advance to the next ayah and update the reader's highlighted verse.
-  - [ ] Automatically turn the Mushaf page when recitation crosses page boundaries.
-- [ ] **Lock-Screen Media Center**:
-  - [ ] Populate `MPNowPlayingInfoCenter` with Surah name, Ayah number, reciter name, and album artwork.
-  - [ ] Implement `MPRemoteCommandCenter` handlers for Play, Pause, Toggle, Next, and Previous.
-- [ ] **Audio Interruption**: Gracefully handle incoming cellular calls, alarms, and Siri interruptions.
-- [ ] **Mini-Player**: Docked floating player showing reciter name, play/pause button, and dismiss button.
+- [x] **AVFoundation Setup**: Configure `AVAudioSession` with `.playback` category and `.spokenAudio` mode.
+- [x] **Sequential Playback**:
+  - [x] Build `AudioPlayerService` wrapping `AVPlayer` with `@Observable` and `@MainActor`.
+  - [x] Stream Sheikh Khalifa Al Tunaiji from EveryAyah CDN: `https://everyayah.com/data/khalefa_al_tunaiji_64kbps/{surah:03d}{ayah:03d}.mp3`.
+  - [x] Automatically advance to the next ayah and update reader's highlighted verse.
+  - [x] Automatically turn the Mushaf page when recitation crosses page boundaries.
+- [x] **Lock-Screen Media Center**:
+  - [x] Populate `MPNowPlayingInfoCenter` with Surah name, Ayah number, reciter name, and track details.
+  - [x] Implement `MPRemoteCommandCenter` handlers for Play, Pause, Toggle, Next, and Previous.
+- [x] **Audio Interruption & Route Changes**: Gracefully handle incoming cellular calls, alarms, Siri interruptions, and headphone disconnects.
+- [x] **Mini-Player**: Docked floating player showing reciter name, active ayah, play/pause buffering state, and scrubber.
 
 ---
 

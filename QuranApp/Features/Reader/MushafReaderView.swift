@@ -77,7 +77,12 @@ public struct MushafReaderView: View {
                     translation: viewModel.activeAyahTranslation,
                     isBookmarked: viewModel.bookmarks.contains(ayah.id),
                     onPlay: {
-                        // Playback integration in Phase 5
+                        viewModel.audioService.play(
+                            surahId: ayah.surahId,
+                            verseNumber: ayah.verseNumber,
+                            surahName: surah?.englishName ?? ""
+                        )
+                        viewModel.isTranslationSheetPresented = false
                     },
                     onBookmark: {
                         viewModel.toggleBookmark(ayahId: ayah.id)
@@ -171,35 +176,69 @@ public struct MushafReaderView: View {
 
             // Reciter & Audio Controls
             HStack {
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Sheikh Khalifa Al Tunaiji")
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(viewModel.audioService.reciterName)
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.inkUmber)
-                    Text("Hafs an Asim • Streaming CDN")
-                        .font(.system(size: 10))
-                        .foregroundStyle(AppColors.sepiaMuted)
+                    
+                    if viewModel.audioService.state == .playing || viewModel.audioService.state == .buffering {
+                        Text("\(viewModel.audioService.currentSurahName) : Ayah \(viewModel.audioService.currentVerseNumber)")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(AppColors.saddleAmber)
+                    } else {
+                        Text("Hafs 'an 'Asim • Streaming CDN")
+                            .font(.system(size: 10))
+                            .foregroundStyle(AppColors.sepiaMuted)
+                    }
                 }
 
                 Spacer()
 
-                Button(action: {}) {
+                // Previous Verse
+                Button(action: {
+                    viewModel.audioService.previousVerse()
+                }) {
                     Image(systemName: "backward.fill")
-                        .font(.system(size: 14))
+                        .font(.system(size: 15))
                         .foregroundStyle(AppColors.inkUmber)
+                        .frame(minWidth: 44, minHeight: 44)
                 }
+                .accessibilityLabel("Previous verse")
 
-                Button(action: {}) {
-                    Image(systemName: "play.circle.fill")
-                        .font(.system(size: 34))
-                        .foregroundStyle(AppColors.saddleAmber)
+                // Play / Pause / Buffering
+                Button(action: {
+                    viewModel.audioService.togglePlayPause()
+                }) {
+                    Group {
+                        if viewModel.audioService.state == .buffering {
+                            ProgressView()
+                                .tint(AppColors.saddleAmber)
+                                .frame(width: 36, height: 36)
+                        } else if viewModel.audioService.state == .playing {
+                            Image(systemName: "pause.circle.fill")
+                                .font(.system(size: 36))
+                                .foregroundStyle(AppColors.saddleAmber)
+                        } else {
+                            Image(systemName: "play.circle.fill")
+                                .font(.system(size: 36))
+                                .foregroundStyle(AppColors.saddleAmber)
+                        }
+                    }
+                    .frame(minWidth: 44, minHeight: 44)
                 }
-                .padding(.horizontal, 8)
+                .accessibilityLabel(viewModel.audioService.state == .playing ? "Pause" : "Play")
+                .padding(.horizontal, 4)
 
-                Button(action: {}) {
+                // Next Verse
+                Button(action: {
+                    viewModel.audioService.nextVerse()
+                }) {
                     Image(systemName: "forward.fill")
-                        .font(.system(size: 14))
+                        .font(.system(size: 15))
                         .foregroundStyle(AppColors.inkUmber)
+                        .frame(minWidth: 44, minHeight: 44)
                 }
+                .accessibilityLabel("Next verse")
             }
             .padding(.horizontal, 16)
             .padding(.top, 2)
@@ -212,7 +251,5 @@ public struct MushafReaderView: View {
         )
         .padding(.horizontal, 12)
         .padding(.bottom, 8)
-    }
-
     }
 }
