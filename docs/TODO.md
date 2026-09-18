@@ -177,14 +177,18 @@ This document tracks all actionable tasks across the lifecycle of the 13-Line Qu
 
 ---
 
-*(Note: StoreKit 2 & Paywall dropped per ADR-008 — 100% Free, Ad-Free & Open / Sadaqah Jariyah)*
+---
+
+*(Note: Prior StoreKit 2 Paywall dropped per ADR-008 — 100% Free, Ad-Free & Open / Sadaqah Jariyah)*
 
 ---
 
-## 14. Quality Assurance & Integrity Testing
+## 12. Quality Assurance & Integrity Testing
 - [ ] **Automated Test Suite**:
   - [ ] Run `QuranIntegrityTests` asserting 114 Surahs, 6,236 Ayahs, and 849 pages (Qudratullah edition).
-  - [ ] Run bounding box coordinate range audit.
+  - [ ] Run `UserDatabaseTests` validating WAL mode, bookmark insertions/deletions, and last-read persistence.
+  - [ ] Run `DownloadManagerTests` asserting backup exclusions and 6-digit filename schemas.
+  - [ ] Run `ThemeManagerTests` asserting palette contrasts and colorScheme behavior.
 - [ ] **Device Testing Matrix**:
   - [ ] Test on iPhone SE (4.7" compact screen).
   - [ ] Test on standard iPhone (6.1").
@@ -196,16 +200,16 @@ This document tracks all actionable tasks across the lifecycle of the 13-Line Qu
 
 ---
 
-## 15. App Store Submission Preparation
+## 13. App Store Submission Preparation
 - [ ] **Pre-Submission Compliance Audit (Appflight)**:
   - [ ] Scan compiled `.ipa` binary and code via [Appflight](https://appflight.co/) to detect App Store rejection risks, unhandled guideline requirements, missing usage descriptions, or undeclared required reason APIs before submitting to Apple.
-- [ ] **Privacy Manifest**: Include `Support/PrivacyInfo.xcprivacy` with required reason API declarations.
+- [ ] **Privacy Manifest**: Include `Support/PrivacyInfo.xcprivacy` with required reason API declarations (declaring zero tracking).
 - [ ] **App Store Connect**:
   - [ ] App Name: "13 Line Quran – Mushaf Reader" (≤30 chars).
   - [ ] Subtitle: "Traditional Indo-Pak Mushaf" (≤30 chars).
   - [ ] Category: Books / Reference.
   - [ ] Age Rating: 4+.
   - [ ] App Privacy: Answer "No, we do not collect data."
-- [ ] **Marketing Assets**: Capture screenshots on 6.9", 6.7", and 6.5" displays.
-- [ ] **Review Notes**: Write explicit review notes explaining background audio and StoreKit sandbox testing.
+- [ ] **Marketing Assets**: Capture screenshots on 6.9", 6.7", and 6.5" displays across Sepia, Soft Ivory, and Midnight OLED themes.
+- [ ] **Review Notes**: Write explicit review notes explaining background audio capabilities and non-commercial Sadaqah Jariyah trust.
 - [ ] **TestFlight Beta**: Conduct external TestFlight round with real 13-line Mushaf readers.
