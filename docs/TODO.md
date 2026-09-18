@@ -49,6 +49,11 @@ This document tracks all actionable tasks across the lifecycle of the 13-Line Qu
   - [ ] (Optional) Add `TelemetryDeck` via Swift Package Manager.
 - [ ] **Folder Structure**: Establish modular folder hierarchy (`App/`, `DesignSystem/`, `Domain/`, `Features/`, `Resources/`, `Support/`).
 - [ ] **Compiler Settings**: Enable Swift 6 Strict Concurrency Checking (`-strict-concurrency=complete`) with zero warnings.
+- [x] **Agent Skills Integration** (`.agents/skills/`):
+  - [x] `swiftui-expert` (SwiftUI 17+, Swift 6 concurrency, view invalidation, downsampling).
+  - [x] `apple-fluid-motion` (Fluid springs, interruptible gestures, velocity handoffs).
+  - [x] `mobile-ios-design` (Apple HIG, 44pt touch targets, Dynamic Type, navigation).
+  - [x] Comprehensive roadmap activation matrix documented in [`docs/SKILLS_GUIDE.md`](docs/SKILLS_GUIDE.md).
 
 ---
 
