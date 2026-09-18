@@ -134,14 +134,15 @@ This document tracks all actionable tasks across the lifecycle of the 13-Line Qu
 ---
 
 ## 9. User Data & Persistence
-- [ ] **User Database**: Create `user_data.sqlite` in `Application Support` via GRDB.
-- [ ] **Bookmarks**:
-  - [ ] Create table `bookmarks (id, ayah_id, page_number, created_at, note)`.
-  - [ ] Add / remove bookmarks with instant UI updates.
-  - [ ] Bookmark list view with swipe-to-delete.
-- [ ] **Last-Read Memory**:
-  - [ ] Auto-save `last_read_page` whenever user rests on a page for $>2$ seconds.
-  - [ ] App launch immediately opens to `last_read_page`.
+- [x] **User Database**: Create `user_data.sqlite` in `Application Support` via native SQLite3 WAL mode.
+- [x] **Bookmarks**:
+  - [x] Create table `bookmarks (id, ayah_id, surah_id, verse_number, page_number, title, arabic_snippet, translation_snippet, note, created_at)`.
+  - [x] Add / remove bookmarks with instant UI updates and duplicate prevention.
+  - [x] Bookmark list view with modal sheet, filter pills (All, Verses, Pages), and native swipe-to-delete.
+- [x] **Last-Read Memory**:
+  - [x] Auto-save `last_read_page` whenever user rests on a page for $>2$ seconds (cancellable Task debounce).
+  - [x] App launch immediately opens to `last_read_page` without visual page flash.
+
 
 ---
 

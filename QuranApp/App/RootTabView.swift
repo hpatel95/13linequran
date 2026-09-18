@@ -17,8 +17,16 @@ public struct RootTabView: View {
         case settings
     }
 
-    public init(repository: QuranRepositoryProtocol) {
-        _readerViewModel = State(wrappedValue: MushafReaderViewModel(repository: repository))
+    public init(
+        repository: QuranRepositoryProtocol,
+        userDatabase: UserDatabaseServiceProtocol,
+        initialPage: Int = 1
+    ) {
+        _readerViewModel = State(wrappedValue: MushafReaderViewModel(
+            repository: repository,
+            userDatabase: userDatabase,
+            initialPage: initialPage
+        ))
     }
 
     public var body: some View {

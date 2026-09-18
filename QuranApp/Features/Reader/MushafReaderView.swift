@@ -94,6 +94,23 @@ public struct MushafReaderView: View {
                 .presentationDetents([.fraction(0.44), .medium, .large])
                 .presentationDragIndicator(.visible)
             }
+            .sheet(isPresented: $viewModel.isBookmarksSheetPresented) {
+                BookmarksListView(
+                    userDatabase: viewModel.userDatabase,
+                    currentPage: viewModel.currentPage,
+                    onSelectBookmark: { bookmark in
+                        viewModel.jumpToPage(bookmark.pageNumber)
+                        if let sId = bookmark.surahId, let vNum = bookmark.verseNumber {
+                            Task {
+                                await viewModel.selectAyah(surahId: sId, verseNumber: vNum)
+                            }
+                        }
+                    },
+                    onDismiss: {
+                        viewModel.isBookmarksSheetPresented = false
+                    }
+                )
+            }
         }
     }
 
@@ -111,32 +128,46 @@ public struct MushafReaderView: View {
 
             Spacer()
 
-            // Translation Switcher Capsule
-            Menu {
-                Button("Saheeh International") {
-                    viewModel.selectedTranslationAuthor = .saheeh
+            HStack(spacing: 4) {
+                // Bookmarks List Button (44x44pt)
+                Button(action: {
+                    viewModel.isBookmarksSheetPresented = true
+                }) {
+                    Image(systemName: viewModel.isCurrentPageBookmarked ? "bookmark.fill" : "bookmark")
+                        .font(.system(size: 16))
+                        .foregroundStyle(viewModel.isCurrentPageBookmarked ? AppColors.saddleAmber : AppColors.sepiaMuted)
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
                 }
-                Button("Dr. Hilali & Dr. Muhsin Khan") {
-                    viewModel.selectedTranslationAuthor = .hilaliKhan
+                .accessibilityLabel(viewModel.isCurrentPageBookmarked ? "Bookmarks (Page \(viewModel.currentPage) bookmarked)" : "Bookmarks")
+
+                // Translation Switcher Capsule
+                Menu {
+                    Button("Saheeh International") {
+                        viewModel.selectedTranslationAuthor = .saheeh
+                    }
+                    Button("Dr. Hilali & Dr. Muhsin Khan") {
+                        viewModel.selectedTranslationAuthor = .hilaliKhan
+                    }
+                    Button("Hamidullah (Français)") {
+                        viewModel.selectedTranslationAuthor = .hamidullah
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "character.book.closed.fill")
+                            .font(.system(size: 13))
+                        Text(viewModel.selectedTranslationAuthor == .saheeh ? "Saheeh" : (viewModel.selectedTranslationAuthor == .hilaliKhan ? "Hilali-Khan" : "Français"))
+                            .font(AppTypography.caption)
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 10))
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(AppColors.surfacePapyrus)
+                    .foregroundStyle(AppColors.saddleAmber)
+                    .clipShape(Capsule())
+                    .overlay(Capsule().stroke(AppColors.borderSepia, lineWidth: 1))
                 }
-                Button("Hamidullah (Français)") {
-                    viewModel.selectedTranslationAuthor = .hamidullah
-                }
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "character.book.closed.fill")
-                        .font(.system(size: 13))
-                    Text(viewModel.selectedTranslationAuthor == .saheeh ? "Saheeh" : (viewModel.selectedTranslationAuthor == .hilaliKhan ? "Hilali-Khan" : "Français"))
-                        .font(AppTypography.caption)
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 10))
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(AppColors.surfacePapyrus)
-                .foregroundStyle(AppColors.saddleAmber)
-                .clipShape(Capsule())
-                .overlay(Capsule().stroke(AppColors.borderSepia, lineWidth: 1))
             }
         }
         .padding(.horizontal, 16)

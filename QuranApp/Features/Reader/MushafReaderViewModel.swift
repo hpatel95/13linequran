@@ -17,6 +17,8 @@ public final class MushafReaderViewModel {
         didSet {
             if currentPage != oldValue {
                 Task { await loadSurroundingPages() }
+                scheduleLastReadAutoSave()
+                Task { await checkCurrentPageBookmarked() }
             }
         }
     }
@@ -24,6 +26,8 @@ public final class MushafReaderViewModel {
     public var selectedTranslationAuthor: Translation.TranslationAuthor = .saheeh
     public var isChromeVisible: Bool = true
     public var isTranslationSheetPresented: Bool = false
+    public var isBookmarksSheetPresented: Bool = false
+    public var isCurrentPageBookmarked: Bool = false
     public var activeAyahTranslation: Translation?
     public var selectedAyah: Ayah?
     public var bookmarks: Set<Int> = []
@@ -41,13 +45,22 @@ public final class MushafReaderViewModel {
 
     // MARK: - Dependencies
     public let repository: QuranRepositoryProtocol
+    public let userDatabase: UserDatabaseServiceProtocol
     public let audioService: AudioPlayerService
+    private var lastReadSaveTask: Task<Void, Never>?
 
-    public init(repository: QuranRepositoryProtocol) {
+    public init(
+        repository: QuranRepositoryProtocol,
+        userDatabase: UserDatabaseServiceProtocol,
+        initialPage: Int = 1
+    ) {
         self.repository = repository
+        self.userDatabase = userDatabase
+        self.currentPage = max(1, min(849, initialPage))
         self.audioService = AudioPlayerService(repository: repository)
         setupAudioSync()
     }
+
 
     private func setupAudioSync() {
         audioService.onVerseChanged = { [weak self] surahId, verseNumber in
@@ -77,16 +90,18 @@ public final class MushafReaderViewModel {
 
     // MARK: - Actions
     public func onAppear() async {
-        guard surahs.isEmpty else { return }
-        isLoading = true
-        do {
-            self.surahs = try await repository.fetchSurahs()
-            await loadSurroundingPages()
-            isLoading = false
-        } catch {
-            self.errorMessage = error.localizedDescription
-            self.isLoading = false
+        if surahs.isEmpty {
+            isLoading = true
+            do {
+                self.surahs = try await repository.fetchSurahs()
+                await loadSurroundingPages()
+                isLoading = false
+            } catch {
+                self.errorMessage = error.localizedDescription
+                self.isLoading = false
+            }
         }
+        await refreshBookmarks()
     }
 
     public func toggleChrome() {
@@ -122,10 +137,72 @@ public final class MushafReaderViewModel {
     public func toggleBookmark(ayahId: Int) {
         if bookmarks.contains(ayahId) {
             bookmarks.remove(ayahId)
+            Task {
+                try? await userDatabase.removeAyahBookmark(ayahId: ayahId)
+            }
         } else {
             bookmarks.insert(ayahId)
+            let ayah = selectedAyah
+            let trans = activeAyahTranslation?.text ?? ""
+            let sName = currentSurahName
+            let pNum = currentPage
+            Task {
+                if let a = ayah, a.id == ayahId {
+                    let title = "\(sName) \(a.surahId):\(a.verseNumber)"
+                    _ = try? await userDatabase.addAyahBookmark(
+                        ayahId: a.id,
+                        surahId: a.surahId,
+                        verseNumber: a.verseNumber,
+                        pageNumber: a.pageNumber,
+                        title: title,
+                        arabic: a.textClean,
+                        translation: trans,
+                        note: nil
+                    )
+                }
+            }
         }
     }
+
+    public func togglePageBookmark() {
+        isCurrentPageBookmarked.toggle()
+        let page = currentPage
+        let isBookmarked = isCurrentPageBookmarked
+        let sName = currentSurahName
+        let jNum = currentJuzNumber
+
+        Task {
+            if isBookmarked {
+                let title = "Page \(page) • \(sName) (Juz \(jNum))"
+                _ = try? await userDatabase.addPageBookmark(pageNumber: page, title: title, note: nil)
+            } else {
+                try? await userDatabase.removePageBookmark(pageNumber: page)
+            }
+        }
+    }
+
+    public func refreshBookmarks() async {
+        do {
+            self.bookmarks = try await userDatabase.fetchBookmarkedAyahIds()
+            self.isCurrentPageBookmarked = try await userDatabase.isPageBookmarked(pageNumber: currentPage)
+        } catch {
+            print("Error refreshing bookmarks: \(error)")
+        }
+    }
+
+    private func checkCurrentPageBookmarked() async {
+        self.isCurrentPageBookmarked = (try? await userDatabase.isPageBookmarked(pageNumber: currentPage)) ?? false
+    }
+
+    private func scheduleLastReadAutoSave() {
+        lastReadSaveTask?.cancel()
+        lastReadSaveTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 2_000_000_000) // 2.0-second dwell time
+            guard !Task.isCancelled, let self = self else { return }
+            try? await self.userDatabase.saveLastReadPage(self.currentPage)
+        }
+    }
+
 
     public func changeTranslationAuthor(_ author: Translation.TranslationAuthor) async {
         self.selectedTranslationAuthor = author

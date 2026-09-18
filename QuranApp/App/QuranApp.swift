@@ -11,6 +11,8 @@ import SwiftUI
 @main
 struct ThirteenLineQuranApp: App {
     @State private var databaseService: QuranDatabaseService?
+    @State private var userDatabaseService: UserDatabaseService?
+    @State private var initialPage: Int = 1
     @State private var initError: String?
 
     init() {
@@ -21,8 +23,12 @@ struct ThirteenLineQuranApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
-                if let service = databaseService {
-                    RootTabView(repository: service)
+                if let service = databaseService, let userDb = userDatabaseService {
+                    RootTabView(
+                        repository: service,
+                        userDatabase: userDb,
+                        initialPage: initialPage
+                    )
                 } else if let error = initError {
                     VStack(spacing: 12) {
                         Image(systemName: "exclamationmark.triangle.fill")
@@ -53,7 +59,13 @@ struct ThirteenLineQuranApp: App {
             }
             .task {
                 do {
-                    self.databaseService = try QuranDatabaseService()
+                    let quranService = try QuranDatabaseService()
+                    let userDb = try UserDatabaseService()
+                    let lastRead = await userDb.getLastReadPage()
+
+                    self.databaseService = quranService
+                    self.userDatabaseService = userDb
+                    self.initialPage = lastRead
                 } catch {
                     self.initError = error.localizedDescription
                 }
