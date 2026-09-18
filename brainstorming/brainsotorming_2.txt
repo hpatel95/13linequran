@@ -1,0 +1,4225 @@
+# Premium 13-Line Indo-Pak Quran for iPhone — Product, Architecture & Launch Blueprint
+
+I researched this as a **commercial App Store product**, with particular attention to the 13-line Indo-Pak Mushaf, current Apple requirements, competing Quran apps, licensing, privacy, subscriptions, offline architecture, and AI-assisted development.
+
+**Research date: September 13, 2026.**
+
+My overall conclusion is strong:
+
+> **Build this as a native Swift/SwiftUI iPhone application, with a fixed, licensed 13-line Indo-Pak Mushaf as the canonical reading surface, a local-first content architecture, StoreKit 2 for premium features, no account requirement for V1, and an extremely small third-party dependency footprint.**
+
+The differentiator should **not** be “another Quran app with 100 features.”
+
+It should be:
+
+> **The most beautiful, trustworthy, technically precise 13-line Indo-Pak Quran reading experience on iPhone.**
+
+---
+
+# 1. Executive recommendation
+
+## The product I would build
+
+**Positioning**
+
+A premium, calm, offline-first Quran reader designed specifically around the **traditional 13-line Indo-Pak Mushaf** used extensively by South Asian Muslims and Huffaz.
+
+Interface language:
+
+**English initially.**
+
+Content:
+
+* Arabic Mushaf
+* English translation
+* Additional translations later
+* Audio
+* Tafsir later
+* 13-line page navigation
+* Juz/Hizb/Rub'/Manzil navigation
+* Bookmarks
+* Notes
+* Reading progress
+* Offline downloads
+* Background audio
+* Dark/reading modes
+
+No prayer times, Qibla, Islamic calendar, Hadith, news, social feed, AI chatbot, community, or advertising in V1.
+
+That restraint is deliberate.
+
+---
+
+# 2. The biggest strategic decision: don't make the Mushaf a normal text view
+
+This is probably the most important technical recommendation in this entire document.
+
+A conventional Quran app can render Arabic text dynamically.
+
+Your **13-line Mushaf should not primarily work that way**.
+
+The canonical reading surface should preserve:
+
+* exact line breaks
+* exact page boundaries
+* exact ayah placement
+* exact visual hierarchy
+* exact diacritics
+* exact calligraphic appearance
+* exact page ordering
+* exact Mushaf edition
+
+### Recommended model
+
+Use:
+
+**licensed high-resolution page artwork + an immutable ayah/page coordinate map.**
+
+Conceptually:
+
+```text
+Mushaf Edition
+    ↓
+Page 1
+    ↓
+Page artwork
+    +
+Ayah hit regions
+    +
+Ayah metadata
+    +
+Juz/Hizb/Rub' metadata
+```
+
+The image is the authoritative visual representation.
+
+The metadata layer tells the application:
+
+> "Ayah 2:255 occupies this region on page 42."
+
+This gives you the best combination of:
+
+* religious fidelity
+* visual consistency
+* predictable rendering
+* fast performance
+* offline operation
+* AI-safe content
+* exact 13-line reproduction
+
+The alternative—dynamically laying out Arabic text into 13 lines—is possible, but I would **not use it as the canonical Mushaf display**.
+
+Unicode itself contains extensive Quranic annotation characters, and these marks have recitation significance; this is not ordinary Arabic typography. ([Unicode][1])
+
+---
+
+# 3. Competitive landscape
+
+The market already contains excellent Quran applications.
+
+Your opportunity is **specialization**, not feature-count competition.
+
+## 13-line competitors
+
+### Quran 13 Line
+
+[Quran 13 Line on the App Store](https://apps.apple.com/us/app/quran-13-line/id885800827?utm_source=chatgpt.com)
+
+This is the most directly relevant competitor.
+
+It already offers:
+
+* 13-line script
+* page-style reading
+* audio
+* translations
+* bookmarks
+* Juz/Surah/Ayah/Page navigation
+* landscape/portrait
+* Tajweed coloring
+* multiple reciters
+* Hifz-friendly repetition
+
+Its App Store listing explicitly describes the 13-line format as being used by millions of Muslims in the subcontinent and elsewhere. ([App Store][2])
+
+**Opportunity:** its existence validates the niche, but also means your reader needs to be dramatically better designed.
+
+---
+
+### 13 Line Quran Indopak Script
+
+[13 Line Quran Indopak Script on the App Store](https://apps.apple.com/id/app/13-line-quran-indopak-script/id6479826111?utm_source=chatgpt.com)
+
+This is a newer competitor focused heavily on:
+
+* Indo-Pak script
+* 13 lines
+* Tajweed coloring
+* offline use
+* large/bold script
+
+It demonstrates that **offline 13-line reading remains a viable product proposition.** ([App Store][3])
+
+---
+
+# 4. Major Quran competitors
+
+## Ayah
+
+[Ayah on the App Store](https://apps.apple.com/us/app/ayah-quran-app/id706037876?utm_source=chatgpt.com)
+
+This is probably the most useful UX benchmark.
+
+It has:
+
+* 109K ratings
+* 4.8 rating
+* clean reading interface
+* recitations
+* verse highlighting
+* repeat
+* bookmarks
+* Khatmah
+* search
+* reminders
+* dark mode
+* verse of the day
+
+It requires iOS 15+ and currently lists membership pricing of $1.99 and $12.99 in the US storefront. ([App Store][4])
+
+**Lesson:** users strongly value a Quran app that feels like a Quran first, not a dashboard.
+
+---
+
+## Quran.com
+
+[Quran by Quran.com on the App Store](https://apps.apple.com/us/app/quran-by-quran-com-%D9%82%D8%B1%D8%A2%D9%86/id1118663303?utm_source=chatgpt.com)
+
+Quran.com has a strong reputation for:
+
+* ad-free experience
+* Quran reading
+* memorization
+* recitation
+* translations
+* straightforward UX
+
+It has approximately 33K App Store ratings at 4.9. ([App Store][5])
+
+Quran.Foundation also provides a current developer API ecosystem. ([Quran Foundation][6])
+
+---
+
+## Quran Majeed
+
+[Quran Majeed Pro on the App Store](https://apps.apple.com/us/app/quran-majeed-pro-%D8%A7%D9%84%D9%82%D8%B1%D8%A2%D9%86-%D8%A7%D9%84%D9%85%D8%AC%D9%8A%D8%AF/id366111277?utm_source=chatgpt.com)
+
+This is a major established competitor with:
+
+* 100M+ claimed users
+* 4.9 rating
+* extensive languages
+* translations
+* audio
+* Tafsir
+* Apple Watch support
+* long commercial history
+
+The US listing currently shows a $49.99 full upgrade. ([App Store][7])
+
+**Lesson:** there is clearly willingness to pay for high-quality Quran functionality.
+
+---
+
+## Tarteel
+
+[Tarteel on the App Store](https://apps.apple.com/us/app/tarteel-ai-quran-memorization/id1391009396?utm_source=chatgpt.com)
+
+Tarteel occupies a different category:
+
+> Quran memorization + AI.
+
+Its differentiator is voice-based memorization verification and mistake detection. The App Store currently claims 15M+ Muslims. ([App Store][8])
+
+**Do not compete here in V1.**
+
+AI Quran memorization is technically interesting but introduces:
+
+* microphone/privacy implications
+* AI accuracy problems
+* religious accuracy concerns
+* much greater backend complexity
+* significantly more QA
+
+---
+
+## Quranly
+
+[Quranly on the App Store](https://apps.apple.com/us/app/quran-by-quranly/id1559233786?utm_source=chatgpt.com)
+
+Quranly emphasizes:
+
+* habit formation
+* reading goals
+* progress
+* streaks
+* daily reading
+
+([App Store][9])
+
+**Lesson:** progress mechanics can increase retention, but they should remain secondary to reading.
+
+---
+
+## iQuran
+
+[iQuran on the App Store](https://apps.apple.com/us/app/iquran-%D8%A7%D9%84%D9%82%D8%B1%D8%A2%D9%86-%D8%A7%D9%84%D9%83%D8%B1%D9%8A%D9%85/id285944183?utm_source=chatgpt.com)
+
+Interesting monetization model:
+
+* core app free
+* no advertising
+* no subscription
+* optional Pro upgrade
+* additional bookmarks/notes/translations/etc.
+
+Current US listing shows a $4.99 Pro upgrade. ([App Store][10])
+
+This is a useful alternative to subscription-only monetization.
+
+---
+
+# 5. What users now expect
+
+Across the strongest products, the baseline expectation is approximately:
+
+| Feature              |      Expected |
+| -------------------- | ------------: |
+| Beautiful Mushaf     | **Essential** |
+| Offline reading      | **Essential** |
+| Surah/Juz navigation | **Essential** |
+| Search               | **Essential** |
+| Bookmarks            | **Essential** |
+| Last read            | **Essential** |
+| Audio                | **Essential** |
+| Background audio     | **Essential** |
+| Translation          | **Essential** |
+| Dark mode            | **Essential** |
+| Ayah interaction     | **Essential** |
+| Reciter selection    |          High |
+| Repeat               |          High |
+| Reading progress     |          High |
+| Khatm planning       |   Medium/high |
+| Notes                |        Medium |
+| Tafsir               |   Medium/high |
+| Cloud sync           |        Medium |
+| AI                   | Not essential |
+| Prayer times         | Not essential |
+| Social/community     | Not essential |
+
+---
+
+# 6. Product differentiation
+
+Your five pillars should be:
+
+### 1. Authentic 13-line experience
+
+Not "Arabic text displayed in 13 rows."
+
+Rather:
+
+> **A faithful digital Mushaf.**
+
+### 2. Beautiful
+
+Compete with premium reading apps aesthetically.
+
+### 3. Fast
+
+Opening the Quran should feel instantaneous.
+
+### 4. Offline
+
+Reading should never depend on an internet connection.
+
+### 5. Trustworthy
+
+Content should be:
+
+* sourced
+* versioned
+* checksum-protected
+* independently verified
+* never AI-generated
+* never modified by runtime code
+
+---
+
+# 7. V1 feature set
+
+I would launch with approximately this:
+
+## FREE
+
+### Reading
+
+* Complete 13-line Mushaf
+* Surah navigation
+* Juz navigation
+* Page navigation
+* Hizb/Rub'
+* Manzil
+* page number
+* last-read position
+* swipe page navigation
+* jump-to-page
+* light mode
+* dark mode
+* reading/sepia mode
+* screen wake option
+* landscape support
+* pinch zoom
+* basic search
+* basic bookmarks
+
+### Audio
+
+* one or two reciters
+* ayah playback
+* surah playback
+* background audio
+* lock-screen controls
+* repeat ayah
+* repeat range
+
+### Translation
+
+* English translation
+* ayah-by-ayah display
+
+This establishes an excellent free product.
+
+---
+
+# 8. PREMIUM
+
+Premium should primarily monetize **additional convenience and content**, not access to the Quran itself.
+
+I recommend:
+
+### Premium audio
+
+* larger reciter library
+* downloadable recitations
+* additional audio quality
+* advanced repetition
+
+### Premium study
+
+* additional translations
+* Tafsir
+* notes
+* collections
+* advanced highlighting
+
+### Premium productivity
+
+* Khatm planner
+* reading goals
+* detailed progress
+* reading statistics
+* reminders
+
+### Premium synchronization
+
+Only once cloud infrastructure exists:
+
+* bookmarks
+* notes
+* reading position
+* collections
+* preferences
+
+---
+
+# 9. What should NOT be in V1
+
+Do not build:
+
+* AI Tafsir
+* AI Quran chatbot
+* social network
+* comments
+* community
+* user profiles
+* prayer times
+* Qibla
+* Islamic calendar
+* Hadith library
+* mosque finder
+* ads
+* gamification
+* leaderboards
+* voice recognition
+* Quran memorization AI
+* Apple Watch reader
+* iPad-specific UI
+* Android version
+
+Those are separate products.
+
+---
+
+# 10. Reader UX
+
+The reader should dominate the application.
+
+### Default screen
+
+```text
+┌──────────────────────────────┐
+│  ←       Juz 01       ⋯      │
+│                              │
+│                              │
+│       13-LINE MUSHAF         │
+│                              │
+│       [Mushaf page]          │
+│                              │
+│                              │
+│              001             │
+│                              │
+└──────────────────────────────┘
+```
+
+Controls should normally disappear.
+
+### Tap
+
+Single tap:
+
+> reveal reader controls.
+
+Second tap:
+
+> hide them.
+
+### Swipe
+
+* swipe toward next page
+* swipe toward previous page
+
+### Long press ayah
+
+Open a subtle bottom sheet:
+
+* Play
+* Bookmark
+* Highlight
+* Translation
+* Tafsir
+* Copy
+* Share
+* Note
+
+Do not create a giant toolbar.
+
+---
+
+# 11. Reader modes
+
+I recommend:
+
+### Mushaf
+
+Canonical 13-line view.
+
+### Ayah
+
+A study-oriented verse-by-verse view.
+
+### Translation
+
+Arabic + English.
+
+But **do not allow arbitrary font/line manipulation in Mushaf mode**.
+
+The user can:
+
+* zoom the page
+* change page presentation
+* change brightness/theme
+
+But should not arbitrarily reflow the canonical Mushaf.
+
+---
+
+# 12. Orientation
+
+### Portrait
+
+Primary mode.
+
+### Landscape
+
+Support it.
+
+For landscape:
+
+* either center a single page at a comfortable width
+* or eventually introduce two-page spread
+
+I would **not launch with two-page spread unless testing proves it feels excellent**.
+
+The traditional reading behavior should remain intuitive.
+
+---
+
+# 13. Audio architecture
+
+Use native iOS audio infrastructure.
+
+Apple's `AVAudioSession` supports the `.playback` category, allowing playback to continue with the Silent switch engaged and when the screen is locked; background audio requires the appropriate audio background mode. ([Apple Developer][11])
+
+Use:
+
+* `AVAudioPlayer` / appropriate AVFoundation components
+* `AVAudioSession`
+* `MPNowPlayingInfoCenter`
+* `MPRemoteCommandCenter`
+
+Apple's MediaPlayer framework supports lock-screen/Control Center Now Playing information and external remote controls. ([Apple Developer][12])
+
+### Required audio behavior
+
+* Play
+* Pause
+* Previous
+* Next
+* Seek
+* repeat ayah
+* repeat range
+* repeat surah
+* playback speed
+* sleep timer
+* background playback
+* Bluetooth
+* AirPods controls
+* lock screen controls
+
+---
+
+# 14. Reciter strategy
+
+Do **not** choose reciters simply because their MP3 files are available online.
+
+Every recitation needs explicit commercial redistribution rights.
+
+Potential reciter candidates can include well-known reciters such as:
+
+* Mishary Alafasy
+* Abdul Basit
+* Al-Husary
+* Al-Minshawi
+* Maher Al-Muaiqly
+* Sudais
+* Shuraim
+* Saad Al-Ghamdi
+
+But:
+
+> **The fact that an audio file exists online does not mean you have the right to package or redistribute it inside a commercial app.**
+
+Apple specifically requires permission for third-party content and warns against unauthorized downloading/streaming of third-party media. ([Apple Developer][13])
+
+For V1 I would rather have:
+
+**2 properly licensed reciters**
+
+than:
+
+**30 questionable reciters.**
+
+---
+
+# 15. Background downloads
+
+Use native `URLSession` background transfers.
+
+Apple explicitly supports long-running background downloads with background URL sessions and can relaunch the app to deliver completion events. ([Apple Developer][14])
+
+Architecture:
+
+```text
+DownloadManager
+    │
+    ├── Mushaf downloads
+    ├── Audio downloads
+    ├── Translation downloads
+    └── Tafsir downloads
+```
+
+Each download gets:
+
+* content ID
+* version
+* URL
+* expected size
+* checksum
+* progress
+* state
+* retry count
+
+Never assume:
+
+> HTTP 200 = valid content.
+
+Verify the downloaded file's hash before activating it.
+
+---
+
+# 16. Quran content architecture
+
+This is where I recommend being extremely conservative.
+
+## Canonical Quran text
+
+A useful reference source is Tanzil.
+
+Tanzil explicitly permits copying and distributing its Quran text, provided it is distributed verbatim, not changed, properly attributed, and linked back to Tanzil. ([Tanzil][15])
+
+That makes Tanzil potentially useful for:
+
+* search index
+* ayah mapping
+* verification
+* metadata
+* text-based study mode
+
+But I would **not automatically make Tanzil the legal basis of the Mushaf visual edition**.
+
+---
+
+# 17. The 13-line Mushaf is a separate issue
+
+This distinction is crucial.
+
+There are several separate intellectual-property layers:
+
+### Layer 1 — Quranic revelation
+
+The underlying Quranic text itself is not something a modern publisher can simply claim as its own original literary work.
+
+### Layer 2 — editorial representation
+
+A particular publisher's:
+
+* typesetting
+* pagination
+* calligraphy
+* line breaks
+* ornamentation
+* page composition
+
+can involve copyright and contractual rights.
+
+### Layer 3 — digital page images
+
+A scanned or digitally enhanced page is its own copyrighted asset.
+
+### Layer 4 — font
+
+The font software may have its own license.
+
+### Layer 5 — translations
+
+Modern translations can be copyrighted.
+
+### Layer 6 — recitations
+
+The recording can be copyrighted.
+
+### Layer 7 — Tafsir
+
+Modern editions/translations can be copyrighted.
+
+Apple's current App Review rules are explicit: third-party content must be created by you or licensed, and authorization may need to be provided to Apple. ([Apple Developer][13])
+
+---
+
+# 18. My recommended Mushaf strategy
+
+## Best option
+
+Find a **specific Indo-Pak 13-line Mushaf edition** whose publisher/rightsholder will give you written commercial digital-app rights.
+
+The contract should explicitly cover:
+
+* iOS
+* App Store distribution
+* worldwide distribution
+* commercial use
+* digital reproduction
+* page-image reproduction
+* caching
+* offline storage
+* backups
+* derivative digital formats if necessary
+* screenshots/marketing
+* future app updates
+
+Do not settle for:
+
+> "You can use our Quran."
+
+You want:
+
+> **explicit written rights for digital commercial redistribution through Apple's App Store.**
+
+Have an IP/licensing lawyer review it.
+
+---
+
+# 19. Potential technical font option
+
+There are open-source Indo-Pak font projects.
+
+For example, DigitalKhatt's IndoPak font project identifies itself as an OFL-1.1 licensed font based on a 13-line IndoPak Mushaf. ([GitHub][16])
+
+That is interesting technically.
+
+But:
+
+> **an open-source font does not automatically mean the underlying Mushaf page design or Quran dataset is licensed for your commercial product.**
+
+Font licensing and Mushaf content licensing must be treated separately.
+
+---
+
+# 20. Why I don't recommend building the Mushaf entirely from a font
+
+A font-based renderer gives you:
+
+* scalable text
+* selectable text
+* smaller storage
+* dynamic rendering
+
+But introduces risk around:
+
+* line wrapping
+* Arabic shaping
+* Quranic marks
+* ligatures
+* font version changes
+* glyph positioning
+* device rendering differences
+* exact page reproduction
+
+For a normal Arabic reader this is acceptable.
+
+For a **religiously sensitive fixed Mushaf format**, I'd rather have:
+
+**page artwork as canonical.**
+
+Then optionally use Unicode text behind it for:
+
+* search
+* accessibility
+* ayah lookup
+* translation
+* copy
+
+---
+
+# 21. Search architecture
+
+Do not search the page images.
+
+Create a separate immutable search corpus.
+
+```text
+Ayah
+ ├── Arabic canonical text
+ ├── normalized search text
+ ├── surah
+ ├── ayah
+ ├── page
+ ├── juz
+ ├── hizb
+ ├── rub
+ ├── manzil
+ └── sajdah
+```
+
+Search should be:
+
+**local and instant.**
+
+No network request.
+
+---
+
+# 22. Content verification pipeline
+
+This should be treated almost like a build artifact.
+
+## Source of truth
+
+Maintain a controlled content repository outside the app project.
+
+For example:
+
+```text
+content/
+    mushaf/
+    metadata/
+    translations/
+    audio/
+    tafsir/
+    licenses/
+    manifests/
+    checksums/
+```
+
+Every content release gets:
+
+```text
+content-version: 1.0.0
+source:
+license:
+verified-by:
+verification-date:
+sha256:
+```
+
+---
+
+# 23. Never let the AI coding agent edit Quran content
+
+This should become a hard rule.
+
+Your coding agent can modify:
+
+* Swift
+* SwiftUI
+* tests
+* UI
+* networking
+* persistence
+
+It should **never modify canonical Quran assets**.
+
+Add CI checks that fail if the canonical content changes unexpectedly.
+
+For example:
+
+```text
+canonical-manifest.json
+       ↓
+SHA-256 hashes
+       ↓
+CI
+       ↓
+FAIL if content differs
+```
+
+---
+
+# 24. Content integrity tests
+
+Before every release:
+
+### Quran structure
+
+Verify:
+
+* 114 surahs
+* correct ayah counts
+* correct ordering
+* no duplicates
+* no omissions
+
+### Mushaf
+
+Verify:
+
+* page count
+* page ordering
+* image dimensions
+* expected hash
+* ayah/page mapping
+
+### Metadata
+
+Verify:
+
+* Juz
+* Hizb
+* Rub'
+* Manzil
+* Sajdah
+
+### Unicode
+
+Verify:
+
+* NFC/NFD expectations
+* Quranic marks
+* no accidental normalization
+* no invisible corruption
+* no replacement characters
+* no stripped diacritics
+
+### Visual regression
+
+Render every page and compare against reference assets.
+
+For a Quran app, this should be a **release-blocking test**.
+
+---
+
+# 25. Translation strategy
+
+Start with **one English translation**.
+
+Do not ship 25 translations just because an API has them.
+
+Every translation requires rights.
+
+Some older translations may be public domain in some jurisdictions, but copyright status must be checked for:
+
+* author
+* edition
+* country
+* current copyright term
+* adaptation
+* digital edition
+
+A commercial app should maintain a **license register**.
+
+Example:
+
+| Content   | Owner                | License  | Commercial | Offline | Attribution |
+| --------- | -------------------- | -------- | ---------- | ------- | ----------- |
+| Arabic    | Licensed source      | Contract | Yes        | Yes     | Required    |
+| English   | Translator/publisher | Contract | Yes        | Yes     | Required    |
+| Reciter A | Rightsholder         | Contract | Yes        | Yes     | Required    |
+| Tafsir    | Publisher            | Contract | Yes        | Yes     | Required    |
+
+---
+
+# 26. Tafsir strategy
+
+I would **not ship Tafsir in V1** unless you already have a properly licensed source.
+
+Tafsir is extremely valuable but introduces:
+
+* copyright
+* translation rights
+* scholarly review
+* theological responsibility
+* much larger content surface
+
+V1:
+
+> Quran + translation.
+
+V1.1:
+
+> Tafsir from one carefully selected licensed source.
+
+---
+
+# 27. Quran.Foundation API
+
+Quran.Foundation now provides an official developer ecosystem with API credentials and production permissions. ([Quran Foundation][6])
+
+This can be valuable for:
+
+* development
+* metadata
+* translations
+* supplementary data
+* future sync
+
+But I would **not make the core reading experience dependent on the API**.
+
+The app should work even if:
+
+* API goes down
+* internet disappears
+* API changes
+* credentials expire
+* third-party service changes its terms
+
+Use external APIs as **content acquisition/refresh infrastructure**, not as the runtime source of truth for the canonical Mushaf.
+
+---
+
+# 28. Recommended architecture
+
+## Native Swift + SwiftUI
+
+**Strong recommendation.**
+
+### Stack
+
+* Swift 6
+* SwiftUI
+* Swift Concurrency
+* SwiftData where appropriate
+* AVFoundation
+* MediaPlayer
+* URLSession
+* StoreKit 2
+* UserNotifications
+* Foundation
+* XCTest / Swift Testing as appropriate
+* Xcode 26+
+
+Swift 6.2 is current in Apple's recent tooling, and Swift concurrency/strict concurrency are mature parts of the modern ecosystem. ([Swift.org][17])
+
+Apple's current Xcode support table shows the Xcode 26 family targeting iOS 26, and Apple's current submission requirement is that App Store uploads use Xcode 26+ with the iOS 26 SDK. ([Apple Developer][18])
+
+---
+
+# 29. SwiftUI vs Flutter vs React Native
+
+| Criterion                 | Swift/SwiftUI | Flutter | React Native |
+| ------------------------- | ------------: | ------: | -----------: |
+| iOS performance           |         ⭐⭐⭐⭐⭐ |    ⭐⭐⭐⭐ |         ⭐⭐⭐⭐ |
+| Native audio              |         ⭐⭐⭐⭐⭐ |    ⭐⭐⭐⭐ |          ⭐⭐⭐ |
+| Arabic/RTL                |         ⭐⭐⭐⭐⭐ |    ⭐⭐⭐⭐ |         ⭐⭐⭐⭐ |
+| Mushaf rendering          |         ⭐⭐⭐⭐⭐ |    ⭐⭐⭐⭐ |          ⭐⭐⭐ |
+| StoreKit                  |         ⭐⭐⭐⭐⭐ |     ⭐⭐⭐ |          ⭐⭐⭐ |
+| Offline                   |         ⭐⭐⭐⭐⭐ |   ⭐⭐⭐⭐⭐ |         ⭐⭐⭐⭐ |
+| Accessibility             |         ⭐⭐⭐⭐⭐ |    ⭐⭐⭐⭐ |         ⭐⭐⭐⭐ |
+| iOS integration           |         ⭐⭐⭐⭐⭐ |     ⭐⭐⭐ |          ⭐⭐⭐ |
+| AI coding reliability     |         ⭐⭐⭐⭐⭐ |    ⭐⭐⭐⭐ |         ⭐⭐⭐⭐ |
+| Long-term iOS maintenance |         ⭐⭐⭐⭐⭐ |    ⭐⭐⭐⭐ |          ⭐⭐⭐ |
+| Small dependency surface  |         ⭐⭐⭐⭐⭐ |     ⭐⭐⭐ |          ⭐⭐⭐ |
+| Premium iOS feel          |         ⭐⭐⭐⭐⭐ |    ⭐⭐⭐⭐ |         ⭐⭐⭐⭐ |
+
+### Winner: native SwiftUI.
+
+Especially because your product is:
+
+> **an iPhone-specific reading experience where typography, gestures, audio, accessibility, StoreKit and system integration matter enormously.**
+
+---
+
+# 30. Why native is particularly important for vibe coding
+
+There is an interesting current development here.
+
+Xcode 26.3 introduced **agentic coding** support, including integrations with Anthropic and OpenAI coding agents. ([Apple Developer][19])
+
+That makes the native route more attractive than it used to be.
+
+Instead of:
+
+> AI → generate cross-platform abstraction → bridge to iOS → debug native behavior
+
+you get:
+
+> AI → Swift → SwiftUI → Apple APIs → Xcode tests.
+
+That's a much cleaner AI feedback loop.
+
+---
+
+# 31. Architecture
+
+I recommend:
+
+```text
+App
+│
+├── Core
+│   ├── Domain
+│   ├── Content
+│   ├── Persistence
+│   ├── Networking
+│   └── Utilities
+│
+├── Features
+│   ├── Reader
+│   ├── Home
+│   ├── Navigation
+│   ├── Search
+│   ├── Bookmarks
+│   ├── Audio
+│   ├── Downloads
+│   ├── Settings
+│   ├── Onboarding
+│   └── Subscription
+│
+├── Services
+│   ├── AudioService
+│   ├── ContentService
+│   ├── DownloadService
+│   ├── SearchService
+│   ├── EntitlementService
+│   └── AnalyticsService
+│
+├── Resources
+│   ├── Mushaf
+│   ├── Metadata
+│   ├── Translations
+│   └── Audio
+│
+└── Tests
+    ├── ContentIntegrity
+    ├── Reader
+    ├── Search
+    ├── Audio
+    ├── Downloads
+    └── StoreKit
+```
+
+---
+
+# 32. Domain models
+
+Core concepts:
+
+```text
+MushafEdition
+MushafPage
+Ayah
+Surah
+Juz
+Hizb
+Rub
+Manzil
+Sajdah
+Translation
+Tafsir
+Reciter
+AudioTrack
+Bookmark
+Collection
+Note
+ReadingPosition
+ReadingSession
+Download
+SubscriptionEntitlement
+```
+
+The domain layer should not know anything about SwiftUI.
+
+---
+
+# 33. Data architecture
+
+## Local database
+
+Use **SwiftData** for user-generated state.
+
+Apple describes SwiftData as the modern persistence layer built around Swift concurrency, with local persistence and optional sync capabilities. ([Apple Developer][20])
+
+Use it for:
+
+* bookmarks
+* notes
+* highlights
+* reading position
+* reading history
+* settings
+* download records
+* collections
+* goals
+
+But don't necessarily store the entire Mushaf as thousands of mutable SwiftData records.
+
+Canonical content should be packaged as immutable resources/manifests.
+
+---
+
+# 34. Local content
+
+I recommend shipping:
+
+### In app
+
+* core Mushaf metadata
+* first Mushaf pages / potentially entire Mushaf
+* Arabic search corpus
+* surah metadata
+* Juz/Hizb/Rub'/Manzil metadata
+
+### Downloadable
+
+* additional recitations
+* translations
+* Tafsir
+* optional high-resolution assets if needed
+
+The complete Mushaf is relatively manageable compared with audio libraries.
+
+If the licensed page assets are reasonably sized, I would strongly consider shipping **the entire Mushaf offline from first launch**.
+
+That makes your central promise extremely strong:
+
+> Open app → Quran works.
+
+---
+
+# 35. Navigation
+
+I recommend **four tabs**, not five.
+
+### 1. Read
+
+The central experience.
+
+### 2. Explore
+
+* Surahs
+* Juz
+* Page
+* Search
+* Hizb/Rub'
+* Manzil
+
+### 3. Bookmarks
+
+* bookmarks
+* collections
+* notes
+
+### 4. Settings
+
+* appearance
+* audio
+* translation
+* downloads
+* subscription
+* privacy
+* about
+
+The currently playing audio should appear as a compact mini-player above the tab bar.
+
+---
+
+# 36. Home / Read tab
+
+Do not build a dashboard full of cards.
+
+Use:
+
+```text
+Good evening
+
+Continue reading
+Page 183
+Al-Baqarah 2:255
+
+[Open Quran]
+
+────────────────
+
+Today's reading
+12 minutes
+
+────────────────
+
+Recently bookmarked
+...
+```
+
+The Quran should visually dominate.
+
+---
+
+# 37. Search screen
+
+Search should support:
+
+* Arabic
+* English translation
+* Surah
+* Ayah number
+
+Results:
+
+```text
+Al-Baqarah 2:255
+
+Arabic excerpt...
+
+English translation...
+
+Page 42
+```
+
+Tap:
+
+> open exact Mushaf page and optionally highlight ayah.
+
+This is a killer feature for a page-oriented app.
+
+---
+
+# 38. Bookmarks
+
+Don't make bookmarks just:
+
+> page 183.
+
+Support:
+
+### Page bookmark
+
+and
+
+### Ayah bookmark
+
+An ayah bookmark should remember:
+
+* surah
+* ayah
+* page
+* Mushaf edition
+
+---
+
+# 39. Collections
+
+Examples:
+
+* Morning
+* Memorization
+* Ramadan
+* Favorite verses
+* Salah
+
+This is premium-worthy.
+
+---
+
+# 40. Notes
+
+Notes should be associated with:
+
+* ayah
+* page
+* collection
+
+But notes should remain local in V1.
+
+No server required.
+
+---
+
+# 41. Reading history
+
+Keep it simple.
+
+Track:
+
+* last opened page
+* session date
+* pages read
+* approximate reading time
+
+Don't immediately create a complicated analytics dashboard.
+
+---
+
+# 42. Khatm planner
+
+V1.1.
+
+Allow:
+
+* target date
+* start date
+* pages/day
+* Juz/day
+* completion estimate
+* reminders
+
+But avoid guilt-oriented gamification.
+
+No:
+
+> "You failed your streak."
+
+Use calm language.
+
+---
+
+# 43. Notifications
+
+Optional.
+
+Examples:
+
+> "Continue your Quran reading."
+
+or:
+
+> "Your reading plan is ready."
+
+No aggressive push marketing.
+
+Apple does not allow requiring push notifications for core functionality, and privacy rules require data minimization and user control. ([Apple Developer][13])
+
+---
+
+# 44. Account strategy
+
+## V1: no account.
+
+This is one of my strongest recommendations.
+
+Apple says that if an app doesn't have significant account-based functionality, users should be allowed to use it without login. ([Apple Developer][13])
+
+Your core functionality does not require an account.
+
+Therefore:
+
+> **Open → read Quran.**
+
+No:
+
+> "Create an account to continue."
+
+---
+
+# 45. CloudKit
+
+Don't use it in V1.
+
+You don't need:
+
+* server-side user profiles
+* cloud database
+* authentication
+* sync infrastructure
+
+Potential V2:
+
+**iCloud/CloudKit sync**
+
+for:
+
+* bookmarks
+* notes
+* reading progress
+* settings
+
+That is a sensible future enhancement.
+
+---
+
+# 46. Sign in with Apple
+
+Don't implement Sign in with Apple in V1.
+
+If you later add:
+
+* Google login
+* email account
+* another social login
+
+Apple's Guideline 4.8 generally requires an equivalent privacy-preserving login option, with exceptions including apps that exclusively use their own account system. ([Apple Developer][13])
+
+Sign in with Apple itself provides authentication and can give the app a private relay email address. ([Apple Developer][21])
+
+But the easiest way to avoid the issue:
+
+> **Don't require accounts.**
+
+---
+
+# 47. Privacy strategy
+
+This app has an unusual privacy opportunity.
+
+A Quran app potentially reveals highly sensitive religious behavior.
+
+GDPR treats personal data revealing religious or philosophical beliefs as special-category data. ([ICO][22])
+
+California's privacy framework likewise treats religious/philosophical beliefs as sensitive personal information. ([privacy.ca.gov][23])
+
+Therefore:
+
+> **Do not build a behavioral advertising machine around Quran usage.**
+
+---
+
+# 48. What I would collect
+
+Ideally:
+
+### Required
+
+Nothing personally identifiable.
+
+### Local only
+
+* reading position
+* bookmarks
+* notes
+* history
+* preferences
+
+### Optional analytics
+
+Anonymous product events such as:
+
+* app launched
+* reader opened
+* search performed
+* audio started
+* download completed
+
+But I would strongly consider **no third-party analytics in V1**.
+
+---
+
+# 49. Analytics recommendation
+
+Use Apple's own App Store Connect analytics where possible.
+
+For crashes:
+
+### First choice
+
+**Xcode Organizer / App Store Connect crash data**
+
+before adding an external SDK.
+
+If external crash reporting becomes necessary:
+
+* choose a vendor with a strong privacy posture
+* configure minimal collection
+* disable advertising identifiers
+* inspect its privacy manifest
+* document its data practices
+
+Apple makes developers responsible for third-party SDK behavior, and listed SDKs may require privacy manifests and signatures. ([Apple Developer][24])
+
+---
+
+# 50. Third-party SDK policy
+
+For this particular app:
+
+> **Every dependency must justify its existence.**
+
+Prefer:
+
+* Apple frameworks
+* Swift Package Manager
+* no huge dependency frameworks
+* no advertising SDK
+* no social SDK
+* no marketing SDK
+* no unnecessary analytics SDK
+
+Apple explicitly says developers are responsible for third-party code and requires privacy manifests/signatures for listed SDKs. ([Apple Developer][24])
+
+---
+
+# 51. Privacy manifest
+
+Include:
+
+`PrivacyInfo.xcprivacy`
+
+and correctly declare:
+
+* collected data
+* tracking
+* required-reason APIs
+
+Apple states privacy manifests describe data collection and required-reason APIs, and App Store Connect rejects builds using covered APIs without appropriate declarations. ([Apple Developer][25])
+
+This should be part of the project from **Phase 1**, not a launch-week task.
+
+---
+
+# 52. App Tracking Transparency
+
+I recommend:
+
+> **No tracking.**
+
+Therefore:
+
+* no advertising identifier
+* no targeted advertising
+* no cross-app tracking
+* ideally no ATT prompt at all
+
+Apple requires ATT permission when an app tracks users across companies' apps/websites or accesses the advertising identifier for tracking. ([Apple Developer][26])
+
+The best privacy experience is simply:
+
+> Don't track.
+
+---
+
+# 53. Subscription strategy
+
+I would use **one subscription group**.
+
+Something like:
+
+### Premium
+
+Monthly
+Annual
+
+Potentially:
+
+### Lifetime
+
+as a separate non-consumable purchase.
+
+But I would initially test whether lifetime access cannibalizes subscription revenue.
+
+---
+
+# 54. Recommended price
+
+Comparable products show a wide range.
+
+Examples currently visible in US App Store listings:
+
+* Ayah: $1.99 / $12.99 membership price points ([App Store][4])
+* Quran Majeed: $29.99 annual subscription and $49.99 full upgrade among listed products ([App Store][27])
+* Quran AI: $4.99 monthly / $49.99 annual / $49.99 lifetime ([App Store][28])
+* iQuran: $4.99 one-time Pro upgrade ([App Store][29])
+
+These are **observed storefront prices, not recommendations**.
+
+---
+
+# 55. My pricing hypothesis
+
+For a premium specialist app:
+
+### Annual
+
+**$24.99–$39.99/year**
+
+### Monthly
+
+**$3.99–$4.99/month**
+
+### Lifetime
+
+Potentially:
+
+**$59.99–$79.99**
+
+But I would start closer to:
+
+> **$29.99/year**
+
+and test conversion.
+
+The subscription must offer ongoing value. Apple's subscription rules require ongoing value and prohibit using subscriptions as a misleading mechanism. ([Apple Developer][30])
+
+---
+
+# 56. What should premium actually mean?
+
+Don't make:
+
+> "Read Quran = paid."
+
+Instead:
+
+### Free
+
+**Quran**
+
+### Premium
+
+**The complete personal Quran toolkit.**
+
+Premium:
+
+* additional reciters
+* audio downloads
+* translations
+* Tafsir
+* advanced notes
+* collections
+* reading plans
+* advanced progress
+* synchronization
+
+This is much more ethically and commercially defensible.
+
+---
+
+# 57. StoreKit 2
+
+Use **StoreKit 2**, not the legacy StoreKit APIs.
+
+Apple describes StoreKit 2 as its modern Swift/SwiftUI-oriented API for purchases, entitlements and subscriptions. ([Apple Developer][31])
+
+Use:
+
+* `Product`
+* `Transaction`
+* `Transaction.currentEntitlements`
+* subscription status APIs
+* StoreKit testing
+
+Apple's `currentEntitlements` API exposes the current transactions that entitle the customer to products/subscriptions. ([Apple Developer][32])
+
+---
+
+# 58. Restore purchases
+
+Absolutely include:
+
+> **Restore Purchases**
+
+Apple explicitly expects apps offering IAP to provide restoration functionality, and its StoreKit testing documentation includes restore-purchase testing. ([Apple Developer][33])
+
+Put it in:
+
+**Settings → Premium → Restore Purchases**
+
+---
+
+# 59. Paywall
+
+The paywall should be calm.
+
+Not:
+
+> 🔥 LIMITED TIME!
+> ONLY $1.99!
+> SUBSCRIBE NOW!!!
+
+Instead:
+
+```text
+Quran, beautifully yours.
+
+Premium gives you:
+
+✓ Offline recitations
+✓ More reciters
+✓ Multiple translations
+✓ Tafsir
+✓ Notes & collections
+✓ Reading plans
+✓ Future sync
+
+Annual
+$29.99 / year
+
+Monthly
+$4.99 / month
+
+[Continue with Annual]
+
+Restore Purchases
+
+Terms · Privacy
+```
+
+Apple requires clear subscription information including duration, content/services, billing price and restoration/sign-in functionality. ([Apple Developer][34])
+
+---
+
+# 60. Onboarding
+
+Keep it to **2–3 screens**.
+
+### Screen 1
+
+> Welcome.
+
+> A quiet place to read the Quran.
+
+### Screen 2
+
+Choose:
+
+* Mushaf appearance
+* translation
+* reciter
+
+### Screen 3
+
+> You're ready.
+
+No account.
+
+No forced notifications.
+
+No forced subscription.
+
+---
+
+# 61. Settings architecture
+
+```text
+Settings
+
+Appearance
+    Theme
+    Mushaf presentation
+    Screen wake
+    Orientation
+
+Reading
+    Default reading mode
+    Translation
+    Page navigation
+    Haptic feedback
+
+Audio
+    Default reciter
+    Playback speed
+    Repeat
+    Sleep timer
+    Downloads
+
+Notifications
+    Reading reminders
+    Khatm reminders
+
+Downloads
+    Audio
+    Translations
+    Tafsir
+    Storage
+
+Premium
+    Manage subscription
+    Restore purchases
+
+Privacy
+    Privacy policy
+    Analytics
+    Data
+
+About
+    Content sources
+    Licenses
+    Mushaf edition
+    Version
+    Contact
+```
+
+---
+
+# 62. Accessibility
+
+This should be excellent.
+
+SwiftUI has native accessibility support including VoiceOver and accessibility labels/values. ([Apple Developer][35])
+
+Apple's current Accessibility Nutrition Labels include:
+
+* VoiceOver
+* Voice Control
+* Larger Text
+* Dark Interface
+* Differentiate Without Color Alone
+* Sufficient Contrast
+* Reduced Motion
+* Captions
+* Audio Descriptions. ([Apple Developer][36])
+
+### Special Quran-reader requirement
+
+VoiceOver needs a carefully designed representation.
+
+Don't make the entire page:
+
+> "Image."
+
+Instead provide an accessibility reading representation:
+
+> Surah Al-Baqarah, verse 255…
+
+The canonical visual page remains untouched.
+
+---
+
+# 63. Important accessibility compromise
+
+The canonical Mushaf page is visually fixed.
+
+Therefore:
+
+**Dynamic Type should apply to surrounding UI and study/translation modes**, not dynamically reflow the canonical Mushaf page.
+
+This is a good example of adapting the UI while protecting the integrity of the Mushaf.
+
+Apple recommends responsive layouts across orientation, Dynamic Type and RTL. ([Apple Developer][37])
+
+---
+
+# 64. Arabic/RTL
+
+SwiftUI supports RTL natively through `LayoutDirection`. ([Apple Developer][38])
+
+But don't assume:
+
+> "SwiftUI supports Arabic, therefore Quran rendering is solved."
+
+It isn't.
+
+The Quran needs testing for:
+
+* combining marks
+* Quranic annotation
+* ayah symbols
+* pause signs
+* diacritics
+* glyph positioning
+* line-height
+* clipping
+* zoom
+* VoiceOver
+* copy/paste
+
+---
+
+# 65. Dark mode
+
+I recommend three reading themes:
+
+### Paper
+
+Warm off-white.
+
+### Night
+
+Near-black with subdued page appearance.
+
+### Sepia
+
+Warm paper tone.
+
+Avoid pure black + pure white.
+
+The purpose is:
+
+> comfortable long reading.
+
+---
+
+# 66. Screen wake
+
+Excellent feature.
+
+Setting:
+
+> **Keep screen awake while reading**
+
+This should be optional.
+
+Default:
+
+**Off**, respecting system battery behavior.
+
+---
+
+# 67. App Store requirements
+
+As of the current Apple requirements:
+
+> Since April 28, 2026, apps uploaded to App Store Connect must be built with **Xcode 26 or later using the iOS 26 SDK or later**. ([Apple Developer][39])
+
+This is a concrete requirement you should build around.
+
+---
+
+# 68. Current Xcode
+
+Apple's current Xcode requirements page shows the Xcode 26 series and newer tooling, with iOS 26 SDKs and Swift 6.x. ([Apple Developer][18])
+
+For your project:
+
+> **Use the latest stable Xcode 26.x available at development time.**
+
+Do not deliberately build on an old Xcode because an AI tutorial happens to use it.
+
+---
+
+# 69. Deployment target
+
+I recommend initially:
+
+> **iOS 18+**
+
+rather than trying to support ancient iPhones.
+
+Why:
+
+* simpler APIs
+* better SwiftUI behavior
+* fewer compatibility branches
+* smaller QA matrix
+* better modern iPhone experience
+
+You could choose iOS 17+ if market data shows meaningful demand.
+
+This is a **product decision rather than an App Store requirement**.
+
+---
+
+# 70. App Store metadata
+
+Apple currently requires the App Store metadata including:
+
+* name
+* subtitle
+* age rating
+* bundle ID
+* SKU
+* category
+* privacy policy
+* screenshots
+* description
+* keywords
+* support URL
+* copyright
+* review information
+
+Apple's current App Store Connect documentation lays out the required/localizable/editable fields. ([Apple Developer][40])
+
+---
+
+# 71. Age rating
+
+The app needs an age rating.
+
+Apple's current age-rating system was updated in 2026, and App Store Connect requires the current questionnaire. ([Apple Developer][41])
+
+A normal Quran reader should likely end up with a very low age rating, but **do not guess**.
+
+Answer the questionnaire according to actual functionality.
+
+---
+
+# 72. App Review rejection risks
+
+The major risks are not likely to be:
+
+> "It's a Quran app."
+
+The real risks are:
+
+### 1. Copyright
+
+Unlicensed:
+
+* Mushaf images
+* translations
+* audio
+* Tafsir
+* fonts
+
+### 2. Broken functionality
+
+Apple's Guideline 2.1 requires complete, functional submissions. ([Apple Developer][13])
+
+### 3. Subscription problems
+
+* unclear pricing
+* misleading trial
+* inaccessible restore
+* subscription not actually working
+* premium content unavailable
+
+### 4. Privacy
+
+* undocumented analytics
+* wrong App Privacy declarations
+* privacy policy mismatch
+* unnecessary permissions
+
+### 5. Third-party content
+
+Apple explicitly requires authorization for third-party services/content. ([Apple Developer][13])
+
+### 6. AI-generated bugs
+
+Especially dangerous in:
+
+* Quran text
+* navigation metadata
+* subscription logic
+* downloads
+
+---
+
+# 73. App Store privacy requirements
+
+Every app needs a privacy policy URL in App Store Connect. Apple also requires apps distributed through the App Store to explain their data handling practices. ([Apple Developer][42])
+
+Your privacy policy should explicitly state:
+
+* what is stored locally
+* what is transmitted
+* what analytics exist
+* whether accounts exist
+* how purchases work
+* whether third parties receive data
+* retention
+* deletion
+* contact mechanism
+
+Apple's review guidelines specifically require disclosure of data collection, usage, third-party sharing and retention/deletion practices. ([Apple Developer][13])
+
+---
+
+# 74. Security architecture
+
+You don't need elaborate cybersecurity infrastructure.
+
+Because the app is local-first:
+
+### Protect
+
+* subscription entitlements
+* private notes
+* credentials if eventually added
+* download integrity
+* server credentials
+* API keys
+
+### Do not put
+
+* secret API keys
+* private signing keys
+* service credentials
+
+inside the app binary.
+
+---
+
+# 75. Subscription security
+
+For V1, let StoreKit determine entitlement.
+
+Do not build a homemade:
+
+```text
+premium = true
+```
+
+flag.
+
+Use StoreKit transaction state.
+
+For more sophisticated server-side subscription management later, add App Store Server Notifications / server verification.
+
+Apple documents subscription lifecycle states including active, renewal, expiration and billing retry behavior. ([Apple Developer][43])
+
+---
+
+# 76. Remote configuration
+
+Keep it minimal.
+
+Potential remote configuration:
+
+```text
+minimum_supported_content_version
+feature_flags
+paywall_variant
+featured_reciter
+maintenance_message
+```
+
+But:
+
+> **Never remotely configure Quran text.**
+
+Canonical Quran content must be immutable.
+
+---
+
+# 77. Recommended backend
+
+### V1 backend
+
+Almost none.
+
+You need a small content distribution layer, potentially:
+
+```text
+CDN
+ ├── audio
+ ├── translations
+ ├── content manifests
+ └── optional updates
+```
+
+No:
+
+* database
+* user service
+* auth
+* social backend
+* recommendation engine
+
+This dramatically reduces complexity.
+
+---
+
+# 78. V1 data flow
+
+```text
+                    ┌──────────────┐
+                    │ App Bundle   │
+                    │ Mushaf       │
+                    │ Metadata     │
+                    └──────┬───────┘
+                           │
+                           ▼
+                     Content Engine
+                           │
+              ┌────────────┼────────────┐
+              ▼            ▼            ▼
+           Reader        Search       Navigation
+              │
+              ▼
+       User Interaction
+              │
+              ▼
+          SwiftData
+```
+
+Optional:
+
+```text
+CDN
+ ↓
+Download Manager
+ ↓
+Local Files
+ ↓
+Content Registry
+```
+
+---
+
+# 79. Download architecture
+
+Use a state machine:
+
+```text
+notDownloaded
+↓
+queued
+↓
+downloading
+↓
+verifying
+↓
+installed
+```
+
+Failure:
+
+```text
+downloading
+↓
+failed
+↓
+retry
+```
+
+Never expose partially downloaded content as valid.
+
+---
+
+# 80. Audio storage
+
+Organize files by:
+
+```text
+reciter/
+    surah/
+        ayah/
+```
+
+or use larger contiguous audio packages where licensing/UX permits.
+
+For a high-quality app, I'd prefer **surah-level packages** over thousands of tiny network requests.
+
+---
+
+# 81. Performance strategy
+
+The reader must:
+
+* prefetch adjacent pages
+* keep current page decoded
+* prefetch next/previous page
+* avoid blocking main thread
+* avoid unnecessary image re-rendering
+* use appropriate image caching
+* use Swift concurrency
+
+Reader transition target:
+
+> feels instantaneous.
+
+---
+
+# 82. Testing devices
+
+At minimum:
+
+### Small
+
+* iPhone SE-class device
+
+### Standard
+
+* current standard iPhone
+
+### Large
+
+* current Pro Max-class iPhone
+
+### iOS
+
+* minimum supported iOS
+* current iOS
+* current beta during development
+
+### Conditions
+
+* light
+* dark
+* Arabic locale
+* English locale
+* RTL UI
+* LTR UI
+* Dynamic Type
+* VoiceOver
+* low storage
+* no network
+* slow network
+* background audio
+* screen locked
+* Bluetooth
+* AirPods
+
+---
+
+# 83. Functional test matrix
+
+## Reader
+
+* open Quran
+* next page
+* previous page
+* jump page
+* jump Surah
+* jump Juz
+* jump Hizb
+* jump Rub'
+* jump Manzil
+* rotate
+* zoom
+* theme
+* screen wake
+
+## Search
+
+* Arabic
+* English
+* partial query
+* no results
+* typo
+* exact ayah
+* open result
+
+## Bookmarks
+
+* create
+* remove
+* duplicate
+* collection
+* reopen
+
+## Audio
+
+* play
+* pause
+* next
+* previous
+* repeat
+* seek
+* background
+* screen lock
+* AirPods
+* interruption
+* phone call
+* Bluetooth
+
+## Downloads
+
+* start
+* pause
+* resume
+* cancel
+* retry
+* corrupt file
+* insufficient storage
+* offline
+
+---
+
+# 84. Quran integrity test matrix
+
+This deserves its own test target.
+
+### Test 1
+
+Expected ayah count.
+
+### Test 2
+
+Expected surah order.
+
+### Test 3
+
+Expected page order.
+
+### Test 4
+
+Every ayah maps to exactly one location.
+
+### Test 5
+
+Every page maps to the expected ayahs.
+
+### Test 6
+
+No missing ayahs.
+
+### Test 7
+
+No duplicate ayahs.
+
+### Test 8
+
+SHA-256 content verification.
+
+### Test 9
+
+Unicode integrity.
+
+### Test 10
+
+Visual snapshot regression.
+
+### Test 11
+
+Juz boundaries.
+
+### Test 12
+
+Hizb/Rub' boundaries.
+
+### Test 13
+
+Sajdah markers.
+
+### Test 14
+
+Search index equals canonical corpus.
+
+A release should fail if any of these fail.
+
+---
+
+# 85. Human religious review
+
+This is one place where AI should **not** be the final authority.
+
+You should have a qualified Quran/Mushaf reviewer verify:
+
+* exact Mushaf edition
+* ayah boundaries
+* page boundaries
+* Tajweed marks
+* pause marks
+* metadata
+* transliteration if used
+* translation presentation
+* Tafsir selection
+
+Ideally use someone familiar with the **Indo-Pak 13-line tradition**, not merely a generic Arabic speaker.
+
+---
+
+# 86. Legal professionals you should use
+
+At minimum:
+
+### IP/licensing lawyer
+
+Review:
+
+* Mushaf contract
+* font license
+* translation rights
+* audio rights
+* Tafsir rights
+
+### Privacy lawyer
+
+Especially if you launch globally and collect:
+
+* reading behavior
+* notes
+* account data
+* analytics
+
+### Islamic/Quran scholar
+
+Content verification.
+
+This is money worth spending.
+
+---
+
+# 87. Development roadmap
+
+I would modify your proposed phases slightly.
+
+## Phase 0 — Legal/content acquisition
+
+**Do this before coding seriously.**
+
+Deliverables:
+
+* selected Mushaf edition
+* signed rights agreement
+* font decision
+* Arabic corpus
+* translation rights
+* initial reciter rights
+* content manifest
+* attribution requirements
+
+**Definition of done:**
+
+You can legally ship the content.
+
+---
+
+# 88. Phase 1 — Product specification
+
+Create:
+
+```text
+PRODUCT.md
+ARCHITECTURE.md
+CONTENT_SPEC.md
+PRIVACY.md
+LICENSING.md
+QA.md
+```
+
+Freeze:
+
+* V1 scope
+* navigation
+* data model
+* content strategy
+
+---
+
+# 89. Phase 2 — Design system
+
+Create:
+
+* typography
+* spacing
+* color system
+* icons
+* buttons
+* sheets
+* navigation
+* reader controls
+* themes
+
+Do this before feature coding.
+
+---
+
+# 90. Phase 3 — Project scaffolding
+
+Create:
+
+* SwiftUI project
+* modular folder structure
+* dependency policy
+* Swift 6 concurrency rules
+* linting/formatting
+* test targets
+* CI
+* privacy manifest
+* content manifest system
+
+Definition:
+
+> clean build + tests pass.
+
+---
+
+# 91. Phase 4 — Content engine
+
+Build:
+
+* Mushaf registry
+* page registry
+* ayah registry
+* metadata
+* content versioning
+* checksums
+* content integrity tests
+
+Do not build UI yet beyond a simple test viewer.
+
+---
+
+# 92. Phase 5 — Mushaf reader
+
+Build:
+
+* page rendering
+* page caching
+* swipe
+* tap controls
+* zoom
+* rotation
+* themes
+* screen wake
+* page number
+* exact ayah hit testing
+
+Definition:
+
+> You can comfortably read the entire Quran.
+
+---
+
+# 93. Phase 6 — Navigation/search
+
+Build:
+
+* Surah
+* Juz
+* Hizb
+* Rub'
+* Manzil
+* search
+* page jump
+* ayah jump
+
+---
+
+# 94. Phase 7 — Bookmarks/progress
+
+Build:
+
+* last read
+* bookmarks
+* collections
+* history
+* progress
+
+Keep all local.
+
+---
+
+# 95. Phase 8 — Audio
+
+Build:
+
+* player
+* reciter
+* queue
+* ayah mapping
+* repeat
+* speed
+* background
+* lock screen
+* Bluetooth
+* download
+
+---
+
+# 96. Phase 9 — Translation
+
+Build:
+
+* English translation
+* Arabic + translation
+* translation settings
+* search translation
+* offline translation
+
+Only after rights are confirmed.
+
+---
+
+# 97. Phase 10 — Downloads
+
+Build:
+
+* download manager
+* progress
+* pause/resume
+* retry
+* checksum
+* storage management
+* delete
+
+---
+
+# 98. Phase 11 — Premium
+
+Build:
+
+* StoreKit 2
+* products
+* entitlement service
+* paywall
+* restore
+* subscription settings
+* purchase errors
+
+Use Apple's StoreKit testing environment heavily. Apple provides local StoreKit configuration and automated testing through StoreKit Test. ([Apple Developer][44])
+
+---
+
+# 99. Phase 12 — Onboarding/settings
+
+Only now.
+
+This prevents onboarding UI from driving architecture.
+
+---
+
+# 100. Phase 13 — QA
+
+Run:
+
+* unit tests
+* content tests
+* UI tests
+* snapshot tests
+* device tests
+* accessibility tests
+* offline tests
+* StoreKit tests
+* background audio tests
+
+---
+
+# 101. Phase 14 — Security/privacy audit
+
+Verify:
+
+* no secret keys
+* no unintended tracking
+* privacy manifest
+* App Privacy questionnaire
+* privacy policy
+* third-party SDK manifests
+* data retention
+* deletion
+* network traffic
+
+---
+
+# 102. Phase 15 — TestFlight
+
+Start internal.
+
+Then external.
+
+Test:
+
+* real devices
+* real subscriptions
+* real downloads
+* poor connectivity
+* fresh install
+* upgrade from previous build
+* restore purchases
+
+---
+
+# 103. Phase 16 — App Store submission
+
+Apple's App Review expects a complete, tested product with functioning URLs and working IAP. ([Apple Developer][13])
+
+Prepare:
+
+* app icon
+* screenshots
+* preview
+* metadata
+* support URL
+* privacy URL
+* terms
+* age rating
+* accessibility information
+* subscription products
+* review notes
+* content rights documentation
+
+---
+
+# 104. Vibe-coding rules
+
+This is perhaps the most important engineering advice.
+
+## Rule 1
+
+**Never ask the agent to build the whole app.**
+
+## Rule 2
+
+Every prompt modifies a small scope.
+
+## Rule 3
+
+Every task has acceptance criteria.
+
+## Rule 4
+
+The agent must inspect the existing code first.
+
+## Rule 5
+
+The agent must run tests after modifications.
+
+## Rule 6
+
+The agent must not rewrite unrelated files.
+
+## Rule 7
+
+The agent must never modify canonical Quran content.
+
+## Rule 8
+
+No architectural changes without explicit approval.
+
+---
+
+# 105. Agent workflow
+
+For every task:
+
+```text
+1. Inspect
+2. Explain intended changes
+3. Modify
+4. Run tests
+5. Run build
+6. Report files changed
+7. Report tests
+8. Report remaining risks
+```
+
+Don't accept:
+
+> "Done."
+
+Require:
+
+> "Implemented X. Changed files A/B/C. Tests X/Y passed. Build succeeds. No unrelated files changed."
+
+---
+
+# 106. Prompt 1 — Project audit
+
+Use this first.
+
+```text
+You are working on a production iOS Quran application.
+
+Before changing anything:
+
+1. Inspect the complete repository structure.
+2. Identify the current Xcode version/project configuration.
+3. Identify the deployment target.
+4. Identify existing SwiftUI architecture.
+5. Identify existing dependencies.
+6. Identify existing test targets.
+7. Identify existing resources/content.
+8. Identify any architectural problems.
+9. Do NOT modify anything yet.
+
+The application will be a premium 13-line Indo-Pak Quran reader.
+
+Architecture constraints:
+- Native Swift.
+- SwiftUI.
+- Swift 6 concurrency.
+- Prefer Apple frameworks.
+- Minimal third-party dependencies.
+- Local-first.
+- Offline-first.
+- StoreKit 2 for purchases.
+- SwiftData for user-created state where appropriate.
+- Canonical Quran content must be immutable.
+- AI-generated code must never modify canonical Quran content.
+
+Produce an architectural audit.
+
+Do not write code yet.
+Do not make changes.
+```
+
+---
+
+# 107. Prompt 2 — Foundation
+
+```text
+Implement only the foundational project architecture described below.
+
+First inspect the existing codebase and preserve unrelated work.
+
+Create the foundational architecture for:
+- Core domain layer
+- Content layer
+- Persistence layer
+- Services layer
+- Feature modules
+- Test targets
+
+Requirements:
+- SwiftUI
+- Swift 6
+- Swift concurrency
+- No unnecessary dependencies
+- Clear separation of UI and domain logic
+- Dependency injection where appropriate
+- No global mutable state
+- No business logic inside SwiftUI views
+
+Create documentation explaining the architecture.
+
+Do NOT implement Quran rendering.
+Do NOT implement subscriptions.
+Do NOT implement audio.
+Do NOT modify Quran content.
+
+Run all existing tests and add basic architecture tests if appropriate.
+
+Acceptance:
+- project builds
+- tests pass
+- architecture is documented
+- unrelated files remain untouched
+```
+
+---
+
+# 108. Prompt 3 — Content engine
+
+```text
+Implement the immutable Quran content engine.
+
+First inspect the current architecture.
+
+Create:
+- MushafEdition
+- MushafPage
+- Ayah
+- Surah
+- Juz
+- Hizb
+- Rub
+- Manzil
+- Sajdah metadata models
+- ContentManifest
+- ContentVersion
+- checksum verification
+
+Requirements:
+- canonical content is read-only
+- no runtime mutation
+- content version must be explicit
+- SHA-256 verification must be supported
+- malformed content must fail safely
+- missing content must produce explicit errors
+
+Create automated integrity tests for:
+- surah ordering
+- ayah ordering
+- expected counts
+- duplicate detection
+- missing ayah detection
+- page ordering
+- metadata references
+
+Do NOT implement UI.
+Do NOT alter canonical Quran data.
+```
+
+---
+
+# 109. Prompt 4 — Mushaf reader
+
+```text
+Implement the 13-line Mushaf reader.
+
+Before changing code, inspect the current content engine.
+
+Requirements:
+- fixed canonical Mushaf page assets
+- portrait reading
+- landscape reading
+- horizontal page navigation
+- adjacent-page prefetching
+- page caching
+- pinch zoom
+- single-tap control reveal
+- page number
+- immersive reading mode
+- light/dark/sepia presentation
+- screen wake setting
+- smooth transitions
+- no text reflow of canonical Mushaf pages
+
+The Mushaf page asset is authoritative.
+
+Do not dynamically re-layout Quran text to reproduce the canonical Mushaf.
+
+Do not modify Quran content.
+
+Write UI tests for:
+- page navigation
+- rotation
+- zoom
+- controls
+- last page/first page boundaries
+
+Run tests and build before finishing.
+```
+
+---
+
+# 110. Prompt 5 — Navigation
+
+```text
+Implement Quran navigation.
+
+Support:
+- Surah
+- Juz
+- Hizb
+- Rub
+- Manzil
+- page number
+- ayah number
+
+Requirements:
+- all navigation must resolve to exact Mushaf pages
+- navigation must be local/offline
+- no network dependency
+- invalid navigation must fail gracefully
+
+Add tests for representative boundaries and every navigation type.
+
+Do not change reader architecture.
+Do not modify canonical Quran content.
+```
+
+---
+
+# 111. Prompt 6 — Search
+
+```text
+Implement offline Quran search.
+
+Requirements:
+- Arabic search
+- English translation search when translation is installed
+- local-only search
+- fast results
+- exact ayah identification
+- result must open the correct Mushaf page
+- ayah should be highlighted when possible
+- no network required
+
+Create a normalized search index without modifying canonical Quran text.
+
+Tests:
+- exact Arabic search
+- partial Arabic search
+- English translation search
+- no result
+- result opens correct page
+- Arabic Unicode edge cases
+```
+
+---
+
+# 112. Prompt 7 — Bookmarks
+
+```text
+Implement local bookmarks.
+
+Support:
+- page bookmarks
+- ayah bookmarks
+- collections
+- create/delete
+- duplicate prevention
+- navigation to bookmarked content
+
+Use the existing persistence architecture.
+
+Do not introduce accounts or networking.
+
+Write unit and UI tests.
+
+Do not modify canonical Quran data.
+```
+
+---
+
+# 113. Prompt 8 — Audio
+
+```text
+Implement the native Quran audio engine.
+
+Use Apple audio frameworks.
+
+Requirements:
+- AVAudioSession playback category
+- background playback
+- lock-screen controls
+- Control Center controls
+- AirPods/Bluetooth support
+- play/pause
+- next/previous
+- seek
+- repeat ayah
+- repeat range
+- repeat surah
+- playback speed
+- queue
+- interruption handling
+- route-change handling
+- sleep timer
+
+Do not download or include unlicensed audio.
+
+Create a protocol-based AudioService so licensed content can be injected later.
+
+Write tests for state transitions and interruption behavior.
+
+Do not modify Quran content.
+```
+
+---
+
+# 114. Prompt 9 — Download manager
+
+```text
+Implement a production download manager.
+
+Requirements:
+- URLSession background downloads
+- queue
+- progress
+- pause/resume where supported
+- retry
+- cancellation
+- checksum verification
+- atomic installation
+- corrupted-file rejection
+- storage reporting
+- offline availability
+
+Use a state machine.
+
+Never expose a file as installed until verification succeeds.
+
+Write tests for:
+- successful download
+- failed download
+- corrupted file
+- retry
+- cancellation
+- app relaunch
+```
+
+Apple supports background URLSession downloads specifically for long-running transfers while the app is inactive. ([Apple Developer][14])
+
+---
+
+# 115. Prompt 10 — StoreKit
+
+```text
+Implement StoreKit 2 subscription architecture.
+
+Requirements:
+- Product loading
+- entitlement service
+- current entitlement detection
+- purchase
+- restore
+- transaction updates
+- expired subscription handling
+- billing retry handling
+- graceful offline behavior
+- paywall state
+
+Do not hard-code premium = true.
+Do not create a custom payment system.
+Use StoreKit 2.
+
+Create StoreKit configuration test products.
+
+Write automated tests for:
+- purchase
+- cancellation
+- expiration
+- restore
+- failed purchase
+- interrupted purchase
+- entitlement refresh
+```
+
+Apple provides local StoreKit testing and automated StoreKit Test support for these scenarios. ([Apple Developer][44])
+
+---
+
+# 116. Prompt 11 — Privacy
+
+```text
+Audit and implement the privacy foundation.
+
+Requirements:
+- PrivacyInfo.xcprivacy
+- no tracking
+- no advertising identifier
+- no unnecessary permissions
+- no account requirement
+- document data collected
+- document third-party SDKs
+- document required-reason APIs
+- ensure App Privacy declarations can accurately describe the app
+
+Do not add analytics SDKs.
+
+Produce a report of all data that can leave the device.
+
+Do not modify unrelated functionality.
+```
+
+---
+
+# 117. Prompt 12 — Accessibility
+
+```text
+Perform a complete accessibility pass.
+
+Core tasks:
+- open Quran
+- navigate page
+- jump Surah
+- search
+- bookmark
+- play audio
+- pause audio
+- change settings
+- restore purchase
+
+Support:
+- VoiceOver
+- Voice Control
+- Larger Text for surrounding UI
+- sufficient contrast
+- Dark Mode
+- reduced motion
+- differentiate without color
+
+The canonical Mushaf must remain visually fixed.
+
+Create an accessible semantic reading representation for VoiceOver without changing the canonical visual Mushaf.
+
+Write accessibility UI tests where practical.
+```
+
+---
+
+# 118. Prompt 13 — QA audit
+
+```text
+Perform a production QA audit.
+
+Do not change architecture unless explicitly necessary.
+
+Test:
+- reader
+- navigation
+- search
+- bookmarks
+- audio
+- downloads
+- offline mode
+- StoreKit
+- settings
+- accessibility
+- orientation
+- low storage
+- app background/foreground
+- screen lock
+- Bluetooth
+- AirPods
+
+Run all automated tests.
+
+Produce:
+1. failures
+2. severity
+3. reproduction steps
+4. recommended fix
+5. regression risk
+
+Do not silently change unrelated code.
+```
+
+---
+
+# 119. Prompt 14 — Quran integrity audit
+
+```text
+Perform a release-blocking Quran content integrity audit.
+
+Verify:
+- every expected surah exists
+- every expected ayah exists
+- no duplicates
+- no omissions
+- ordering
+- Unicode integrity
+- page count
+- page ordering
+- ayah/page mapping
+- Juz mapping
+- Hizb mapping
+- Rub mapping
+- Manzil mapping
+- Sajdah metadata
+- content hashes
+
+Compare the shipped content against the canonical manifest.
+
+If any difference exists:
+STOP.
+
+Do not automatically repair the content.
+
+Report the exact difference for human Quran-content review.
+
+The AI must never modify canonical Quran content automatically.
+```
+
+---
+
+# 120. Recommended V1 UI map
+
+```text
+READ
+ ├── Continue Reading
+ ├── Mushaf Reader
+ ├── Audio Mini Player
+ └── Reading Progress
+
+EXPLORE
+ ├── Surahs
+ ├── Juz
+ ├── Hizb
+ ├── Rub'
+ ├── Manzil
+ ├── Page
+ └── Search
+
+BOOKMARKS
+ ├── All
+ ├── Collections
+ └── Notes
+
+SETTINGS
+ ├── Appearance
+ ├── Reading
+ ├── Audio
+ ├── Downloads
+ ├── Notifications
+ ├── Premium
+ ├── Privacy
+ └── About
+```
+
+---
+
+# 121. V1.1
+
+Add:
+
+* more reciters
+* more translations
+* Tafsir
+* notes
+* collections
+* Khatm planner
+* reading reminders
+* better audio downloads
+* improved search
+* additional Mushaf navigation
+* content update system
+
+---
+
+# 122. V1.5
+
+Consider:
+
+* iCloud sync
+* multiple reading profiles
+* advanced statistics
+* word-by-word translation
+* Tajweed learning
+* memorization mode
+* richer Tafsir
+* shareable ayah cards
+
+---
+
+# 123. V2
+
+Potentially:
+
+* Apple Watch
+* iPad optimization
+* Mac
+* Quran memorization tools
+* voice-based recitation assistance
+* multiple Mushaf editions
+* more languages
+* advanced synchronization
+
+But these should only happen once the core reader is excellent.
+
+---
+
+# 124. What I would explicitly avoid
+
+### AI-generated Quran text
+
+No.
+
+### AI-generated Tafsir
+
+Not as authoritative religious content.
+
+### AI-generated translations
+
+No.
+
+### Scraped audio
+
+No.
+
+### Scraped Mushaf images
+
+No.
+
+### "Public domain" claims without jurisdictional analysis
+
+No.
+
+### Runtime API dependency
+
+No.
+
+### Mandatory account
+
+No.
+
+### Advertising
+
+No.
+
+### Aggressive streak mechanics
+
+No.
+
+---
+
+# 125. The commercial moat
+
+The strongest moat isn't the code.
+
+It's:
+
+### 1. Licensed Mushaf
+
+### 2. Excellent page rendering
+
+### 3. Verified content
+
+### 4. Brand trust
+
+### 5. UX quality
+
+### 6. Offline performance
+
+### 7. Content relationships
+
+Once someone trusts your app for Quran reading, that trust is extremely valuable.
+
+---
+
+# 126. Estimated complexity
+
+I'd rate the project:
+
+### UI
+
+**Medium**
+
+### Mushaf rendering
+
+**High**
+
+### Quran content integrity
+
+**Very high**
+
+### Audio
+
+**Medium/high**
+
+### Offline downloads
+
+**Medium/high**
+
+### Search
+
+**Medium**
+
+### StoreKit
+
+**Medium**
+
+### Privacy
+
+**Medium**
+
+### Licensing
+
+**Very high**
+
+### QA
+
+**Very high**
+
+### Overall
+
+**High-complexity product, but completely achievable incrementally.**
+
+The biggest danger is not programming.
+
+It's trying to build everything simultaneously.
+
+---
+
+# 127. Rough development effort
+
+For a solo developer using strong AI coding assistance:
+
+### Prototype
+
+**3–6 weeks**
+
+### Serious functional beta
+
+**8–14 weeks**
+
+### Production-quality V1
+
+**4–7 months**
+
+### Highly polished commercial product
+
+**6–9 months**
+
+The licensing process could take longer than the coding.
+
+A particularly strong AI-assisted developer could move faster, but **I would not reduce the QA/content-validation schedule simply because AI writes code quickly.**
+
+---
+
+# 128. Pre-launch checklist
+
+## Legal
+
+* [ ] Mushaf license
+* [ ] font license
+* [ ] translation license
+* [ ] audio licenses
+* [ ] Tafsir license
+* [ ] attribution
+* [ ] legal review
+
+## Content
+
+* [ ] canonical manifest
+* [ ] SHA-256 hashes
+* [ ] Quran scholar review
+* [ ] page mapping verification
+* [ ] metadata verification
+
+## Engineering
+
+* [ ] Xcode 26+
+* [ ] iOS 26 SDK
+* [ ] Swift 6
+* [ ] strict concurrency
+* [ ] tests
+* [ ] crash-free release candidate
+* [ ] offline mode
+* [ ] background audio
+* [ ] StoreKit
+* [ ] privacy manifest
+
+## Privacy
+
+* [ ] privacy policy
+* [ ] App Privacy questionnaire
+* [ ] no accidental tracking
+* [ ] SDK audit
+* [ ] deletion policy
+* [ ] data inventory
+
+## App Store
+
+* [ ] bundle ID
+* [ ] signing
+* [ ] App Store Connect
+* [ ] app name
+* [ ] subtitle
+* [ ] description
+* [ ] keywords
+* [ ] screenshots
+* [ ] icon
+* [ ] age rating
+* [ ] accessibility information
+* [ ] support URL
+* [ ] privacy URL
+* [ ] terms
+* [ ] subscription products
+* [ ] review notes
+
+---
+
+# 129. App Review notes
+
+Make the reviewer’s job extremely easy.
+
+Explain:
+
+> This application is an offline-first Quran reader centered around a licensed 13-line Indo-Pak Mushaf.
+
+Then explain:
+
+* how to navigate
+* where premium exists
+* how to test audio
+* how to test downloads
+* how to restore purchases
+* what content requires network
+* what credentials are required
+
+Because there is no account, you should ideally be able to tell Apple:
+
+> **No account is required to use the application.**
+
+That's excellent from a review perspective.
+
+---
+
+# 130. Content rights documentation
+
+Keep a private internal folder:
+
+```text
+legal/
+    mushaf-license.pdf
+    font-license.pdf
+    translation-license.pdf
+    reciter-a-license.pdf
+    reciter-b-license.pdf
+    tafsir-license.pdf
+    attribution.txt
+    rights-register.xlsx
+```
+
+If Apple asks:
+
+> "Do you have permission to use this content?"
+
+You should be able to answer immediately.
+
+Apple specifically says authorization may need to be provided upon request. ([Apple Developer][13])
+
+---
+
+# 131. A subtle but important monetization recommendation
+
+Do **not** advertise the app as:
+
+> "Premium Quran — $29.99"
+
+Instead position it as:
+
+> **Free Quran reading. Premium tools for serious readers.**
+
+This makes the value proposition much healthier.
+
+The Quran itself remains accessible.
+
+You're charging for:
+
+* storage
+* additional content
+* convenience
+* organization
+* advanced study
+* synchronization
+
+---
+
+# 132. The product personality
+
+I would define the design brief as:
+
+> **Quiet confidence.**
+
+Not:
+
+* Islamic-tech startup
+* neon green
+* excessive gold
+* mosque imagery everywhere
+* decorative Arabic calligraphy on every screen
+* gamified dashboards
+
+Instead:
+
+* warm paper
+* restrained typography
+* subtle separators
+* excellent spacing
+* very quiet animations
+* generous margins
+* carefully chosen Arabic typography
+* minimal chrome
+
+Think:
+
+> **A beautifully designed physical Mushaf translated into a modern iPhone experience.**
+
+---
+
+# 133. One important product decision: don't over-customize the Mushaf
+
+Users should be able to customize:
+
+* theme
+* zoom
+* brightness
+* UI
+* translation
+* audio
+
+But not:
+
+* arbitrary font
+* arbitrary line count
+* arbitrary page layout
+* arbitrary line height
+* arbitrary ayah reflow
+
+That preserves the identity of the product.
+
+---
+
+# 134. Another important decision: page navigation should be primary
+
+Many Quran apps are fundamentally:
+
+> scroll through text.
+
+Yours should feel like:
+
+> **turning pages in a Mushaf.**
+
+That means:
+
+* page curl/slide should be subtle
+* page numbers prominent but quiet
+* page jump excellent
+* previous/next extremely reliable
+* last-read position exact
+* opening the app should return to the exact page
+
+That is your differentiator.
+
+---
+
+# 135. The ideal V1 experience
+
+Imagine the user opening the app:
+
+**0 seconds**
+
+App opens.
+
+**0.5 seconds**
+
+Their last Mushaf page appears.
+
+They swipe.
+
+Page changes instantly.
+
+They tap an ayah.
+
+A minimal control sheet appears.
+
+They press play.
+
+Recitation begins.
+
+They lock the iPhone.
+
+Audio continues.
+
+Later they reopen.
+
+The exact page is still there.
+
+No account.
+
+No ads.
+
+No feed.
+
+No noise.
+
+No internet required.
+
+That is the product.
+
+---
+
+# 136. My final technology recommendation
+
+## Use
+
+**Swift 6 + SwiftUI + SwiftData + AVFoundation + MediaPlayer + URLSession + StoreKit 2**
+
+with:
+
+* Swift Concurrency
+* strict concurrency checking
+* minimal dependencies
+* local-first architecture
+* immutable content bundles
+* background downloads
+* native accessibility
+
+Apple's current platform tooling and StoreKit documentation align very well with this architecture. ([Apple Developer][18])
+
+---
+
+# 137. My final content recommendation
+
+### Canonical Mushaf
+
+**Licensed Indo-Pak 13-line edition**
+
+### Arabic verification/reference
+
+**Tanzil and/or another independently verified Quran source**
+
+Tanzil's license explicitly allows verbatim use in applications with attribution and prohibits changing the text. ([Tanzil][15])
+
+### Search
+
+Local canonical text corpus.
+
+### Translation
+
+One commercially licensed English translation.
+
+### Audio
+
+One or two commercially licensed reciters.
+
+### Tafsir
+
+V1.1 after rights and scholarly review.
+
+### Font
+
+Prefer a commercially safe/openly licensed Indo-Pak font, but treat font rights independently from Mushaf rights.
+
+---
+
+# 138. My final privacy recommendation
+
+**No account.**
+
+**No advertising.**
+
+**No tracking.**
+
+**No third-party analytics in V1.**
+
+**No religious profiling.**
+
+**No cloud dependency.**
+
+**Local bookmarks/notes/history.**
+
+Potential V2:
+
+> optional iCloud synchronization.
+
+This creates an unusually strong privacy story.
+
+---
+
+# 139. My final V1 scope
+
+If I were personally approving the V1 scope, it would be:
+
+### MUST HAVE
+
+* 13-line Indo-Pak Mushaf
+* perfect page rendering
+* page navigation
+* Surah/Juz navigation
+* search
+* bookmarks
+* last read
+* light/dark/sepia
+* zoom
+* screen wake
+* English translation
+* 2 reciters
+* background audio
+* lock-screen controls
+* offline operation
+* downloads
+* StoreKit 2
+* restore purchases
+* accessibility
+* privacy-first architecture
+
+### SHOULD HAVE
+
+* collections
+* notes
+* reading history
+* Rub'/Hizb
+* Manzil
+* reading progress
+
+### V1.1
+
+* Tafsir
+* more translations
+* more reciters
+* Khatm planner
+* reminders
+* iCloud sync
+
+### NOT V1
+
+* AI
+* social
+* prayer
+* Qibla
+* Hadith
+* memorization AI
+* Apple Watch
+* iPad
+* Android
+
+---
+
+# 140. The single biggest risk
+
+The biggest mistake would be:
+
+> **Start coding before securing the exact 13-line Mushaf rights.**
+
+Don't do that.
+
+Your entire product depends on the exact visual Mushaf.
+
+You need to know:
+
+1. Which publisher/edition?
+2. Who owns the digital rights?
+3. Can it be reproduced digitally?
+4. Can it be distributed commercially?
+5. Can it be cached offline?
+6. Can it be included in an App Store application?
+7. Can it be modified/resized?
+8. Can ayah hit regions be overlaid?
+9. Can you use excerpts in screenshots?
+10. Can you use it globally?
+
+Get those answers **in writing**.
+
+---
+
+# 141. Second-biggest risk
+
+The second biggest risk is allowing an AI agent to "clean up" Quran content.
+
+For example:
+
+> "Normalize all Arabic Unicode."
+
+That sounds harmless.
+
+It could be disastrous for Quranic typography.
+
+The coding agent should therefore have a project-level rule:
+
+> **Canonical Quran assets are read-only and must never be transformed by automated code generation.**
+
+---
+
+# 142. Third-biggest risk
+
+Trying to beat Quran apps by adding features.
+
+You don't need to beat:
+
+* Muslim Pro at Islamic utilities
+* Tarteel at AI memorization
+* Quranly at habit gamification
+* Quran.com at ecosystem breadth
+
+You need to beat them at:
+
+> **13-line Quran reading.**
+
+That's a much more achievable product strategy.
+
+---
+
+# 143. Final architecture in one diagram
+
+```text
+                 ┌─────────────────────────┐
+                 │      SwiftUI App        │
+                 └────────────┬────────────┘
+                              │
+       ┌──────────────────────┼─────────────────────┐
+       │                      │                     │
+       ▼                      ▼                     ▼
+   Reader UI              Navigation             Settings
+       │                      │                     │
+       └──────────────┬───────┴─────────────┬───────┘
+                      ▼                     ▼
+               Domain Layer          Entitlement Layer
+                      │                     │
+          ┌───────────┼───────────┐         │
+          ▼           ▼           ▼         ▼
+       Content     Search      SwiftData  StoreKit 2
+       Engine       Index        State
+          │
+     ┌────┴─────┐
+     ▼          ▼
+ Mushaf      Metadata
+ Pages
+     │
+     ▼
+Immutable Licensed Content
+     │
+     ├── Quran
+     ├── Page assets
+     ├── translations
+     ├── audio
+     └── licenses
+```
+
+---
+
+# 144. The strategic answer
+
+If you asked me:
+
+> **"Would you build this?"**
+
+Yes.
+
+But I would **not** build it as "a Quran app."
+
+I would build it as:
+
+> **a premium digital Mushaf product whose first-class object is the 13-line Indo-Pak page.**
+
+That's the key.
+
+And I would make the engineering philosophy:
+
+> **Native. Local. Immutable. Verified. Minimal. Beautiful.**
+
+Apple's current platform direction actually helps this approach: current App Store submissions require the iOS 26 SDK/Xcode 26+, modern Swift concurrency is mature, SwiftUI provides native RTL/accessibility capabilities, StoreKit 2 is the current purchase architecture, and Xcode now has first-party agentic coding capabilities. ([Apple Developer][39])
+
+The market also validates the opportunity: established apps such as Ayah, Quran.com, Quran Majeed, Tarteel and Quranly demonstrate strong demand for polished Quran experiences, while dedicated 13-line applications demonstrate that the Indo-Pak format is a real, identifiable niche rather than an artificial product concept. ([App Store][4])
+
+### The next practical step
+
+**Do not start coding yet.**
+
+The next thing I'd produce is the **actual implementation specification** that sits between this strategy and your AI coding agent:
+
+1. exact V1 screen-by-screen specification
+2. exact domain/data models
+3. exact project folder structure
+4. exact content manifest format
+5. exact Mushaf/page/ayah mapping model
+6. exact StoreKit product model
+7. exact download state machine
+8. exact testing matrix
+9. exact design tokens
+10. **a 20–30 prompt sequential vibe-coding build plan**
+
+That document can then become the **single source of truth that every AI coding agent must follow**, which will dramatically reduce the risk of the agent gradually turning the project into an unmaintainable mess.
