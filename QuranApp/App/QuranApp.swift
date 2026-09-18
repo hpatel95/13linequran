@@ -72,7 +72,7 @@ struct ThirteenLineQuranApp: App {
                 do {
                     let quranService = try QuranDatabaseService()
                     let userDb = try UserDatabaseService()
-                    let lastRead = await userDb.getLastReadPage()
+                    let lastRead = try await userDb.getLastReadPage()
                     let dm = DownloadManager(repository: quranService)
 
                     self.databaseService = quranService

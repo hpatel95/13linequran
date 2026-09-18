@@ -45,7 +45,7 @@ public actor QuranDatabaseService: QuranRepositoryProtocol {
         }
 
         self.databasePath = path
-        try self.openDatabase()
+        self.db = try Self.open(path: path)
     }
 
     deinit {
@@ -54,15 +54,15 @@ public actor QuranDatabaseService: QuranRepositoryProtocol {
         }
     }
 
-    private func openDatabase() throws {
+    private static func open(path: String) throws -> OpaquePointer {
         var connection: OpaquePointer?
         let flags = SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX
-        let status = sqlite3_open_v2(databasePath, &connection, flags, nil)
+        let status = sqlite3_open_v2(path, &connection, flags, nil)
         guard status == SQLITE_OK, let validConnection = connection else {
             let errMsg = connection.flatMap { String(cString: sqlite3_errmsg($0)) } ?? "Unknown error"
             throw DatabaseError.connectionFailed(errMsg)
         }
-        self.db = validConnection
+        return validConnection
     }
 
     // MARK: - Surahs

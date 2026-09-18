@@ -36,4 +36,5 @@ public enum AppTypography {
     public static let arabic13Line = arabicCalligraphy(size: 17, weight: .medium)
     public static let pageNumber = Font.system(size: 11, weight: .semibold, design: .default)
     public static let englishTranslation = Font.system(.body, design: .serif)
+    public static let bodyEnglish = englishTranslation
 }

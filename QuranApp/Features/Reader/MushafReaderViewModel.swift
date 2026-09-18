@@ -145,7 +145,6 @@ public final class MushafReaderViewModel {
             let ayah = selectedAyah
             let trans = activeAyahTranslation?.text ?? ""
             let sName = currentSurahName
-            let pNum = currentPage
             Task {
                 if let a = ayah, a.id == ayahId {
                     let title = "\(sName) \(a.surahId):\(a.verseNumber)"

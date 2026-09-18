@@ -94,23 +94,23 @@ public struct MushafReaderView: View {
                 .presentationDetents([.fraction(0.44), .medium, .large])
                 .presentationDragIndicator(.visible)
             }
-            .sheet(isPresented: $viewModel.isBookmarksSheetPresented) {
-                BookmarksListView(
-                    userDatabase: viewModel.userDatabase,
-                    currentPage: viewModel.currentPage,
-                    onSelectBookmark: { bookmark in
-                        viewModel.jumpToPage(bookmark.pageNumber)
-                        if let sId = bookmark.surahId, let vNum = bookmark.verseNumber {
-                            Task {
-                                await viewModel.selectAyah(surahId: sId, verseNumber: vNum)
-                            }
+        }
+        .sheet(isPresented: $viewModel.isBookmarksSheetPresented) {
+            BookmarksListView(
+                userDatabase: viewModel.userDatabase,
+                currentPage: viewModel.currentPage,
+                onSelectBookmark: { bookmark in
+                    viewModel.jumpToPage(bookmark.pageNumber)
+                    if let sId = bookmark.surahId, let vNum = bookmark.verseNumber {
+                        Task {
+                            await viewModel.selectAyah(surahId: sId, verseNumber: vNum)
                         }
-                    },
-                    onDismiss: {
-                        viewModel.isBookmarksSheetPresented = false
                     }
-                )
-            }
+                },
+                onDismiss: {
+                    viewModel.isBookmarksSheetPresented = false
+                }
+            )
         }
     }
 

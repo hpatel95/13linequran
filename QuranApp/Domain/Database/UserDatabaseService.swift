@@ -66,7 +66,7 @@ public actor UserDatabaseService: UserDatabaseServiceProtocol {
         sqlite3_exec(db, "PRAGMA synchronous = NORMAL;", nil, nil, nil)
 
         // Initialize schema
-        try createSchema()
+        try Self.createSchema(db: connection)
     }
 
     deinit {
@@ -76,7 +76,7 @@ public actor UserDatabaseService: UserDatabaseServiceProtocol {
     }
 
     // MARK: - Schema Initialization
-    private func createSchema() throws {
+    private static func createSchema(db: OpaquePointer?) throws {
         let sql = """
         CREATE TABLE IF NOT EXISTS bookmarks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -59,10 +59,6 @@ public final class AudioPlayerService: NSObject {
     }
 
     deinit {
-        // Clean up time observer
-        if let token = timeObserverToken {
-            player?.removeTimeObserver(token)
-        }
         NotificationCenter.default.removeObserver(self)
     }
 
@@ -114,12 +110,14 @@ public final class AudioPlayerService: NSObject {
         // Observe Time Progress
         let interval = CMTime(seconds: 0.25, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
         self.timeObserverToken = player?.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
-            guard let self = self else { return }
-            self.elapsedSeconds = time.seconds
-            if let duration = self.player?.currentItem?.duration.seconds, !duration.isNaN {
-                self.durationSeconds = duration
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                self.elapsedSeconds = time.seconds
+                if let duration = self.player?.currentItem?.duration.seconds, !duration.isNaN {
+                    self.durationSeconds = duration
+                }
+                self.updateNowPlayingInfo()
             }
-            self.updateNowPlayingInfo()
         }
 
         player?.play()
