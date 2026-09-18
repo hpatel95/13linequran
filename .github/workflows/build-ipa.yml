@@ -47,15 +47,15 @@ jobs:
             -configuration Release \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
+            -derivedDataPath build/DerivedData \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            CONFIGURATION_BUILD_DIR=build/Release-iphoneos
+            CODE_SIGNING_ALLOWED=NO
 
       - name: Package Payload into IPA
         run: |
           mkdir -p Payload
-          cp -r build/Release-iphoneos/*.app Payload/
+          cp -r "build/DerivedData/Build/Products/Release-iphoneos/"*.app Payload/
           zip -qr Quran13Line.ipa Payload
           ls -lh Quran13Line.ipa
 
