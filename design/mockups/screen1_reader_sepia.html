@@ -1,0 +1,354 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>13 Line Quran Reader - Surah Al-Mulk</title>
+<!-- Material Symbols Outlined Font -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Google Fonts: Newsreader, Source Sans 3, Amiri / Noto Serif Arabic -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&amp;family=Amiri:ital,wght@0,400;0,700;1,400&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;family=Noto+Naskh+Arabic:wght@400;500;600;700&amp;family=Noto+Serif:wght@400;500;600&amp;family=Source+Sans+3:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "canvas-vellum": "#F3EDE0",
+            "surface-papyrus": "#EAE3D3",
+            "ink-umber": "#2B2620",
+            "sepia-muted": "#6E6459",
+            "saddle-amber": "#9E6B38",
+            "border-sepia": "#DFD7C7",
+            "paper-aged": "#FAF6EE"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-xl": "2rem",
+            "space-sm": "0.5rem",
+            "space-lg": "1.25rem",
+            "margin": "1.25rem",
+            "space-md": "0.875rem",
+            "gutter": "1rem",
+            "space-xs": "0.25rem"
+          },
+          "fontFamily": {
+            "arabic-ayah-lg": ["Amiri", "Amiri Quran", "Noto Serif", "serif"],
+            "label-md": ["\"Source Sans 3\"", "sans-serif"],
+            "body-md": ["Newsreader", "serif"],
+            "label-sm": ["\"Source Sans 3\"", "sans-serif"],
+            "headline-md": ["Newsreader", "serif"],
+            "headline-lg": ["Newsreader", "serif"],
+            "arabic-ayah-mobile": ["Amiri", "Noto Naskh Arabic", "serif"],
+            "body-lg": ["Newsreader", "serif"],
+            "headline-sm": ["Newsreader", "serif"],
+            "headline-lg-mobile": ["Newsreader", "serif"]
+          },
+          "fontSize": {
+            "arabic-ayah-lg": ["28px", { "lineHeight": "54px", "fontWeight": "400" }],
+            "label-md": ["13px", { "lineHeight": "18px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+            "body-md": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+            "headline-md": ["22px", { "lineHeight": "28px", "fontWeight": "500" }],
+            "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.015em", "fontWeight": "500" }],
+            "arabic-ayah-mobile": ["17px", { "lineHeight": "27px", "fontWeight": "500" }],
+            "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+            "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "headline-lg-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "500" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-feature-settings: 'liga';
+      -webkit-font-smoothing: antialiased;
+    }
+    .arabic-text {
+      font-family: 'Amiri', 'Noto Naskh Arabic', serif;
+      direction: rtl;
+      text-align: justify;
+      text-align-last: justify;
+    }
+    .arabic-center {
+      font-family: 'Amiri', 'Noto Naskh Arabic', serif;
+      direction: rtl;
+      text-align: center;
+      text-align-last: center;
+    }
+    @keyframes soundwave {
+      0%, 100% { height: 4px; }
+      50% { height: 14px; }
+    }
+    .soundbar-1 { animation: soundwave 1.1s ease-in-out infinite; }
+    .soundbar-2 { animation: soundwave 0.8s ease-in-out infinite 0.2s; }
+    .soundbar-3 { animation: soundwave 1.3s ease-in-out infinite 0.4s; }
+    .soundbar-4 { animation: soundwave 0.9s ease-in-out infinite 0.1s; }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-[#E4DCCB] min-h-screen flex items-center justify-center p-0 md:p-6 select-none font-body-md text-[#2B2620]">
+<!-- iPhone 16 Pro Viewport Chassis (393px × 852px) -->
+<div class="relative w-[393px] h-[852px] bg-[#F3EDE0] rounded-[48px] shadow-2xl overflow-hidden flex flex-col border-[6px] border-[#DFD7C7] ring-1 ring-[#2B2620]/15">
+<!-- Subtle Parchment Texture & Vignette Overlay -->
+<div class="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_35%,rgba(250,246,238,0.75)_0%,rgba(243,237,224,0.95)_100%)] z-0"></div>
+<!-- 1. iOS Native Status Bar & Dynamic Island -->
+<header class="relative z-50 w-full h-[48px] pt-3 px-7 flex justify-between items-center text-[#2B2620] shrink-0">
+<!-- Time -->
+<span class="font-label-md text-label-md text-[#2B2620] font-semibold tracking-tight">9:41</span>
+<!-- Dynamic Island Capsule -->
+<div class="absolute left-1/2 -translate-x-1/2 top-2.5 w-[122px] h-[35px] bg-[#2B2620] rounded-full flex items-center justify-end px-2.5 shadow-sm">
+<div class="w-3 h-3 rounded-full bg-[#9E6B38]/50 mr-1 blur-[0.5px]"></div>
+<div class="w-2.5 h-2.5 rounded-full bg-[#1C1814] border border-[#3D352C]"></div>
+</div>
+<!-- System Status Icons (Signal, Wifi, Battery) -->
+<div class="flex items-center gap-1.5 text-[#2B2620]">
+<span class="material-symbols-outlined text-[16px] leading-none" data-icon="signal_cellular_4_bar">signal_cellular_4_bar</span>
+<span class="material-symbols-outlined text-[16px] leading-none" data-icon="wifi">wifi</span>
+<div class="w-5 h-2.5 border border-[#2B2620]/80 rounded-[3px] p-[1px] flex items-center">
+<div class="h-full w-full bg-[#2B2620] rounded-[1.5px]"></div>
+</div>
+</div>
+</header>
+<!-- Top Minimal Navigation Bar -->
+<div class="relative z-40 bg-[#F3EDE0]/90 backdrop-blur-md text-[#2B2620] border-b border-[#DFD7C7] flex justify-between items-center w-full px-margin h-14 max-w-md mx-auto">
+<!-- Left: Chapter Directory / Surahs button -->
+<button class="flex items-center gap-1 text-[#2B2620] hover:bg-[#EAE3D3] active:scale-95 transition-all py-1 px-1.5 rounded-lg">
+<span class="material-symbols-outlined text-[20px] text-[#9E6B38]" data-icon="menu_book">menu_book</span>
+<span class="font-label-md text-label-md text-[#2B2620] font-medium">Surahs</span>
+</button>
+<!-- Center: Surah Name Title Cartouche -->
+<div class="flex flex-col items-center">
+<span class="font-headline-sm text-headline-sm text-[#2B2620] font-bold tracking-normal leading-tight">
+          سُورَةُ المُلْكِ
+        </span>
+<span class="font-label-sm text-label-sm text-[#6E6459] tracking-wider uppercase font-semibold text-[10px]">
+          Surah Al-Mulk • Juz 29
+        </span>
+</div>
+<!-- Right: Page Badge & Bookmark -->
+<div class="flex items-center gap-1.5">
+<span class="bg-[#EAE3D3] px-2 py-0.5 rounded-full font-label-sm text-label-sm text-[#6E6459] font-semibold border border-[#DFD7C7] shadow-xs">
+          Page 741
+        </span>
+<button class="text-[#9E6B38] hover:bg-[#EAE3D3] active:scale-95 p-1 rounded-full transition-all">
+<span class="material-symbols-outlined text-[20px]" data-icon="bookmark">bookmark</span>
+</button>
+</div>
+</div>
+<!-- 2. Main 13-Line Mushaf Viewport (Heritage Sepia & Tooled Leather Madrasa Standard) -->
+<main class="relative z-10 flex-1 px-margin py-1 overflow-hidden flex flex-col justify-between">
+<!-- Lithograph Ornate Outer Double-Border & Hashiya Margin Frame -->
+<div class="relative w-full h-full p-2 rounded-xl border border-[#9E6B38] bg-[#FAF6EE] shadow-sm flex flex-col justify-between">
+<!-- Inner Hairline Border -->
+<div class="absolute inset-1.5 rounded-lg border border-[#DFD7C7] pointer-events-none"></div>
+<!-- Four Corner Arabesque Ornaments in Saddle Amber -->
+<div class="absolute top-2 left-2 text-[#9E6B38] leading-none select-none text-[12px]">✦</div>
+<div class="absolute top-2 right-2 text-[#9E6B38] leading-none select-none text-[12px]">✦</div>
+<div class="absolute bottom-2 left-2 text-[#9E6B38] leading-none select-none text-[12px]">✦</div>
+<div class="absolute bottom-2 right-2 text-[#9E6B38] leading-none select-none text-[12px]">✦</div>
+<!-- Surah Title Decorative Header Cartouche (Heritage Saddle Amber Unwan) -->
+<div class="relative mt-1 mb-1 mx-1.5 py-1.5 px-3 bg-[#F3EDE0] rounded border border-[#9E6B38] flex items-center justify-between shadow-xs">
+<span class="font-label-sm text-label-sm text-[#9E6B38] font-semibold text-[10px]">مَكِّيَّةٌ</span>
+<div class="flex items-center gap-1.5">
+<span class="text-[#9E6B38] text-xs">❖</span>
+<span class="font-arabic-ayah-mobile text-[16px] text-[#2B2620] font-bold">سُورَةُ المُلْكِ</span>
+<span class="text-[#9E6B38] text-xs">❖</span>
+</div>
+<span class="font-label-sm text-label-sm text-[#9E6B38] font-semibold text-[10px]">٣٠ آيَةً</span>
+</div>
+<!-- 13 Strict Horizontal Calligraphic Baselines Rhythm Grid -->
+<div class="flex-1 flex flex-col justify-between px-1.5 py-0.5 text-[#2B2620]">
+<!-- Line 1: Bismillah -->
+<div class="arabic-center text-[#2B2620] text-[17px] leading-tight font-semibold tracking-wide py-0.5">
+            بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
+          </div>
+<!-- Line 2: VERSE 1 (ACTIVE SELECTION WITH HERITAGE SADDLE AMBER GLAZE HIGHLIGHT) -->
+<div class="relative arabic-text text-[#2B2620] font-arabic-ayah-mobile text-arabic-ayah-mobile bg-[rgba(158,107,56,0.20)] rounded px-1.5 py-0.5 border border-[#9E6B38] shadow-xs">
+            تَبَارَكَ الَّذِي بِيَدِهِ الْمُلْكُ وَهُوَ عَلَىٰ كُلِّ شَيْءٍ قَدِيرٌ
+            <span class="inline-flex items-center justify-center mx-0.5 text-[#9E6B38] font-bold text-[14px]">﴿١﴾</span>
+</div>
+<!-- Line 3 -->
+<div class="arabic-text text-[#2B2620] font-arabic-ayah-mobile text-arabic-ayah-mobile px-1">
+            الَّذِي خَلَقَ الْمَوْتَ وَالْحَيَاةَ لِيَبْلُوَكُمْ أَيُّكُمْ أَحْسَنُ عَمَلًا
+            <span class="inline-flex items-center justify-center mx-0.5 text-[#9E6B38]/80 font-normal text-[14px]">﴿٢﴾</span>
+</div>
+<!-- Line 4 -->
+<div class="arabic-text text-[#2B2620] font-arabic-ayah-mobile text-arabic-ayah-mobile px-1">
+            وَهُوَ الْعَزِيزُ الْغَفُورُ الَّذِي خَلَقَ سَبْعَ سَمَاوَاتٍ طِبَاقًا
+            <span class="inline-flex items-center justify-center mx-0.5 text-[#9E6B38]/80 font-normal text-[14px]">﴿٣﴾</span>
+</div>
+<!-- Line 5 -->
+<div class="arabic-text text-[#2B2620] font-arabic-ayah-mobile text-arabic-ayah-mobile px-1">
+            مَّا تَرَىٰ فِي خَلْقِ الرَّحْمَٰنِ مِن تَفَاوُتٍ فَارْجِعِ الْبَصَرَ
+            <span class="inline-flex items-center justify-center mx-0.5 text-[#9E6B38]/80 font-normal text-[14px]">﴿٤﴾</span>
+</div>
+<!-- Line 6 -->
+<div class="arabic-text text-[#2B2620] font-arabic-ayah-mobile text-arabic-ayah-mobile px-1">
+            هَلْ تَرَىٰ مِن فُطُورٍ ثُمَّ ارْجِعِ الْبَصَرَ كَرَّتَيْنِ
+            <span class="inline-flex items-center justify-center mx-0.5 text-[#9E6B38]/80 font-normal text-[14px]">﴿٥﴾</span>
+</div>
+<!-- Line 7 -->
+<div class="arabic-text text-[#2B2620] font-arabic-ayah-mobile text-arabic-ayah-mobile px-1">
+            يَنقَلِبْ إِلَيْكَ الْبَصَرُ خَاسِئًا وَهُوَ حَسِيرٌ
+            <span class="inline-flex items-center justify-center mx-0.5 text-[#9E6B38]/80 font-normal text-[14px]">﴿٦﴾</span>
+</div>
+<!-- Line 8 -->
+<div class="arabic-text text-[#2B2620] font-arabic-ayah-mobile text-arabic-ayah-mobile px-1">
+            وَلَقَدْ زَيَّنَّا السَّمَاءَ الدُّنْيَا بِمَصَابِيحَ وَجَعَلْنَاهَا
+            <span class="inline-flex items-center justify-center mx-0.5 text-[#9E6B38]/80 font-normal text-[14px]">﴿٧﴾</span>
+</div>
+<!-- Line 9 -->
+<div class="arabic-text text-[#2B2620] font-arabic-ayah-mobile text-arabic-ayah-mobile px-1">
+            رُجُومًا لِّلشَّيَاطِينِ وَأَعْتَدْنَا لَهُمْ عَذَابَ السَّعِيرِ
+            <span class="inline-flex items-center justify-center mx-0.5 text-[#9E6B38]/80 font-normal text-[14px]">﴿٨﴾</span>
+</div>
+<!-- Line 10 -->
+<div class="arabic-text text-[#2B2620] font-arabic-ayah-mobile text-arabic-ayah-mobile px-1">
+            وَلِلَّذِينَ كَفَرُوا بِرَبِّهِمْ عَذَابُ جَهَنَّمَ وَبِئْسَ الْمَصِيرُ
+            <span class="inline-flex items-center justify-center mx-0.5 text-[#9E6B38]/80 font-normal text-[14px]">﴿٩﴾</span>
+</div>
+<!-- Line 11 -->
+<div class="arabic-text text-[#2B2620] font-arabic-ayah-mobile text-arabic-ayah-mobile px-1">
+            إِذَا أُلْقُوا فِيهَا سَمِعُوا لَهَا شَهِيقًا وَهِيَ تَفُورُ
+            <span class="inline-flex items-center justify-center mx-0.5 text-[#9E6B38]/80 font-normal text-[14px]">﴿١٠﴾</span>
+</div>
+<!-- Line 12 -->
+<div class="arabic-text text-[#2B2620] font-arabic-ayah-mobile text-arabic-ayah-mobile px-1">
+            تَكَادُ تَمَيَّزُ مِنَ الْغَيْظِ كُلَّمَا أُلْقِيَ فِيهَا فَوْجٌ
+            <span class="inline-flex items-center justify-center mx-0.5 text-[#9E6B38]/80 font-normal text-[14px]">﴿١١﴾</span>
+</div>
+<!-- Line 13 -->
+<div class="arabic-text text-[#2B2620] font-arabic-ayah-mobile text-arabic-ayah-mobile px-1">
+            سَأَلَهُمْ خَزَنَتُهَا أَلَمْ يَأْتِكُمْ نَذِيرٌ قَالُوا بَلَىٰ
+            <span class="inline-flex items-center justify-center mx-0.5 text-[#9E6B38]/80 font-normal text-[14px]">﴿١٢﴾</span>
+</div>
+</div>
+<!-- Lithograph Frame Traditional Margin Footer -->
+<div class="mt-1 pt-1 border-t border-[#DFD7C7] flex justify-between items-center text-[10px] text-[#6E6459] font-label-sm px-2">
+<span class="font-medium">جُزْء ٢٩</span>
+<span class="font-bold text-[#9E6B38] font-arabic-ayah-mobile text-xs">٧٤١</span>
+<span class="font-medium">سُوْرَة المُلْك</span>
+</div>
+</div>
+</main>
+<!-- 3. Floating Mini Audio Bar Capsule HUD (Frosted Papyrus Tone) -->
+<div class="relative z-30 px-4 -mb-1">
+<div class="backdrop-blur-xl bg-[#EAE3D3]/90 shadow-md ring-1 ring-[#DFD7C7] rounded-full px-3 py-1.5 flex items-center justify-between">
+<!-- Play / Pause Circular Icon -->
+<div class="flex items-center gap-2.5">
+<button class="w-8 h-8 rounded-full bg-[#9E6B38] text-white flex items-center justify-center shadow-sm active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[18px]" data-icon="pause">pause</span>
+</button>
+<div class="flex flex-col">
+<span class="font-label-sm text-[12px] font-bold text-[#2B2620] leading-tight">Mishary Rashid Alafasy</span>
+<!-- Live Audio Soundwave Graphic Bars -->
+<div class="flex items-end gap-[3px] h-3 mt-0.5">
+<span class="w-[2.5px] bg-[#9E6B38] rounded-full soundbar-1"></span>
+<span class="w-[2.5px] bg-[#9E6B38] rounded-full soundbar-2"></span>
+<span class="w-[2.5px] bg-[#9E6B38] rounded-full soundbar-3"></span>
+<span class="w-[2.5px] bg-[#9E6B38] rounded-full soundbar-4"></span>
+<span class="text-[10px] text-[#6E6459] font-medium ml-1">Ayah 1</span>
+</div>
+</div>
+</div>
+<!-- Audio Counter & Speed Badge -->
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm text-[#6E6459] font-semibold">1 / 30</span>
+<span class="px-1.5 py-0.5 rounded bg-[#F3EDE0] font-label-sm text-[10px] font-bold text-[#9E6B38] border border-[#DFD7C7]">
+            1.0x
+          </span>
+</div>
+</div>
+</div>
+<!-- 4. Bottom Translation & Action Sheet (Papyrus Tone Modal Card) -->
+<section class="relative z-40 rounded-t-[28px] bg-[#EAE3D3] shadow-[0_-10px_30px_rgba(43,38,32,0.10)] ring-1 ring-[#DFD7C7] pt-2.5 pb-6 px-5 flex flex-col">
+<!-- Drag Grabber Pill -->
+<div class="w-10 h-1 bg-[#DFD7C7] rounded-full mx-auto mb-2.5"></div>
+<!-- Sheet Header -->
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-[#6E6459] font-bold text-[10px]">
+          Surah Al-Mulk • Verse 1
+        </span>
+<div class="flex items-center gap-1">
+<button class="w-7 h-7 rounded-full text-[#6E6459] hover:bg-[#F3EDE0] flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="volume_up">volume_up</span>
+</button>
+<button class="w-7 h-7 rounded-full text-[#6E6459] hover:bg-[#F3EDE0] flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="close">close</span>
+</button>
+</div>
+</div>
+<!-- Large Right-to-Left Arabic Display Card -->
+<div class="bg-[#FAF6EE] rounded-xl p-3 border border-[#DFD7C7] mb-2.5 shadow-2xs">
+<p class="arabic-text text-[19px] leading-relaxed text-[#2B2620] font-semibold text-right">
+          تَبَارَكَ الَّذِي بِيَدِهِ الْمُلْكُ وَهُوَ عَلَىٰ كُلِّ شَيْءٍ قَدِيرٌ
+          <span class="text-[#9E6B38] font-bold text-[16px] mr-1">﴿١﴾</span>
+</p>
+</div>
+<!-- English Translation (Pickthall) -->
+<div class="mb-3 px-1">
+<p class="font-body-md text-[14px] leading-snug text-[#2B2620] italic">
+          “Blessed is He in Whose hand is the Kingdom, and He is Able to do all things.”
+        </p>
+<span class="font-label-sm text-[10px] text-[#6E6459] font-medium tracking-wide mt-0.5 block">— Marmaduke Pickthall</span>
+</div>
+<!-- Action Row (4 Refined Saddle Amber Action Buttons) -->
+<div class="grid grid-cols-4 gap-2 pt-1 border-t border-[#DFD7C7]">
+<!-- Play Verse -->
+<button class="flex flex-col items-center gap-1 group active:scale-95 transition-transform">
+<div class="w-10 h-10 rounded-full bg-[#F3EDE0] flex items-center justify-center text-[#9E6B38] group-hover:bg-[#9E6B38] group-hover:text-[#FAF6EE] transition-colors border border-[#DFD7C7]">
+<span class="material-symbols-outlined text-[19px]" data-icon="play_arrow">play_arrow</span>
+</div>
+<span class="font-label-sm text-[10px] text-[#6E6459] font-medium">Play Verse</span>
+</button>
+<!-- Bookmark -->
+<button class="flex flex-col items-center gap-1 group active:scale-95 transition-transform">
+<div class="w-10 h-10 rounded-full bg-[#F3EDE0] flex items-center justify-center text-[#9E6B38] group-hover:bg-[#9E6B38] group-hover:text-[#FAF6EE] transition-colors border border-[#DFD7C7]">
+<span class="material-symbols-outlined text-[19px]" data-icon="bookmark_add">bookmark_add</span>
+</div>
+<span class="font-label-sm text-[10px] text-[#6E6459] font-medium">Bookmark</span>
+</button>
+<!-- Copy -->
+<button class="flex flex-col items-center gap-1 group active:scale-95 transition-transform">
+<div class="w-10 h-10 rounded-full bg-[#F3EDE0] flex items-center justify-center text-[#9E6B38] group-hover:bg-[#9E6B38] group-hover:text-[#FAF6EE] transition-colors border border-[#DFD7C7]">
+<span class="material-symbols-outlined text-[19px]" data-icon="content_copy">content_copy</span>
+</div>
+<span class="font-label-sm text-[10px] text-[#6E6459] font-medium">Copy</span>
+</button>
+<!-- Share -->
+<button class="flex flex-col items-center gap-1 group active:scale-95 transition-transform">
+<div class="w-10 h-10 rounded-full bg-[#F3EDE0] flex items-center justify-center text-[#9E6B38] group-hover:bg-[#9E6B38] group-hover:text-[#FAF6EE] transition-colors border border-[#DFD7C7]">
+<span class="material-symbols-outlined text-[19px]" data-icon="ios_share">ios_share</span>
+</div>
+<span class="font-label-sm text-[10px] text-[#6E6459] font-medium">Share</span>
+</button>
+</div>
+<!-- iOS Home Indicator Safe Area Pill -->
+<div class="w-32 h-1 bg-[#2B2620]/25 rounded-full mx-auto mt-4"></div>
+</section>
+</div>
+</body></html>

@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Surahs &amp; Juz Navigation Index - 13 Line Quran</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&amp;family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&amp;family=Source+Sans+3:ital,wght@0,400..700;1,400..700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "inverse-primary": "#f8ba80",
+            "saddle-amber": "#9E6B38",
+            "inverse-on-surface": "#f4f0e8",
+            "surface-dim": "#dddad2",
+            "sepia-muted": "#6E6459",
+            "on-tertiary-fixed": "#001f2a",
+            "outline": "#837469",
+            "on-background": "#1c1c17",
+            "on-secondary-fixed-variant": "#4e453b",
+            "on-secondary-container": "#6d6358",
+            "secondary-fixed-dim": "#d2c4b7",
+            "primary-fixed": "#ffdcbf",
+            "on-error": "#ffffff",
+            "on-tertiary": "#ffffff",
+            "on-surface": "#1c1c17",
+            "surface-container-low": "#f7f3eb",
+            "border-sepia": "#DFD7C7",
+            "surface-container-high": "#ece8e0",
+            "surface-papyrus": "#EAE3D3",
+            "tertiary-fixed-dim": "#96ceeb",
+            "inverse-surface": "#31302b",
+            "surface-tint": "#835423",
+            "surface-variant": "#e6e2da",
+            "tertiary-fixed": "#bfe8ff",
+            "surface-container-lowest": "#ffffff",
+            "surface-container": "#f1ede6",
+            "paper-aged": "#FAF6EE",
+            "outline-variant": "#d5c3b6",
+            "on-tertiary-container": "#ffffff",
+            "on-secondary": "#ffffff",
+            "error-container": "#ffdad6",
+            "on-primary-fixed-variant": "#673d0d",
+            "secondary": "#665d52",
+            "canvas-vellum": "#F3EDE0",
+            "background": "#fdf9f1",
+            "primary-fixed-dim": "#f8ba80",
+            "primary": "#825322",
+            "tertiary": "#28647d",
+            "secondary-fixed": "#eee0d2",
+            "ink-umber": "#2B2620",
+            "surface-bright": "#fdf9f1",
+            "on-surface-variant": "#51443a",
+            "on-primary-fixed": "#2d1600",
+            "on-error-container": "#93000a",
+            "secondary-container": "#eee0d2",
+            "on-primary-container": "#ffffff",
+            "tertiary-container": "#447d97",
+            "primary-container": "#9e6b38",
+            "on-secondary-fixed": "#211a12",
+            "error": "#ba1a1a",
+            "surface-container-highest": "#e6e2da",
+            "surface": "#fdf9f1",
+            "on-tertiary-fixed-variant": "#024d65",
+            "on-primary": "#ffffff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-sm": "0.5rem",
+            "margin": "1.25rem",
+            "gutter": "1rem",
+            "space-lg": "1.25rem",
+            "space-xs": "0.25rem",
+            "space-xl": "2rem",
+            "space-md": "0.875rem"
+          },
+          "fontFamily": {
+            "headline-md": ["Newsreader"],
+            "label-md": ["\"Source Sans 3\""],
+            "body-lg": ["Newsreader"],
+            "headline-sm": ["Newsreader"],
+            "arabic-ayah-lg": ["Amiri"],
+            "arabic-ayah-mobile": ["Amiri"],
+            "headline-lg-mobile": ["Newsreader"],
+            "label-sm": ["\"Source Sans 3\""],
+            "body-md": ["Newsreader"],
+            "headline-lg": ["Newsreader"]
+          },
+          "fontSize": {
+            "headline-md": ["22px", { "lineHeight": "28px", "fontWeight": "500" }],
+            "label-md": ["13px", { "lineHeight": "18px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+            "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+            "headline-sm": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "arabic-ayah-lg": ["28px", { "lineHeight": "54px", "fontWeight": "400" }],
+            "arabic-ayah-mobile": ["17px", { "lineHeight": "27px", "fontWeight": "500" }],
+            "headline-lg-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+            "body-md": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.015em", "fontWeight": "500" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 3px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #DFD7C7;
+      border-radius: 9999px;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#181614] min-h-screen flex items-center justify-center p-0 sm:p-4 antialiased selection:bg-saddle-amber selection:text-paper-aged">
+<!-- iPhone 16 Pro Device Frame Container -->
+<div class="relative w-full max-w-[402px] h-[874px] bg-canvas-vellum overflow-hidden shadow-2xl rounded-[50px] border-[9px] border-[#2B2724] flex flex-col justify-between">
+<!-- Top System Chrome & Dynamic Island -->
+<div class="relative z-30 pt-3 px-7 flex items-center justify-between text-ink-umber select-none bg-canvas-vellum/90 backdrop-blur-md">
+<!-- Time -->
+<span class="text-xs font-semibold tracking-tight font-label-md">9:41</span>
+<!-- Dynamic Island pill -->
+<div class="absolute left-1/2 -translate-x-1/2 top-2.5 w-[114px] h-[31px] bg-black rounded-full flex items-center justify-between px-3">
+<div class="w-2.5 h-2.5 rounded-full bg-[#0a0a0a] ring-1 ring-neutral-800"></div>
+<div class="w-2.5 h-2.5 rounded-full bg-[#111] ring-1 ring-neutral-900 flex items-center justify-center">
+<div class="w-1 h-1 rounded-full bg-blue-950/60"></div>
+</div>
+</div>
+<!-- Status Icons -->
+<div class="flex items-center space-x-1.5 opacity-90 text-[11px]">
+<span class="material-symbols-outlined text-[15px]" data-icon="signal_cellular_4_bar">signal_cellular_4_bar</span>
+<span class="material-symbols-outlined text-[15px]" data-icon="wifi">wifi</span>
+<div class="w-5 h-2.5 rounded-[3px] border border-ink-umber p-0.5 flex items-center">
+<div class="h-full w-3.5 bg-ink-umber rounded-[1px]"></div>
+</div>
+</div>
+</div>
+<!-- Header Section (TopAppBar Blueprint adaptation) -->
+<header class="relative z-20 px-margin pt-2 pb-3 bg-canvas-vellum/95 backdrop-blur-md">
+<div class="flex items-center justify-between h-11">
+<!-- Back action -->
+<a class="w-9 h-9 rounded-full flex items-center justify-center bg-surface-papyrus/80 text-ink-umber border border-border-sepia shadow-sm active:scale-95 transition-all" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="arrow_back">arrow_back</span>
+</a>
+<!-- Header Title -->
+<div class="text-center">
+<div class="flex items-center justify-center gap-1.5">
+<span class="text-saddle-amber text-xs font-serif">❖</span>
+<h1 class="font-headline-sm text-headline-sm text-ink-umber font-semibold tracking-tight">Surahs &amp; Juz</h1>
+<span class="text-saddle-amber text-xs font-serif">❖</span>
+</div>
+<p class="font-label-sm text-label-sm text-sepia-muted -mt-0.5">فِهْرِسُ المُصْحَفِ الشَّرِيف</p>
+</div>
+<!-- Jump / Filter action -->
+<button class="w-9 h-9 rounded-full flex items-center justify-center bg-surface-papyrus/80 text-saddle-amber border border-border-sepia shadow-sm hover:text-primary active:scale-95 transition-all">
+<span class="material-symbols-outlined text-lg" data-icon="tune">tune</span>
+</button>
+</div>
+<!-- Search Box with Recessed Papyrus Style -->
+<div class="mt-3 relative">
+<div class="relative flex items-center bg-surface-papyrus/90 rounded-full border border-border-sepia px-3.5 py-2 shadow-inner">
+<span class="material-symbols-outlined text-sepia-muted text-lg mr-2" data-icon="search">search</span>
+<input class="w-full bg-transparent border-none p-0 text-ink-umber placeholder:text-sepia-muted/70 font-body-md text-body-md focus:ring-0 focus:outline-none" placeholder="Search surah, meaning, or number..." type="text"/>
+<div class="flex items-center gap-1">
+<span class="text-[10px] font-label-sm px-1.5 py-0.5 bg-paper-aged text-sepia-muted border border-border-sepia rounded">13-line</span>
+</div>
+</div>
+</div>
+<!-- Segmented Control (Surahs / Juz / Pages) -->
+<div class="mt-3 p-0.5 bg-surface-papyrus rounded-full border border-border-sepia flex items-center justify-between">
+<button class="flex-1 py-1.5 px-3 rounded-full bg-primary-container text-on-primary-container shadow-sm flex items-center justify-center gap-1.5 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="auto_stories">auto_stories</span>
+<span class="font-label-md text-label-md font-medium">Surahs</span>
+<span class="text-[10px] bg-paper-aged/25 px-1.5 py-0.2 rounded-full font-label-sm">114</span>
+</button>
+<button class="flex-1 py-1.5 px-3 rounded-full text-sepia-muted hover:text-ink-umber flex items-center justify-center gap-1.5 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="menu_book">menu_book</span>
+<span class="font-label-md text-label-md font-medium">Juz</span>
+<span class="text-[10px] bg-border-sepia/50 px-1.5 py-0.2 rounded-full font-label-sm">30</span>
+</button>
+<button class="flex-1 py-1.5 px-3 rounded-full text-sepia-muted hover:text-ink-umber flex items-center justify-center gap-1.5 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="layers">layers</span>
+<span class="font-label-md text-label-md font-medium">Pages</span>
+<span class="text-[10px] bg-border-sepia/50 px-1.5 py-0.2 rounded-full font-label-sm">848</span>
+</button>
+</div>
+<!-- Quick Metadata Bar -->
+<div class="mt-2.5 px-1 flex items-center justify-between text-sepia-muted">
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-saddle-amber"></span>
+<span class="font-label-sm text-label-sm tracking-wider uppercase text-sepia-muted">114 Surahs • Classical Lithograph</span>
+</div>
+<button class="flex items-center gap-1 text-ink-umber hover:text-primary transition-colors font-label-sm text-label-sm">
+<span>Sort: Traditional</span>
+<span class="material-symbols-outlined text-sm" data-icon="swap_vert">swap_vert</span>
+</button>
+</div>
+</header>
+<!-- Main Content: Scrollable Surah Index List -->
+<main class="flex-1 overflow-y-auto px-margin space-y-1.5 custom-scrollbar pb-24 pt-1">
+<!-- Surah 1: Al-Fatihah -->
+<div class="group bg-paper-aged/85 hover:bg-paper-aged border border-border-sepia rounded-xl p-3 flex items-center justify-between transition-all duration-150 active:scale-[0.99] shadow-[0_1px_2px_rgba(43,38,32,0.04)]">
+<div class="flex items-center gap-3">
+<!-- Number badge -->
+<div class="w-9 h-9 rounded-full border border-border-sepia bg-surface-papyrus/70 flex items-center justify-center font-headline-sm text-ink-umber text-sm">
+            1
+          </div>
+<!-- Title details -->
+<div>
+<div class="flex items-baseline gap-1.5">
+<span class="font-headline-sm text-ink-umber text-base font-medium">Al-Fatihah</span>
+<span class="text-sepia-muted font-body-md text-xs">• The Opener</span>
+</div>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="font-label-sm text-[10px] uppercase text-sepia-muted bg-surface-papyrus/90 px-1.5 py-0.2 rounded border border-border-sepia/70">Meccan</span>
+<span class="text-border-sepia">•</span>
+<span class="font-label-sm text-[10px] text-sepia-muted">7 Verses</span>
+<span class="text-border-sepia">•</span>
+<span class="font-label-sm text-[10px] text-saddle-amber font-medium">Juz 1</span>
+</div>
+</div>
+</div>
+<!-- Calligraphy & Page indicator -->
+<div class="text-right">
+<p class="font-arabic-ayah-mobile text-arabic-ayah-mobile text-ink-umber font-bold leading-tight">سُورَةُ الفَاتِحَةِ</p>
+<div class="flex items-center justify-end gap-1 mt-1 text-sepia-muted">
+<span class="font-label-sm text-[11px] font-semibold text-primary">p. 1</span>
+<span class="material-symbols-outlined text-xs text-sepia-muted" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Surah 2: Al-Baqarah -->
+<div class="group bg-paper-aged/85 hover:bg-paper-aged border border-border-sepia rounded-xl p-3 flex items-center justify-between transition-all duration-150 active:scale-[0.99] shadow-[0_1px_2px_rgba(43,38,32,0.04)]">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full border border-border-sepia bg-surface-papyrus/70 flex items-center justify-center font-headline-sm text-ink-umber text-sm">
+            2
+          </div>
+<div>
+<div class="flex items-baseline gap-1.5">
+<span class="font-headline-sm text-ink-umber text-base font-medium">Al-Baqarah</span>
+<span class="text-sepia-muted font-body-md text-xs">• The Cow</span>
+</div>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="font-label-sm text-[10px] uppercase text-tertiary bg-secondary-fixed/50 px-1.5 py-0.2 rounded border border-border-sepia/70">Medinan</span>
+<span class="text-border-sepia">•</span>
+<span class="font-label-sm text-[10px] text-sepia-muted">286 Verses</span>
+<span class="text-border-sepia">•</span>
+<span class="font-label-sm text-[10px] text-saddle-amber font-medium">Juz 1–3</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<p class="font-arabic-ayah-mobile text-arabic-ayah-mobile text-ink-umber font-bold leading-tight">سُورَةُ البَقَرَةِ</p>
+<div class="flex items-center justify-end gap-1 mt-1 text-sepia-muted">
+<span class="font-label-sm text-[11px] font-semibold text-primary">p. 2</span>
+<span class="material-symbols-outlined text-xs text-sepia-muted" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Surah 3: Ali 'Imran -->
+<div class="group bg-paper-aged/85 hover:bg-paper-aged border border-border-sepia rounded-xl p-3 flex items-center justify-between transition-all duration-150 active:scale-[0.99] shadow-[0_1px_2px_rgba(43,38,32,0.04)]">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full border border-border-sepia bg-surface-papyrus/70 flex items-center justify-center font-headline-sm text-ink-umber text-sm">
+            3
+          </div>
+<div>
+<div class="flex items-baseline gap-1.5">
+<span class="font-headline-sm text-ink-umber text-base font-medium">Ali 'Imran</span>
+<span class="text-sepia-muted font-body-md text-xs">• Family of Imran</span>
+</div>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="font-label-sm text-[10px] uppercase text-tertiary bg-secondary-fixed/50 px-1.5 py-0.2 rounded border border-border-sepia/70">Medinan</span>
+<span class="text-border-sepia">•</span>
+<span class="font-label-sm text-[10px] text-sepia-muted">200 Verses</span>
+<span class="text-border-sepia">•</span>
+<span class="font-label-sm text-[10px] text-saddle-amber font-medium">Juz 3–4</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<p class="font-arabic-ayah-mobile text-arabic-ayah-mobile text-ink-umber font-bold leading-tight">سُورَةُ آلِ عِمْرَانَ</p>
+<div class="flex items-center justify-end gap-1 mt-1 text-sepia-muted">
+<span class="font-label-sm text-[11px] font-semibold text-primary">p. 50</span>
+<span class="material-symbols-outlined text-xs text-sepia-muted" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Surah 18: Al-Kahf -->
+<div class="group bg-paper-aged/85 hover:bg-paper-aged border border-border-sepia rounded-xl p-3 flex items-center justify-between transition-all duration-150 active:scale-[0.99] shadow-[0_1px_2px_rgba(43,38,32,0.04)]">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full border border-border-sepia bg-surface-papyrus/70 flex items-center justify-center font-headline-sm text-ink-umber text-sm">
+            18
+          </div>
+<div>
+<div class="flex items-baseline gap-1.5">
+<span class="font-headline-sm text-ink-umber text-base font-medium">Al-Kahf</span>
+<span class="text-sepia-muted font-body-md text-xs">• The Cave</span>
+</div>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="font-label-sm text-[10px] uppercase text-sepia-muted bg-surface-papyrus/90 px-1.5 py-0.2 rounded border border-border-sepia/70">Meccan</span>
+<span class="text-border-sepia">•</span>
+<span class="font-label-sm text-[10px] text-sepia-muted">110 Verses</span>
+<span class="text-border-sepia">•</span>
+<span class="font-label-sm text-[10px] text-saddle-amber font-medium">Juz 15–16</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<p class="font-arabic-ayah-mobile text-arabic-ayah-mobile text-ink-umber font-bold leading-tight">سُورَةُ الكَهْفِ</p>
+<div class="flex items-center justify-end gap-1 mt-1 text-sepia-muted">
+<span class="font-label-sm text-[11px] font-semibold text-primary">p. 293</span>
+<span class="material-symbols-outlined text-xs text-sepia-muted" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Surah 36: Ya-Sin -->
+<div class="group bg-paper-aged/85 hover:bg-paper-aged border border-border-sepia rounded-xl p-3 flex items-center justify-between transition-all duration-150 active:scale-[0.99] shadow-[0_1px_2px_rgba(43,38,32,0.04)]">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full border border-border-sepia bg-surface-papyrus/70 flex items-center justify-center font-headline-sm text-ink-umber text-sm">
+            36
+          </div>
+<div>
+<div class="flex items-baseline gap-1.5">
+<span class="font-headline-sm text-ink-umber text-base font-medium">Ya-Sin</span>
+<span class="text-sepia-muted font-body-md text-xs">• Ya-Sin</span>
+</div>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="font-label-sm text-[10px] uppercase text-sepia-muted bg-surface-papyrus/90 px-1.5 py-0.2 rounded border border-border-sepia/70">Meccan</span>
+<span class="text-border-sepia">•</span>
+<span class="font-label-sm text-[10px] text-sepia-muted">83 Verses</span>
+<span class="text-border-sepia">•</span>
+<span class="font-label-sm text-[10px] text-saddle-amber font-medium">Juz 22–23</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<p class="font-arabic-ayah-mobile text-arabic-ayah-mobile text-ink-umber font-bold leading-tight">سُورَةُ يس</p>
+<div class="flex items-center justify-end gap-1 mt-1 text-sepia-muted">
+<span class="font-label-sm text-[11px] font-semibold text-primary">p. 440</span>
+<span class="material-symbols-outlined text-xs text-sepia-muted" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Surah 55: Ar-Rahman -->
+<div class="group bg-paper-aged/85 hover:bg-paper-aged border border-border-sepia rounded-xl p-3 flex items-center justify-between transition-all duration-150 active:scale-[0.99] shadow-[0_1px_2px_rgba(43,38,32,0.04)]">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full border border-border-sepia bg-surface-papyrus/70 flex items-center justify-center font-headline-sm text-ink-umber text-sm">
+            55
+          </div>
+<div>
+<div class="flex items-baseline gap-1.5">
+<span class="font-headline-sm text-ink-umber text-base font-medium">Ar-Rahman</span>
+<span class="text-sepia-muted font-body-md text-xs">• The Beneficent</span>
+</div>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="font-label-sm text-[10px] uppercase text-tertiary bg-secondary-fixed/50 px-1.5 py-0.2 rounded border border-border-sepia/70">Medinan</span>
+<span class="text-border-sepia">•</span>
+<span class="font-label-sm text-[10px] text-sepia-muted">78 Verses</span>
+<span class="text-border-sepia">•</span>
+<span class="font-label-sm text-[10px] text-saddle-amber font-medium">Juz 27</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<p class="font-arabic-ayah-mobile text-arabic-ayah-mobile text-ink-umber font-bold leading-tight">سُورَةُ الرَّحْمَٰنِ</p>
+<div class="flex items-center justify-end gap-1 mt-1 text-sepia-muted">
+<span class="font-label-sm text-[11px] font-semibold text-primary">p. 531</span>
+<span class="material-symbols-outlined text-xs text-sepia-muted" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Surah 67: Al-Mulk (Active Reading Indicator / Current Position) -->
+<div class="relative bg-paper-aged border-2 border-saddle-amber/80 rounded-xl p-3 flex items-center justify-between shadow-md ring-2 ring-saddle-amber/15">
+<!-- Bookmark ribbon tag -->
+<div class="absolute -top-2.5 left-6 bg-saddle-amber text-white font-label-sm text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[11px]" data-icon="bookmark" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+<span>Currently Reading</span>
+</div>
+<div class="flex items-center gap-3 pt-1">
+<div class="w-9 h-9 rounded-full bg-saddle-amber text-white flex items-center justify-center font-headline-sm text-sm shadow-sm font-semibold">
+            67
+          </div>
+<div>
+<div class="flex items-baseline gap-1.5">
+<span class="font-headline-sm text-ink-umber text-base font-semibold">Al-Mulk</span>
+<span class="text-sepia-muted font-body-md text-xs">• The Sovereignty</span>
+</div>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="font-label-sm text-[10px] uppercase text-sepia-muted bg-surface-papyrus px-1.5 py-0.2 rounded border border-border-sepia">Meccan</span>
+<span class="text-border-sepia">•</span>
+<span class="font-label-sm text-[10px] text-sepia-muted">30 Verses</span>
+<span class="text-border-sepia">•</span>
+<span class="font-label-sm text-[10px] text-saddle-amber font-semibold">Juz 29</span>
+</div>
+</div>
+</div>
+<div class="text-right pt-1">
+<p class="font-arabic-ayah-mobile text-arabic-ayah-mobile text-primary font-bold leading-tight">سُورَةُ المُلْكِ</p>
+<div class="flex items-center justify-end gap-1 mt-1">
+<span class="font-label-sm text-[11px] font-bold text-saddle-amber bg-surface-papyrus px-1.5 py-0.5 rounded border border-border-sepia">p. 562</span>
+<span class="material-symbols-outlined text-xs text-saddle-amber" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+</div>
+<!-- Surah 78: An-Naba' -->
+<div class="group bg-paper-aged/85 hover:bg-paper-aged border border-border-sepia rounded-xl p-3 flex items-center justify-between transition-all duration-150 active:scale-[0.99] shadow-[0_1px_2px_rgba(43,38,32,0.04)]">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full border border-border-sepia bg-surface-papyrus/70 flex items-center justify-center font-headline-sm text-ink-umber text-sm">
+            78
+          </div>
+<div>
+<div class="flex items-baseline gap-1.5">
+<span class="font-headline-sm text-ink-umber text-base font-medium">An-Naba'</span>
+<span class="text-sepia-muted font-body-md text-xs">• The Tidings</span>
+</div>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="font-label-sm text-[10px] uppercase text-sepia-muted bg-surface-papyrus/90 px-1.5 py-0.2 rounded border border-border-sepia/70">Meccan</span>
+<span class="text-border-sepia">•</span>
+<span class="font-label-sm text-[10px] text-sepia-muted">40 Verses</span>
+<span class="text-border-sepia">•</span>
+<span class="font-label-sm text-[10px] text-saddle-amber font-medium">Juz 30 (Amma)</span>
+</div>
+</div>
+</div>
+<div class="text-right">
+<p class="font-arabic-ayah-mobile text-arabic-ayah-mobile text-ink-umber font-bold leading-tight">سُورَةُ النَّبَإِ</p>
+<div class="flex items-center justify-end gap-1 mt-1 text-sepia-muted">
+<span class="font-label-sm text-[11px] font-semibold text-primary">p. 582</span>
+<span class="material-symbols-outlined text-xs text-sepia-muted" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Bar & Home Indicator Container -->
+<div class="relative z-40">
+<!-- Floating BottomNavBar matching blueprint format and tokens -->
+<nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-sm z-50 flex justify-around items-center py-2 px-4 bg-surface/85 backdrop-blur-lg rounded-full ring-1 ring-outline-variant/30 shadow-lg shadow-on-background/5">
+<!-- Destination 1: Surahs/Reader (Active Tab) -->
+<a class="flex items-center justify-center bg-primary-container text-on-primary-container rounded-full w-10 h-10 active:scale-90 transition-transform duration-150" href="#" title="Index / Reading">
+<span class="material-symbols-outlined text-xl" data-icon="auto_stories" style="font-variation-settings: 'FILL' 1;">auto_stories</span>
+</a>
+<!-- Destination 2: Audio Player -->
+<a class="flex items-center justify-center text-on-surface-variant hover:text-primary w-10 h-10 active:scale-90 transition-transform duration-150" href="#" title="Recitation">
+<span class="material-symbols-outlined text-xl" data-icon="headphones">headphones</span>
+</a>
+<!-- Destination 3: Translation & Tafsir -->
+<a class="flex items-center justify-center text-on-surface-variant hover:text-primary w-10 h-10 active:scale-90 transition-transform duration-150" href="#" title="Translation">
+<span class="material-symbols-outlined text-xl" data-icon="translate">translate</span>
+</a>
+<!-- Destination 4: Settings -->
+<a class="flex items-center justify-center text-on-surface-variant hover:text-primary w-10 h-10 active:scale-90 transition-transform duration-150" href="#" title="Preferences">
+<span class="material-symbols-outlined text-xl" data-icon="settings">settings</span>
+</a>
+</nav>
+<!-- iPhone 16 Pro Home Indicator Bar -->
+<div class="w-full pb-2 pt-1 flex justify-center bg-transparent pointer-events-none">
+<div class="w-32 h-1 bg-ink-umber/35 rounded-full"></div>
+</div>
+</div>
+</div>
+</body></html>

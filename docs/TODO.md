@@ -53,13 +53,16 @@ This document tracks all actionable tasks across the lifecycle of the 13-Line Qu
 ---
 
 ## 4. Design System & Theming
-- [ ] **Color Tokens**:
-  - [ ] Sand Ivory (`#FDFBF7`) / Cream background.
-  - [ ] Antique Parchment (`#F4EEDA`) / Sepia background.
-  - [ ] Midnight OLED (`#0B0C0E`) / Pure dark background.
-  - [ ] Primary Gold (`#C5A059`) for accents and ayah highlights.
-  - [ ] Deep Charcoal Ink (`#1A1A1A`) for day typography.
-- [ ] **Typography**: Define font styling for Arabic script and Apple SF Pro UI typography.
+- [x] **Visual Mockup & Design Extraction**: Generated via Stitch MCP (`Heritage Sepia & Tooled Leather` + `Surahs & Juz Navigation Index`).
+- [x] **Color Tokens** (`QuranApp/DesignSystem/ColorTokens.swift`):
+  - [x] Canvas Vellum (`#F3EDE0`) & Paper Aged (`#FAF6EE`).
+  - [x] Ink Umber (`#2B2620`) & Sepia Muted (`#6E6459`).
+  - [x] Saddle Amber (`#9E6B38`) & Border Sepia (`#DFD7C7`).
+  - [x] Ayah Selection Glaze (`rgba(158, 107, 56, 0.20)`).
+- [x] **Typography Tokens** (`QuranApp/DesignSystem/TypographyTokens.swift`):
+  - [x] Headline & Body styles (Newsreader / Apple New York serif).
+  - [x] UI labels & badges (SF Pro).
+  - [x] Arabic Naskh calligraphy scaling helpers.
 - [ ] **Decorative Assets**: Implement vector `IslamicBanner` Surah divider in pure SwiftUI paths.
 - [ ] **Contrast Audit**: Verify all foreground/background color combinations satisfy WCAG AA contrast standards.
 
