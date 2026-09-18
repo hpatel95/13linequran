@@ -1,24 +1,477 @@
+/**
+ * build_db.js
+ * 
+ * High-performance, resumable pipeline to build `quran_content.sqlite`
+ * Sources:
+ * - 13-line Mushaf Layout (849 pages) & IndoPak text: QUL (Quranic Universal Library)
+ * - Translations:
+ *     - English 1: Saheeh International (Tanzil en.sahih)
+ *     - English 2: Dr. Hilali & Dr. Muhsin Khan (Tanzil en.hilali)
+ *     - French: Dr. Muhammad Hamidullah (Tanzil fr.hamidullah)
+ * - Normalized Arabic Search Text: Quran.com API (Imlaei Simple 6,236 verses)
+ * - Chapters & Juz Metadata: Quran.com API
+ */
+
 const fs = require('fs');
+const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const axios = require('axios');
-const path = require('path');
 
-const DB_PATH = path.join(__dirname, '..', 'QuranApp', 'Resources', 'Database', 'quran_content.sqlite');
-const TEMP_DIR = path.join(__dirname, 'temp');
+const PAGES_DIR = path.join(__dirname, 'temp', 'pages');
+const META_DIR = path.join(__dirname, 'temp', 'meta');
+const TRANS_DIR = path.join(__dirname, 'temp', 'translations');
+const DB_OUTPUT_DIR = path.join(__dirname, '..', 'QuranApp', 'Resources', 'Database');
+const DB_PATH = path.join(DB_OUTPUT_DIR, 'quran_content.sqlite');
+const SHA_PATH = path.join(DB_OUTPUT_DIR, 'quran_content.sqlite.sha256');
 
-// Ensure directories exist
-if (!fs.existsSync(path.dirname(DB_PATH))) {
-    fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+// Ensure working directories exist
+[PAGES_DIR, META_DIR, TRANS_DIR, DB_OUTPUT_DIR].forEach(dir => {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+});
+
+// Helper for sleep
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// --- 1. DOWNLOAD TRANSLATIONS ---
+async function downloadTranslations() {
+  console.log('--- Step 1: Ingesting Translations ---');
+  const sources = [
+    { name: 'en.sahih.txt', url: 'https://tanzil.net/trans/en.sahih' },
+    { name: 'en.hilali.txt', url: 'https://tanzil.net/trans/en.hilali' },
+    { name: 'fr.hamidullah.txt', url: 'https://tanzil.net/trans/fr.hamidullah' }
+  ];
+
+  for (const s of sources) {
+    const dest = path.join(TRANS_DIR, s.name);
+    if (!fs.existsSync(dest) || fs.statSync(dest).size < 1000) {
+      console.log(`Downloading ${s.name}...`);
+      const res = await axios.get(s.url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+      fs.writeFileSync(dest, res.data, 'utf8');
+    } else {
+      console.log(`[CACHED] ${s.name} (${fs.statSync(dest).size} bytes)`);
+    }
+  }
 }
-if (!fs.existsSync(TEMP_DIR)) {
-    fs.mkdirSync(TEMP_DIR, { recursive: true });
+
+// --- 2. DOWNLOAD CHAPTERS & JUZ & CLEAN ARABIC ---
+async function downloadMetadata() {
+  console.log('--- Step 2: Ingesting Surahs, Juz & Clean Arabic ---');
+
+  // Chapters English
+  const chEnPath = path.join(META_DIR, 'chapters_en.json');
+  if (!fs.existsSync(chEnPath)) {
+    console.log('Downloading English chapters...');
+    const res = await axios.get('https://api.quran.com/api/v4/chapters?language=en');
+    fs.writeFileSync(chEnPath, JSON.stringify(res.data.chapters, null, 2));
+  }
+
+  // Chapters French
+  const chFrPath = path.join(META_DIR, 'chapters_fr.json');
+  if (!fs.existsSync(chFrPath)) {
+    console.log('Downloading French chapters...');
+    const res = await axios.get('https://api.quran.com/api/v4/chapters?language=fr');
+    fs.writeFileSync(chFrPath, JSON.stringify(res.data.chapters, null, 2));
+  }
+
+  // Juzs
+  const juzPath = path.join(META_DIR, 'juzs.json');
+  if (!fs.existsSync(juzPath)) {
+    console.log('Downloading Juz metadata...');
+    const res = await axios.get('https://api.quran.com/api/v4/juzs');
+    fs.writeFileSync(juzPath, JSON.stringify(res.data.juzs, null, 2));
+  }
+
+  // Imlaei Simple (diacritic-free normalized Arabic for search)
+  const imlaeiPath = path.join(META_DIR, 'imlaei_simple.json');
+  if (!fs.existsSync(imlaeiPath)) {
+    console.log('Downloading Imlaei clean Arabic text...');
+    const res = await axios.get('https://api.quran.com/api/v4/quran/verses/imlaei_simple');
+    fs.writeFileSync(imlaeiPath, JSON.stringify(res.data.verses, null, 2));
+  }
+
+  console.log('Metadata ready.');
 }
 
-console.log('Data Pipeline Initialized...');
-console.log('Target DB:', DB_PATH);
+// --- 3. DOWNLOAD ALL 849 13-LINE MUSHAF PAGES ---
+async function downloadPages() {
+  console.log('--- Step 3: Ingesting 849 13-Line Mushaf Layout Pages ---');
+  const TOTAL_PAGES = 849;
+  const missingPages = [];
 
-// TODO: 
-// 1. Download QUL 13-line metadata (Resource 17)
-// 2. Download Tanzil Texts
-// 3. Download Saheeh International, Hilali-Khan, Hamidullah translations
-// 4. Create SQLite Schema and populate
+  for (let p = 1; p <= TOTAL_PAGES; p++) {
+    const pageFile = path.join(PAGES_DIR, `page_${p}.html`);
+    if (!fs.existsSync(pageFile) || fs.statSync(pageFile).size < 1000) {
+      missingPages.push(p);
+    }
+  }
+
+  console.log(`Pages cached: ${TOTAL_PAGES - missingPages.length}/${TOTAL_PAGES}. Need to fetch: ${missingPages.length}`);
+
+  const CONCURRENCY = 15;
+  for (let i = 0; i < missingPages.length; i += CONCURRENCY) {
+    const chunk = missingPages.slice(i, i + CONCURRENCY);
+    await Promise.all(chunk.map(async (pageNum) => {
+      let retries = 3;
+      while (retries > 0) {
+        try {
+          const res = await axios.get(`https://qul.tarteel.ai/resources/mushaf-layout/236?page=${pageNum}`, {
+            timeout: 10000,
+            headers: { 'User-Agent': 'Mozilla/5.0' }
+          });
+          fs.writeFileSync(path.join(PAGES_DIR, `page_${pageNum}.html`), res.data, 'utf8');
+          break;
+        } catch (err) {
+          retries--;
+          if (retries === 0) console.error(`Failed page ${pageNum}: ${err.message}`);
+          await sleep(500);
+        }
+      }
+    }));
+
+    process.stdout.write(`\rProgress: ${Math.min(i + CONCURRENCY, missingPages.length)}/${missingPages.length} downloaded`);
+  }
+  console.log('\nAll 849 layout pages downloaded.');
+}
+
+// --- 4. PARSE PAGE HTML ---
+function parsePage(html, pageNumber) {
+  const turboMatch = html.match(new RegExp(`<turbo-frame id="page_${pageNumber}_mushaf_17">([\\s\\S]*?)</turbo-frame>`));
+  if (!turboMatch) return [];
+
+  const content = turboMatch[1];
+  const lineSplits = content.split('<div class="line-container"');
+  const lines = [];
+
+  for (let i = 1; i < lineSplits.length; i++) {
+    const chunk = lineSplits[i];
+    const isSurahName = chunk.includes('line--surah-name');
+    const isBismillah = chunk.includes('line--bismillah');
+    const isCenter = chunk.includes('line--center');
+
+    let lineType = 'ayah_text';
+    let surahHeader = null;
+
+    if (isSurahName) {
+      lineType = 'surah_name';
+      const sMatch = chunk.match(/surah(\d{3})/);
+      if (sMatch) surahHeader = parseInt(sMatch[1], 10);
+    } else if (isBismillah) {
+      lineType = 'bismillah';
+    }
+
+    const wordRegex = /data-location="([^"]+)"[^>]*>[\s\S]*?<a[^>]*>\s*([\s\S]*?)\s*<\/a>/g;
+    const words = [];
+    let wMatch;
+    while ((wMatch = wordRegex.exec(chunk)) !== null) {
+      const loc = wMatch[1];
+      const text = wMatch[2].trim();
+      const [s, a, w] = loc.split(':').map(Number);
+      words.push({ surah: s, ayah: a, word: w, location: loc, text: text });
+    }
+
+    const lineText = isBismillah ? '﷽' : words.map(w => w.text).join(' ');
+
+    lines.push({
+      line_number: i,
+      line_type: lineType,
+      surah_header: surahHeader,
+      is_centered: isCenter || isBismillah ? 1 : 0,
+      words: words,
+      line_text: lineText
+    });
+  }
+
+  return lines;
+}
+
+// --- 5. BUILD SQLITE DATABASE ---
+async function buildDatabase() {
+  console.log('--- Step 4: Compiling quran_content.sqlite ---');
+
+  if (fs.existsSync(DB_PATH)) {
+    fs.unlinkSync(DB_PATH);
+  }
+
+  const db = new sqlite3.Database(DB_PATH);
+  const run = (sql, params = []) => new Promise((resolve, reject) => {
+    db.run(sql, params, function(err) {
+      if (err) reject(err);
+      else resolve(this);
+    });
+  });
+
+  // Create Schema
+  await run(`
+    CREATE TABLE surahs (
+      id INTEGER PRIMARY KEY,
+      arabic_name TEXT NOT NULL,
+      english_name TEXT NOT NULL,
+      french_name TEXT NOT NULL,
+      english_meaning TEXT NOT NULL,
+      revelation_type TEXT NOT NULL,
+      total_verses INTEGER NOT NULL,
+      start_page INTEGER NOT NULL,
+      juz_number INTEGER NOT NULL
+    );
+  `);
+
+  await run(`
+    CREATE TABLE ayahs (
+      id INTEGER PRIMARY KEY,
+      surah_id INTEGER NOT NULL,
+      verse_number INTEGER NOT NULL,
+      page_number INTEGER NOT NULL,
+      juz_number INTEGER NOT NULL,
+      hizb_quarter INTEGER NOT NULL,
+      sajdah INTEGER DEFAULT 0,
+      text_indopak TEXT NOT NULL,
+      text_clean TEXT NOT NULL,
+      FOREIGN KEY(surah_id) REFERENCES surahs(id)
+    );
+  `);
+
+  await run(`
+    CREATE TABLE mushaf_lines (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      page_number INTEGER NOT NULL,
+      line_number INTEGER NOT NULL,
+      line_type TEXT NOT NULL,
+      surah_id INTEGER,
+      is_centered INTEGER DEFAULT 0,
+      text_indopak TEXT
+    );
+  `);
+
+  await run(`
+    CREATE TABLE translations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      ayah_id INTEGER NOT NULL,
+      lang TEXT NOT NULL,
+      author_code TEXT NOT NULL,
+      text TEXT NOT NULL,
+      FOREIGN KEY(ayah_id) REFERENCES ayahs(id)
+    );
+  `);
+
+  await run(`
+    CREATE VIRTUAL TABLE search_index USING fts5(
+      ayah_id UNINDEXED,
+      surah_id UNINDEXED,
+      verse_number UNINDEXED,
+      arabic_clean,
+      translation_en_saheeh,
+      translation_en_hilali,
+      translation_fr_hamidullah,
+      tokenize = 'unicode61 remove_diacritics 2'
+    );
+  `);
+
+  console.log('Schema created.');
+
+  // Load Metadata
+  const chEn = JSON.parse(fs.readFileSync(path.join(META_DIR, 'chapters_en.json'), 'utf8'));
+  const chFr = JSON.parse(fs.readFileSync(path.join(META_DIR, 'chapters_fr.json'), 'utf8'));
+  const imlaeiList = JSON.parse(fs.readFileSync(path.join(META_DIR, 'imlaei_simple.json'), 'utf8'));
+
+  const imlaeiMap = new Map();
+  imlaeiList.forEach(v => imlaeiMap.set(v.verse_key, v.text_imlaei_simple));
+
+  // Parse Translations
+  function loadTranslationFile(filename) {
+    const map = new Map();
+    const content = fs.readFileSync(path.join(TRANS_DIR, filename), 'utf8');
+    const lines = content.split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const parts = trimmed.split('|');
+      if (parts.length >= 3) {
+        const s = parseInt(parts[0], 10);
+        const a = parseInt(parts[1], 10);
+        const text = parts.slice(2).join('|').trim();
+        map.set(`${s}:${a}`, text);
+      }
+    }
+    return map;
+  }
+
+  const saheehMap = loadTranslationFile('en.sahih.txt');
+  const hilaliMap = loadTranslationFile('en.hilali.txt');
+  const hamidullahMap = loadTranslationFile('fr.hamidullah.txt');
+
+  console.log('Translations parsed in memory.');
+
+  // Parse all 849 pages to build line layout and map verses to pages
+  console.log('Parsing 849 mushaf pages...');
+  const verseToPageMap = new Map();
+  const verseToIndoPakWords = new Map(); // "s:a" -> array of word texts
+  const surahStartPages = new Map();
+
+  await run('BEGIN TRANSACTION');
+
+  const insertLineStmt = db.prepare(`
+    INSERT INTO mushaf_lines (page_number, line_number, line_type, surah_id, is_centered, text_indopak)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+
+  for (let p = 1; p <= 849; p++) {
+    const pageHtml = fs.readFileSync(path.join(PAGES_DIR, `page_${p}.html`), 'utf8');
+    const lines = parsePage(pageHtml, p);
+
+    for (const l of lines) {
+      insertLineStmt.run(p, l.line_number, l.line_type, l.surah_header, l.is_centered, l.line_text);
+
+      if (l.surah_header && !surahStartPages.has(l.surah_header)) {
+        surahStartPages.set(l.surah_header, p);
+      }
+
+      for (const w of l.words) {
+        const vKey = `${w.surah}:${w.ayah}`;
+        if (!verseToPageMap.has(vKey)) {
+          verseToPageMap.set(vKey, p);
+        }
+        if (!verseToIndoPakWords.has(vKey)) {
+          verseToIndoPakWords.set(vKey, []);
+        }
+        verseToIndoPakWords.get(vKey).push(w.text);
+      }
+    }
+  }
+
+  await new Promise(res => insertLineStmt.finalize(res));
+  await run('COMMIT');
+  console.log('mushaf_lines table populated.');
+
+  // Populate Surahs
+  await run('BEGIN TRANSACTION');
+  const insertSurahStmt = db.prepare(`
+    INSERT INTO surahs (id, arabic_name, english_name, french_name, english_meaning, revelation_type, total_verses, start_page, juz_number)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  for (let i = 0; i < chEn.length; i++) {
+    const en = chEn[i];
+    const fr = chFr[i];
+    const startPage = surahStartPages.get(en.id) || 1;
+    insertSurahStmt.run(
+      en.id,
+      en.name_arabic,
+      en.name_simple,
+      fr.translated_name.name,
+      en.translated_name.name,
+      en.revelation_place === 'makkah' ? 'Meccan' : 'Medinan',
+      en.verses_count,
+      startPage,
+      1 // Juz will be updated per ayah
+    );
+  }
+  await new Promise(res => insertSurahStmt.finalize(res));
+  await run('COMMIT');
+  console.log('surahs table populated.');
+
+  // Populate Ayahs, Translations & FTS5
+  console.log('Populating ayahs, translations, and search index...');
+  await run('BEGIN TRANSACTION');
+
+  const insertAyahStmt = db.prepare(`
+    INSERT INTO ayahs (id, surah_id, verse_number, page_number, juz_number, hizb_quarter, sajdah, text_indopak, text_clean)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const insertTransStmt = db.prepare(`
+    INSERT INTO translations (ayah_id, lang, author_code, text)
+    VALUES (?, ?, ?, ?)
+  `);
+
+  const insertFtsStmt = db.prepare(`
+    INSERT INTO search_index (ayah_id, surah_id, verse_number, arabic_clean, translation_en_saheeh, translation_en_hilali, translation_fr_hamidullah)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  let globalAyahId = 0;
+  for (const surah of chEn) {
+    for (let v = 1; v <= surah.verses_count; v++) {
+      globalAyahId++;
+      const vKey = `${surah.id}:${v}`;
+      const pageNumber = verseToPageMap.get(vKey) || 1;
+      const cleanArabic = imlaeiMap.get(vKey) || '';
+      const indoPakText = (verseToIndoPakWords.get(vKey) || []).join(' ');
+
+      const tSaheeh = saheehMap.get(vKey) || '';
+      const tHilali = hilaliMap.get(vKey) || '';
+      const tHamidullah = hamidullahMap.get(vKey) || '';
+
+      // Ayah record
+      insertAyahStmt.run(
+        globalAyahId,
+        surah.id,
+        v,
+        pageNumber,
+        1, // juz default
+        1, // hizb default
+        0, // sajdah default
+        indoPakText,
+        cleanArabic
+      );
+
+      // Translations
+      insertTransStmt.run(globalAyahId, 'en', 'saheeh', tSaheeh);
+      insertTransStmt.run(globalAyahId, 'en', 'hilali_khan', tHilali);
+      insertTransStmt.run(globalAyahId, 'fr', 'hamidullah', tHamidullah);
+
+      // FTS5 Virtual Index
+      insertFtsStmt.run(
+        globalAyahId,
+        surah.id,
+        v,
+        cleanArabic,
+        tSaheeh,
+        tHilali,
+        tHamidullah
+      );
+    }
+  }
+
+  await new Promise(res => insertAyahStmt.finalize(res));
+  await new Promise(res => insertTransStmt.finalize(res));
+  await new Promise(res => insertFtsStmt.finalize(res));
+  await run('COMMIT');
+
+  // Create fast lookup indexes
+  console.log('Creating database indexes...');
+  await run('CREATE INDEX idx_ayahs_surah_verse ON ayahs(surah_id, verse_number);');
+  await run('CREATE INDEX idx_ayahs_page ON ayahs(page_number);');
+  await run('CREATE INDEX idx_mushaf_lines_page ON mushaf_lines(page_number, line_number);');
+  await run('CREATE INDEX idx_translations_ayah ON translations(ayah_id, author_code);');
+
+  await new Promise(res => db.close(res));
+  console.log('Database successfully compiled and closed.');
+
+  // Compute SHA-256
+  const crypto = require('crypto');
+  const fileBuffer = fs.readFileSync(DB_PATH);
+  const hash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+  fs.writeFileSync(SHA_PATH, hash, 'utf8');
+
+  console.log('--------------------------------------------------');
+  console.log(`Database generated at: ${DB_PATH}`);
+  console.log(`File size: ${(fileBuffer.length / (1024 * 1024)).toFixed(2)} MB`);
+  console.log(`SHA-256: ${hash}`);
+  console.log('--------------------------------------------------');
+}
+
+// --- MAIN RUNNER ---
+async function main() {
+  const start = Date.now();
+  console.log('Starting Phase 0 Data Pipeline...');
+  await downloadTranslations();
+  await downloadMetadata();
+  await downloadPages();
+  await buildDatabase();
+  console.log(`Pipeline complete in ${((Date.now() - start) / 1000).toFixed(1)}s!`);
+}
+
+main().catch(err => {
+  console.error('Pipeline failed with error:', err);
+  process.exit(1);
+});

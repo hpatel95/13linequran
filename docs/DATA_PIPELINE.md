@@ -68,15 +68,12 @@ quran_content.sqlite
 ---
 
 ### Layer 4: English Translations (Saheeh International & Hilali-Khan)
-* **Primary Translations Evaluated**:
+* **Exclusive English Translations**:
   1. *Saheeh International*: Widely popular, modern English, highly readable, standard in most top Quran apps.
-  2. *Dr. Muhammad Taqi-ud-Din al-Hilali and Dr. Muhammad Muhsin Khan*: Highly regarded and universally accepted; official translation endorsed by the King Fahd Complex.
-* **Additional Notables (Future-proofing)**:
-  - *The Clear Quran (Dr. Mustafa Khattab)*: Extremely popular modern phrasing.
-  - *Abdullah Yusuf Ali*: Classic legacy translation.
-* **Source**: QUL / Tanzil / QuranEnc APIs.
+  2. *Dr. Muhammad Taqi-ud-Din al-Hilali and Dr. Muhammad Muhsin Khan*: Highly regarded, authoritative; official translation endorsed by the King Fahd Complex.
+* **Source**: QuranEnc / Tanzil / QUL.
 * **Format**: SQLite / JSON.
-* **Recommendation**: **Adopt Saheeh International and Hilali-Muhsin Khan as the dual primary English translations for V1.** They are the most requested, structurally sound, and widely trusted in English-speaking communities.
+* **Selection Policy**: Exclusively Saheeh International and Hilali-Khan. No other English translations.
 
 ---
 
