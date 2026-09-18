@@ -156,42 +156,28 @@ This document tracks all actionable tasks across the lifecycle of the 13-Line Qu
 
 ---
 
-## 11. StoreKit 2 & Monetization
-- [ ] **Product Configuration**:
-  - [ ] Monthly Supporter Subscription (`com.company.thirteenlinequran.supporter.monthly`).
-  - [ ] Annual Supporter Subscription (`com.company.thirteenlinequran.supporter.annual`).
-  - [ ] Lifetime Supporter Pass (`com.company.thirteenlinequran.supporter.lifetime`).
-- [ ] **Local StoreKit Testing**: Create `Subscriptions.storekit` file in Xcode for automated sandbox testing.
-- [ ] **Paywall UI**:
-  - [ ] Build `SupporterPaywallView` using StoreKit 2 `SubscriptionStoreView` or custom cards.
-  - [ ] Prominent "Restore Purchases" button.
-  - [ ] Functional links to Privacy Policy and Terms of Use (EULA).
-  - [ ] Clear disclosure of renewal terms and cancel-anytime instructions.
-- [ ] **Entitlement Listener**: Implement background `Transaction.updates` listener to unlock features immediately upon transaction completion.
+---
+
+## 11. Settings, Themes, Onboarding & Accessibility Polish
+- [x] **Visual Reading Themes**:
+  - [x] Heritage Sepia & Tooled Leather (Default).
+  - [x] Soft Ivory Parchment.
+  - [x] Midnight OLED Dark (Pure black `#000000` with warm amber scripture glow).
+- [x] **Onboarding Flow**:
+  - [x] Screen 1: Welcome & core promise ("The 13-Line Mushaf, Beautifully Offline").
+  - [x] Screen 2: Choose default theme and translation (Saheeh, Hilali-Khan, Hamidullah).
+  - [x] Screen 3: Ready to recite — jump directly into Al-Fatihah.
+  - [x] First-launch detection via `@AppStorage("hasCompletedOnboarding")`.
+- [x] **VoiceOver & Accessibility Polish**:
+  - [x] Accessible semantic labels on all icon buttons ("Play audio", "Add bookmark", "Next page", "Open index").
+  - [x] Dynamic Type compliance across UI chrome and settings.
+  - [x] Verify RTL layout direction compatibility.
+- [x] **Scholarly Attributions & Licensing**:
+  - [x] Clean, comprehensive About & Attribution sheet.
 
 ---
 
-## 12. Settings & Onboarding
-- [ ] **Onboarding Flow**:
-  - [ ] Screen 1: Welcome & core promise ("The 13-Line Mushaf, Beautifully Offline").
-  - [ ] Screen 2: Choose default theme and translation.
-  - [ ] Screen 3: Optional reading reminder time picker.
-- [ ] **Settings Screen**:
-  - [ ] Appearance picker (Light, Dark OLED, Warm Sepia).
-  - [ ] Audio settings (Default reciter, audio quality).
-  - [ ] Storage management (Downloads, cache size).
-  - [ ] Supporter status & Restore Purchases.
-  - [ ] About screen with full licensing attributions.
-
----
-
-## 13. Accessibility & RTL Polish
-- [ ] **VoiceOver**:
-  - [ ] Map underlying Unicode text to each ayah bounding box element.
-  - [ ] Add accessible labels to all icon buttons ("Play audio", "Add bookmark", "Next page").
-  - [ ] Rotor support for navigating by Ayah or Surah.
-- [ ] **Dynamic Type**: Ensure all UI chrome, settings labels, and translation sheets scale properly under Accessibility font sizes.
-- [ ] **RTL Mirroring**: Verify that navigation stack and back buttons mirror naturally under Arabic system locales.
+*(Note: StoreKit 2 & Paywall dropped per ADR-008 — 100% Free, Ad-Free & Open / Sadaqah Jariyah)*
 
 ---
 

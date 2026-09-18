@@ -13,8 +13,11 @@ struct ThirteenLineQuranApp: App {
     @State private var databaseService: QuranDatabaseService?
     @State private var userDatabaseService: UserDatabaseService?
     @State private var downloadManager: DownloadManager?
+    @State private var themeManager = ThemeManager()
     @State private var initialPage: Int = 1
     @State private var initError: String?
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
+    @State private var showOnboarding: Bool = false
 
     init() {
         // Register custom IndoPak Nastaleeq font if needed at launch
@@ -29,8 +32,14 @@ struct ThirteenLineQuranApp: App {
                         repository: service,
                         userDatabase: userDb,
                         downloadManager: dm,
+                        themeManager: themeManager,
                         initialPage: initialPage
                     )
+                    .fullScreenCover(isPresented: $showOnboarding) {
+                        OnboardingView(themeManager: themeManager) {
+                            showOnboarding = false
+                        }
+                    }
                 } else if let error = initError {
                     VStack(spacing: 12) {
                         Image(systemName: "exclamationmark.triangle.fill")
@@ -70,6 +79,10 @@ struct ThirteenLineQuranApp: App {
                     self.userDatabaseService = userDb
                     self.downloadManager = dm
                     self.initialPage = lastRead
+
+                    if !hasCompletedOnboarding {
+                        self.showOnboarding = true
+                    }
                 } catch {
                     self.initError = error.localizedDescription
                 }

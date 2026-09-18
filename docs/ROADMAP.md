@@ -153,27 +153,16 @@ Phase 12: App Store Connect, TestFlight & Public Release
 
 ---
 
-### Phase 9: StoreKit 2 Supporter Monetization & Paywall
-* **Objective**: Implement the Supporter Pass subscription and lifetime unlock using Apple StoreKit 2.
-* **Dependencies**: Phases 1, 5, 8.
+### Phase 9: Settings, Themes, Onboarding & Accessibility Polish
+* **Objective**: Deliver multi-theme visual rendering (Sepia, Soft Ivory, Midnight OLED Dark), a serene 15-second onboarding experience, and comprehensive Apple accessibility (VoiceOver, Dynamic Type).
 * **Deliverables**:
-  * `Domain/StoreKit/StoreKitManager.swift` (StoreKit 2 actor managing products and transaction updates).
-  * `Features/Paywall/SupporterPaywallView.swift` (Respectful paywall displaying benefits, localized pricing, Restore Purchases, EULA, and Privacy links).
-  * `Resources/Configuration/Subscriptions.storekit` (Local Xcode sandbox testing configuration).
-* **Tests**: Sandbox purchase, restore, and cancellation automated tests.
-* **Definition of Done**: Purchasing in Xcode sandbox immediately unlocks Supporter perks; "Restore Purchases" succeeds; closing the paywall never blocks free Mushaf reading.
+  * `DesignSystem/ThemeManager.swift` (Dynamic theme palette: Sepia, Ivory, Midnight OLED).
+  * `Features/Onboarding/OnboardingView.swift` (3-screen serene onboarding with theme & translation selection).
+  * `Features/Settings/SettingsView.swift` (Live theme switcher, audio settings, offline storage links, attributions).
+  * Accessibility polish across all icon buttons, search fields, and sheets.
+* **Definition of Done**: Fresh install launches onboarding with immediate theme selection; switching themes updates reader canvas, chrome, and index instantly; all controls pass VoiceOver audit.
 
----
-
-### Phase 10: Settings, Onboarding & Accessibility Polish
-* **Objective**: Build the user settings interface, 15-second onboarding flow, and full Apple accessibility pass.
-* **Dependencies**: All prior phases.
-* **Deliverables**:
-  * `Features/Settings/SettingsView.swift` (Theme picker, audio settings, offline storage, about credits).
-  * `Features/Onboarding/OnboardingView.swift` (3-screen quick onboarding flow).
-  * Full VoiceOver accessibility pass (rotor navigation, clear labels for all buttons and ayah overlays).
-* **Tests**: VoiceOver traversal audit; Dynamic Type scaling audit on UI chrome.
-* **Definition of Done**: Fresh install opens to onboarding and reaches Al-Fatiha in under 15 seconds; VoiceOver reads ayah text and navigates accurately.
+*(Note: Prior StoreKit 2 Paywall draft dropped per ADR-008 — 100% Free, Ad-Free & Open / Sadaqah Jariyah)*
 
 ---
 

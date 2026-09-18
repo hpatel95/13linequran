@@ -48,6 +48,7 @@ public struct MushafLineView: View {
                     .font(AppTypography.arabic13Line)
                     .foregroundStyle(AppColors.saddleAmber)
                     .frame(maxWidth: .infinity, alignment: .center)
+                    .accessibilityLabel("Bismillah ir-Rahman ir-Rahim")
 
             case .ayahText:
                 if line.words.isEmpty {
@@ -86,6 +87,10 @@ public struct MushafLineView: View {
                     onSelectAyah?(cluster.surah, cluster.ayah)
                 }
                 .animation(.spring(response: 0.28, dampingFraction: 0.88), value: isSelected)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Surah \(cluster.surah), Verse \(cluster.ayah)")
+                .accessibilityHint("Double tap to select verse and open translation")
+                .accessibilityAddTraits(.isButton)
             }
         }
         .frame(maxWidth: .infinity, alignment: line.isCentered ? .center : .trailing)

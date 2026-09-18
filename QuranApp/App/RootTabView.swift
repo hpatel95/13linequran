@@ -12,6 +12,7 @@ public struct RootTabView: View {
     @State private var readerViewModel: MushafReaderViewModel
 
     public let downloadManager: DownloadManager
+    public let themeManager: ThemeManager
 
     public enum TabItem: Hashable {
         case read
@@ -23,9 +24,11 @@ public struct RootTabView: View {
         repository: QuranRepositoryProtocol,
         userDatabase: UserDatabaseServiceProtocol,
         downloadManager: DownloadManager,
+        themeManager: ThemeManager,
         initialPage: Int = 1
     ) {
         self.downloadManager = downloadManager
+        self.themeManager = themeManager
         _readerViewModel = State(wrappedValue: MushafReaderViewModel(
             repository: repository,
             userDatabase: userDatabase,
@@ -64,13 +67,14 @@ public struct RootTabView: View {
             .tag(TabItem.index)
 
             // Tab 3: Settings
-            SettingsView(downloadManager: downloadManager)
+            SettingsView(downloadManager: downloadManager, themeManager: themeManager)
                 .tabItem {
                     Label("Settings", systemImage: "gearshape.fill")
                 }
                 .tag(TabItem.settings)
         }
-        .tint(AppColors.saddleAmber)
+        .tint(themeManager.colors.saddleAmber)
+        .preferredColorScheme(themeManager.currentTheme.colorScheme)
     }
 }
 

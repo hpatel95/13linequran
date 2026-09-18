@@ -52,6 +52,56 @@ public enum AppColors {
     
     /// Hairline border surrounding active ayah bounds (#9E6B38 at 80% opacity)
     public static let ayahHighlightBorder = Color(hex: 0x9E6B38).opacity(0.80)
+
+    // MARK: - Dynamic Theme Palettes
+    public static func palette(for theme: AppTheme) -> ThemePalette {
+        switch theme {
+        case .sepia:
+            return ThemePalette(
+                canvasVellum: Color(hex: 0xF3EDE0),
+                paperAged: Color(hex: 0xFAF6EE),
+                surfacePapyrus: Color(hex: 0xEAE3D3),
+                sheetSurface: Color(hex: 0xFFFFFF),
+                inkUmber: Color(hex: 0x2B2620),
+                sepiaMuted: Color(hex: 0x6E6459),
+                saddleAmber: Color(hex: 0x9E6B38),
+                primaryDeepAmber: Color(hex: 0x825322),
+                borderSepia: Color(hex: 0xDFD7C7),
+                ayahHighlightGlaze: Color(red: 158 / 255.0, green: 107 / 255.0, blue: 56 / 255.0, opacity: 0.20),
+                ayahHighlightBorder: Color(hex: 0x9E6B38).opacity(0.80)
+            )
+
+        case .ivory:
+            return ThemePalette(
+                canvasVellum: Color(hex: 0xF7F4EC),
+                paperAged: Color(hex: 0xFCFAF5),
+                surfacePapyrus: Color(hex: 0xF0EBE0),
+                sheetSurface: Color(hex: 0xFFFFFF),
+                inkUmber: Color(hex: 0x262422),
+                sepiaMuted: Color(hex: 0x736D65),
+                saddleAmber: Color(hex: 0xA6743A),
+                primaryDeepAmber: Color(hex: 0x8E5E28),
+                borderSepia: Color(hex: 0xE5DFD3),
+                ayahHighlightGlaze: Color(red: 166 / 255.0, green: 116 / 255.0, blue: 58 / 255.0, opacity: 0.20),
+                ayahHighlightBorder: Color(hex: 0xA6743A).opacity(0.80)
+            )
+
+        case .midnight:
+            return ThemePalette(
+                canvasVellum: Color(hex: 0x000000),
+                paperAged: Color(hex: 0x0D0D0D),
+                surfacePapyrus: Color(hex: 0x1A1A1A),
+                sheetSurface: Color(hex: 0x141414),
+                inkUmber: Color(hex: 0xF5EBD7),
+                sepiaMuted: Color(hex: 0x9E978C),
+                saddleAmber: Color(hex: 0xD4A054),
+                primaryDeepAmber: Color(hex: 0xE0B066),
+                borderSepia: Color(hex: 0x2A2722),
+                ayahHighlightGlaze: Color(red: 212 / 255.0, green: 160 / 255.0, blue: 84 / 255.0, opacity: 0.30),
+                ayahHighlightBorder: Color(hex: 0xD4A054).opacity(0.90)
+            )
+        }
+    }
 }
 
 
