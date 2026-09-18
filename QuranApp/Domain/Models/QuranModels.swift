@@ -11,17 +11,40 @@ import Foundation
 // MARK: - Surah (Chapter)
 public struct Surah: Identifiable, Hashable, Sendable, Codable {
     public let id: Int                   // 1 ... 114
-    public let arabicName: String        // e.g. "سُورَةُ الْمُلْكِ"
-    public let englishName: String       // e.g. "Al-Mulk"
-    public let englishMeaning: String    // e.g. "The Sovereignty"
+    public let arabicName: String        // e.g. "الفاتحة"
+    public let englishName: String       // e.g. "Al-Fatihah"
+    public let frenchName: String        // e.g. "L'ouverture"
+    public let englishMeaning: String    // e.g. "The Opener"
     public let revelationType: RevelationType
-    public let totalVerses: Int          // e.g. 30
-    public let startPage: Int            // Starting 13-line page (1 ... 848)
+    public let totalVerses: Int          // e.g. 7
+    public let startPage: Int            // Starting 13-line page (1 ... 849)
     public let juzNumber: Int            // Starting Juz (1 ... 30)
-    
+
     public enum RevelationType: String, Sendable, Codable {
         case meccan = "Meccan"
         case medinan = "Medinan"
+    }
+
+    public init(
+        id: Int,
+        arabicName: String,
+        englishName: String,
+        frenchName: String,
+        englishMeaning: String,
+        revelationType: RevelationType,
+        totalVerses: Int,
+        startPage: Int,
+        juzNumber: Int
+    ) {
+        self.id = id
+        self.arabicName = arabicName
+        self.englishName = englishName
+        self.frenchName = frenchName
+        self.englishMeaning = englishMeaning
+        self.revelationType = revelationType
+        self.totalVerses = totalVerses
+        self.startPage = startPage
+        self.juzNumber = juzNumber
     }
 }
 
@@ -30,29 +53,145 @@ public struct Ayah: Identifiable, Hashable, Sendable, Codable {
     public let id: Int                   // Canonical global verse index: 1 ... 6236
     public let surahId: Int              // 1 ... 114
     public let verseNumber: Int          // 1 ... N (relative to Surah)
-    public let pageNumber: Int           // 1 ... 848 (13-line page)
+    public let pageNumber: Int           // 1 ... 849 (13-line page)
     public let juzNumber: Int            // 1 ... 30
-    public let arabicText: String        // Verified Tanzil Uthmanic/Indo-Pak text
+    public let hizbQuarter: Int          // 1 ... 240
+    public let sajdah: Bool              // True if verse contains Sajdah
+    public let textIndopak: String       // Verified Indo-Pak calligraphic text
+    public let textClean: String         // Normalized Imlaei search text
+
+    public var verseKey: String {
+        "\(surahId):\(verseNumber)"
+    }
+
+    public init(
+        id: Int,
+        surahId: Int,
+        verseNumber: Int,
+        pageNumber: Int,
+        juzNumber: Int,
+        hizbQuarter: Int,
+        sajdah: Bool,
+        textIndopak: String,
+        textClean: String
+    ) {
+        self.id = id
+        self.surahId = surahId
+        self.verseNumber = verseNumber
+        self.pageNumber = pageNumber
+        self.juzNumber = juzNumber
+        self.hizbQuarter = hizbQuarter
+        self.sajdah = sajdah
+        self.textIndopak = textIndopak
+        self.textClean = textClean
+    }
 }
 
-// MARK: - AyahBound (13-Line Coordinate Geometry)
-public struct AyahBound: Identifiable, Hashable, Sendable, Codable {
-    public let id: Int                   // Unique coordinate record ID
-    public let ayahId: Int               // Global verse ID reference
-    public let pageNumber: Int           // 1 ... 848
-    public let lineNumber: Int           // 1 ... 13 (line on the page)
-    
-    // Normalized coordinates [0.0 ... 1.0] relative to the 1600x2400 page tile
-    public let minX: Double
-    public let minY: Double
-    public let maxX: Double
-    public let maxY: Double
+// MARK: - Mushaf Line (13-Line Physical Page Structure)
+public struct MushafLine: Identifiable, Hashable, Sendable, Codable {
+    public let id: Int
+    public let pageNumber: Int           // 1 ... 849
+    public let lineNumber: Int           // 1 ... 13
+    public let lineType: LineType
+    public let surahId: Int?
+    public let isCentered: Bool
+    public let textIndopak: String
+
+    public enum LineType: String, Sendable, Codable {
+        case ayahText = "ayah_text"
+        case surahName = "surah_name"
+        case bismillah = "bismillah"
+    }
+
+    public init(
+        id: Int,
+        pageNumber: Int,
+        lineNumber: Int,
+        lineType: LineType,
+        surahId: Int?,
+        isCentered: Bool,
+        textIndopak: String
+    ) {
+        self.id = id
+        self.pageNumber = pageNumber
+        self.lineNumber = lineNumber
+        self.lineType = lineType
+        self.surahId = surahId
+        self.isCentered = isCentered
+        self.textIndopak = textIndopak
+    }
 }
 
-// MARK: - Translation (Public Domain)
+// MARK: - Translation
 public struct Translation: Identifiable, Hashable, Sendable, Codable {
     public let id: Int
-    public let ayahId: Int               // Verse reference
-    public let authorCode: String        // "pickthall_1930", "yusuf_ali_1934", "jalandhari_1944"
+    public let ayahId: Int               // Global verse ID reference (1 ... 6236)
+    public let lang: String              // "en" or "fr"
+    public let authorCode: TranslationAuthor
     public let text: String
+
+    public enum TranslationAuthor: String, Sendable, Codable, CaseIterable {
+        case saheeh = "saheeh"
+        case hilaliKhan = "hilali_khan"
+        case hamidullah = "hamidullah"
+
+        public var displayName: String {
+            switch self {
+            case .saheeh:
+                return "Saheeh International"
+            case .hilaliKhan:
+                return "Dr. Hilali & Dr. Muhsin Khan"
+            case .hamidullah:
+                return "Dr. Muhammad Hamidullah (Français)"
+            }
+        }
+    }
+
+    public init(
+        id: Int,
+        ayahId: Int,
+        lang: String,
+        authorCode: TranslationAuthor,
+        text: String
+    ) {
+        self.id = id
+        self.ayahId = ayahId
+        self.lang = lang
+        self.authorCode = authorCode
+        self.text = text
+    }
+}
+
+// MARK: - Search Result (FTS5 Match)
+public struct SearchResult: Identifiable, Hashable, Sendable, Codable {
+    public var id: Int { ayahId }
+    public let ayahId: Int
+    public let surahId: Int
+    public let verseNumber: Int
+    public let arabicClean: String
+    public let translationEnSaheeh: String
+    public let translationEnHilali: String
+    public let translationFrHamidullah: String
+
+    public var verseKey: String {
+        "\(surahId):\(verseNumber)"
+    }
+
+    public init(
+        ayahId: Int,
+        surahId: Int,
+        verseNumber: Int,
+        arabicClean: String,
+        translationEnSaheeh: String,
+        translationEnHilali: String,
+        translationFrHamidullah: String
+    ) {
+        self.ayahId = ayahId
+        self.surahId = surahId
+        self.verseNumber = verseNumber
+        self.arabicClean = arabicClean
+        self.translationEnSaheeh = translationEnSaheeh
+        self.translationEnHilali = translationEnHilali
+        self.translationFrHamidullah = translationFrHamidullah
+    }
 }
