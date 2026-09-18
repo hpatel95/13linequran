@@ -67,14 +67,16 @@ quran_content.sqlite
 
 ---
 
-### Layer 4: English Translation (Pickthall 1930)
-* **Candidate Translations Evaluated**:
-  1. *Muhammad Marmaduke Pickthall (1930)*: Expired copyright, universally recognized as public domain. Classical, poetic English.
-  2. *Abdullah Yusuf Ali (1934 original edition)*: Public domain in US; modified 1989 edition is copyrighted.
-  3. *The Clear Quran / Saheeh International*: Copyrighted by commercial foundations; DMCA risk.
-* **Source**: QUL Resource `145` / Tanzil / QuranEnc.
+### Layer 4: English Translations (Saheeh International & Hilali-Khan)
+* **Primary Translations Evaluated**:
+  1. *Saheeh International*: Widely popular, modern English, highly readable, standard in most top Quran apps.
+  2. *Dr. Muhammad Taqi-ud-Din al-Hilali and Dr. Muhammad Muhsin Khan*: Highly regarded and universally accepted; official translation endorsed by the King Fahd Complex.
+* **Additional Notables (Future-proofing)**:
+  - *The Clear Quran (Dr. Mustafa Khattab)*: Extremely popular modern phrasing.
+  - *Abdullah Yusuf Ali*: Classic legacy translation.
+* **Source**: QUL / Tanzil / QuranEnc APIs.
 * **Format**: SQLite / JSON.
-* **Recommendation**: **Adopt Pickthall (1930) as the primary English translation for V1.** 100% legally clean, zero copyright risk.
+* **Recommendation**: **Adopt Saheeh International and Hilali-Muhsin Khan as the dual primary English translations for V1.** They are the most requested, structurally sound, and widely trusted in English-speaking communities.
 
 ---
 
@@ -103,13 +105,13 @@ quran_content.sqlite
 ---
 
 ### Layer 7: Audio Recitation & Word Synchronization
-* **Reciter**: Sheikh Mishary Rashid Al-Afasy (Hafs an Asim).
-* **Streaming Source**: EveryAyah CDN & QUL Resource `414` (*Mishari Rashid al-`Afasy Streaming*).
-* **URL Pattern**: `https://everyayah.com/data/Alafasy_128kbps/{surah:03d}{ayah:03d}.mp3`
-* **Synchronization Data**: QUL Resource `414` provides segment timestamps mapping milliseconds to specific verse word ranges.
+* **Reciter**: Sheikh Khalifa Al Tunaiji.
+* **Streaming Source**: EveryAyah CDN & QUL Recitation Metadata.
+* **URL Pattern**: `https://everyayah.com/data/Khalifa_Al_Tunaiji_64kbps/{surah:03d}{ayah:03d}.mp3`
+* **Synchronization Data**: QUL word-by-word segment timestamps map milliseconds to specific verse word ranges.
 * **Licensing**: Open Islamic commons with attribution.
 * **Recommendation**:
-  - Stream free tier directly from EveryAyah CDN.
+  - Stream directly from EveryAyah CDN.
   - Monetize offline downloading and repeat looping through the Supporter Pass.
 
 ---
@@ -187,7 +189,7 @@ CREATE VIRTUAL TABLE search_index USING fts5(
    - Download QUL Qudratullah Layout 17 SQLite / JSON dataset.
    - Download QUL IndoPak Nastaleeq TTF Font.
    - Download Tanzil Clean Arabic text & XML metadata.
-   - Download QuranEnc / QUL English (Pickthall) and French (Hamidullah).
+   - Download QuranEnc / QUL English (Saheeh International & Hilali-Khan) and French (Hamidullah).
 2. **Build Database Script** (`pipeline/build_db.js`):
    - Node.js script to merge, validate verse counts (114 Surahs, 6,236 Ayahs), and populate `quran_content.sqlite`.
 3. **Generate FTS5 Index & SHA-256 Checksum**:
