@@ -54,3 +54,7 @@ tmp/
 raw_scans/
 *.tmp
 pipeline/temp_*
+QuranAppExpo/
+web_simulator.html
+pipeline/check_font.js
+pipeline/verify_expo_db.js

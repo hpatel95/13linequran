@@ -125,6 +125,7 @@ public struct PageJumpView: View {
         if page >= 1 && page <= 849 {
             inputErrorMessage = nil
             #if canImport(UIKit)
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
             #endif
             onSelectPage(page)

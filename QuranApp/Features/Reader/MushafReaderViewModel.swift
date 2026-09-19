@@ -40,6 +40,7 @@ public final class MushafReaderViewModel {
     // Windowed Cache: [PageNumber: [MushafLine]]
     public var pageLinesCache: [Int: [MushafLine]] = [:]
     public var surahs: [Surah] = []
+    public var juzs: [Juz] = []
     public var isLoading: Bool = false
     public var errorMessage: String?
 
@@ -94,6 +95,7 @@ public final class MushafReaderViewModel {
             isLoading = true
             do {
                 self.surahs = try await repository.fetchSurahs()
+                self.juzs = (try? await repository.fetchJuzs()) ?? []
                 await loadSurroundingPages()
                 isLoading = false
             } catch {
@@ -239,18 +241,35 @@ public final class MushafReaderViewModel {
     }
 
     // MARK: - Helpers
-    public var currentSurahName: String {
-        guard let firstLine = pageLinesCache[currentPage]?.first(where: { $0.surahId != nil }),
-              let sId = firstLine.surahId,
-              let surah = surahs.first(where: { $0.id == sId }) else {
-            // Fallback finding surah containing current page
-            return surahs.last(where: { $0.startPage <= currentPage })?.englishName ?? "Al-Fatihah"
+    public func surahForPage(_ page: Int) -> Surah? {
+        if let firstLine = pageLinesCache[page]?.first(where: { $0.surahId != nil }),
+           let sId = firstLine.surahId,
+           let surah = surahs.first(where: { $0.id == sId }) {
+            return surah
         }
-        return surah.englishName
+        return surahs.last(where: { $0.startPage <= page }) ?? surahs.first
+    }
+
+    public func juzForPage(_ page: Int) -> Juz? {
+        if let j = juzs.last(where: { $0.startPage <= page }) {
+            return j
+        }
+        return juzs.first
+    }
+
+    public var currentSurahName: String {
+        surahForPage(currentPage)?.englishName ?? "Al-Fatihah"
+    }
+
+    public var currentSurahArabicName: String {
+        surahForPage(currentPage)?.arabicName ?? ""
     }
 
     public var currentJuzNumber: Int {
-        // Approximate or lookup from metadata
-        surahs.last(where: { $0.startPage <= currentPage })?.juzNumber ?? 1
+        juzForPage(currentPage)?.id ?? 1
+    }
+
+    public var currentJuzArabicName: String {
+        juzForPage(currentPage)?.nameArabic ?? ""
     }
 }

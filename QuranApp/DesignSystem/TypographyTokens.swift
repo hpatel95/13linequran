@@ -25,15 +25,18 @@ public enum AppTypography {
     
     // MARK: - Arabic Calligraphy Helpers
     public static func arabicCalligraphy(size: CGFloat, weight: Font.Weight = .regular) -> Font {
-        // Falls back to system Arabic font (Geeza Pro / Noto Naskh) if custom font is not bundled
-        return Font.custom("NotoNaskhArabic", size: size).weight(weight)
+        // Uses bundled Indo-Pak Nastaleeq font (AlQuranIndoPakbyQuranWBW)
+        return Font.custom("AlQuranIndoPakbyQuranWBW", size: size).weight(weight)
     }
 
     // MARK: - Compatibility Aliases & Semantic Helpers
     public static let headline = headlineSmall
     public static let body = bodyMedium
-    public static let surahHeader = arabicCalligraphy(size: 17, weight: .bold)
-    public static let arabic13Line = arabicCalligraphy(size: 17, weight: .medium)
+    public static let surahHeader = arabicCalligraphy(size: 20, weight: .bold)
+    public static let arabic13Line = arabicCalligraphy(size: 22, weight: .regular)
+    public static func arabic13Line(size: CGFloat) -> Font {
+        arabicCalligraphy(size: size, weight: .regular)
+    }
     public static let pageNumber = Font.system(size: 11, weight: .semibold, design: .default)
     public static let englishTranslation = Font.system(.body, design: .serif)
     public static let bodyEnglish = englishTranslation

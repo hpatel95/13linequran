@@ -75,6 +75,7 @@ public struct RootTabView: View {
         }
         .tint(themeManager.colors.saddleAmber)
         .preferredColorScheme(themeManager.currentTheme.colorScheme)
+        .toolbar(selectedTab == .read && !readerViewModel.isChromeVisible ? .hidden : .visible, for: .tabBar)
     }
 }
 

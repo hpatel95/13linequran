@@ -24,21 +24,27 @@ public struct MushafReaderView: View {
             // Horizontal Right-to-Left Paging Canvas
             TabView(selection: $viewModel.currentPage) {
                 ForEach(1...849, id: \.self) { pageNum in
-                    ScrollView(.vertical, showsIndicators: false) {
-                        MushafPageView(
-                            pageNumber: pageNum,
-                            lines: viewModel.pageLinesCache[pageNum] ?? [],
-                            surahName: viewModel.currentSurahName,
-                            juzNumber: viewModel.currentJuzNumber,
-                            selectedVerseKey: viewModel.selectedVerseKey,
-                            onSelectAyah: { surahId, ayahNumber in
-                                Task { await viewModel.selectAyah(surahId: surahId, verseNumber: ayahNumber) }
-                            }
-                        )
-                        .padding(.top, viewModel.isChromeVisible ? 60 : 16)
-                        .padding(.bottom, viewModel.isChromeVisible ? 90 : 20)
-                    }
+                    let surah = viewModel.surahForPage(pageNum)
+                    let juz = viewModel.juzForPage(pageNum)
+
+                    MushafPageView(
+                        pageNumber: pageNum,
+                        lines: viewModel.pageLinesCache[pageNum] ?? [],
+                        surahName: surah?.englishName ?? "",
+                        surahArabicName: surah?.arabicName ?? "",
+                        juzNumber: juz?.id ?? 1,
+                        juzArabicName: juz?.nameArabic ?? "",
+                        revelationType: surah?.revelationType.rawValue,
+                        totalVerses: surah?.totalVerses,
+                        selectedVerseKey: viewModel.selectedVerseKey,
+                        onSelectAyah: { surahId, ayahNumber in
+                            Task { await viewModel.selectAyah(surahId: surahId, verseNumber: ayahNumber) }
+                        }
+                    )
                     .tag(pageNum)
+                    .padding(.top, viewModel.isChromeVisible ? 60 : 4)
+                    .padding(.bottom, viewModel.isChromeVisible ? 16 : 4)
+                    .contentShape(Rectangle())
                     .onTapGesture {
                         viewModel.toggleChrome()
                     }
@@ -55,15 +61,6 @@ public struct MushafReaderView: View {
                     Spacer()
                 }
             }
-
-            // Bottom Audio & Scrubbing Chrome
-            if viewModel.isChromeVisible {
-                VStack {
-                    Spacer()
-                    bottomChromeBar
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-            }
         }
         .task {
             await viewModel.onAppear()
@@ -77,11 +74,6 @@ public struct MushafReaderView: View {
                     translation: viewModel.activeAyahTranslation,
                     isBookmarked: viewModel.bookmarks.contains(ayah.id),
                     onPlay: {
-                        viewModel.audioService.play(
-                            surahId: ayah.surahId,
-                            verseNumber: ayah.verseNumber,
-                            surahName: surah?.englishName ?? ""
-                        )
                         viewModel.isTranslationSheetPresented = false
                     },
                     onBookmark: {
@@ -178,109 +170,5 @@ public struct MushafReaderView: View {
                 .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 4)
         )
         .padding(.horizontal, 12)
-    }
-
-    // MARK: - Bottom Chrome Bar (Audio & Page Scrubber)
-    private var bottomChromeBar: some View {
-        VStack(spacing: 8) {
-            // Page Slider
-            HStack(spacing: 12) {
-                Text("1")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.sepiaMuted)
-
-                Slider(
-                    value: Binding(
-                        get: { Double(viewModel.currentPage) },
-                        set: { viewModel.jumpToPage(Int($0)) }
-                    ),
-                    in: 1...849,
-                    step: 1
-                )
-                .tint(AppColors.saddleAmber)
-
-                Text("849")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.sepiaMuted)
-            }
-            .padding(.horizontal, 16)
-
-            // Reciter & Audio Controls
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(viewModel.audioService.reciterName)
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.inkUmber)
-                    
-                    if viewModel.audioService.state == .playing || viewModel.audioService.state == .buffering {
-                        Text("\(viewModel.audioService.currentSurahName) : Ayah \(viewModel.audioService.currentVerseNumber)")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(AppColors.saddleAmber)
-                    } else {
-                        Text("Hafs 'an 'Asim • Streaming CDN")
-                            .font(.system(size: 10))
-                            .foregroundStyle(AppColors.sepiaMuted)
-                    }
-                }
-
-                Spacer()
-
-                // Previous Verse
-                Button(action: {
-                    viewModel.audioService.previousVerse()
-                }) {
-                    Image(systemName: "backward.fill")
-                        .font(.system(size: 15))
-                        .foregroundStyle(AppColors.inkUmber)
-                        .frame(minWidth: 44, minHeight: 44)
-                }
-                .accessibilityLabel("Previous verse")
-
-                // Play / Pause / Buffering
-                Button(action: {
-                    viewModel.audioService.togglePlayPause()
-                }) {
-                    Group {
-                        if viewModel.audioService.state == .buffering {
-                            ProgressView()
-                                .tint(AppColors.saddleAmber)
-                                .frame(width: 36, height: 36)
-                        } else if viewModel.audioService.state == .playing {
-                            Image(systemName: "pause.circle.fill")
-                                .font(.system(size: 36))
-                                .foregroundStyle(AppColors.saddleAmber)
-                        } else {
-                            Image(systemName: "play.circle.fill")
-                                .font(.system(size: 36))
-                                .foregroundStyle(AppColors.saddleAmber)
-                        }
-                    }
-                    .frame(minWidth: 44, minHeight: 44)
-                }
-                .accessibilityLabel(viewModel.audioService.state == .playing ? "Pause" : "Play")
-                .padding(.horizontal, 4)
-
-                // Next Verse
-                Button(action: {
-                    viewModel.audioService.nextVerse()
-                }) {
-                    Image(systemName: "forward.fill")
-                        .font(.system(size: 15))
-                        .foregroundStyle(AppColors.inkUmber)
-                        .frame(minWidth: 44, minHeight: 44)
-                }
-                .accessibilityLabel("Next verse")
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 2)
-        }
-        .padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(AppColors.paperAged.opacity(0.95))
-                .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: -2)
-        )
-        .padding(.horizontal, 12)
-        .padding(.bottom, 8)
     }
 }

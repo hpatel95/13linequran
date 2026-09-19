@@ -347,7 +347,8 @@ public actor QuranDatabaseService: QuranRepositoryProtocol {
         }
         defer { sqlite3_finalize(statement) }
         sqlite3_bind_int(statement, 1, Int32(ayahId))
-        sqlite3_bind_text(statement, 2, authorCode.rawValue, -1, nil)
+        let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+        sqlite3_bind_text(statement, 2, authorCode.rawValue, -1, SQLITE_TRANSIENT)
 
         if sqlite3_step(statement) == SQLITE_ROW {
             let id = Int(sqlite3_column_int(statement, 0))

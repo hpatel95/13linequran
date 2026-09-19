@@ -62,11 +62,8 @@ public struct AyahActionSheetView: View {
                     Divider()
                         .overlay(AppColors.borderSepia)
 
-                    // 5 Native Action Buttons (Apple HIG 44pt Touch Targets)
+                    // Action Buttons (Bookmark, Copy, Share)
                     actionButtonsSection
-
-                    // Memorization Loop Selector
-                    repeatLoopSection
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
@@ -141,31 +138,18 @@ public struct AyahActionSheetView: View {
     // MARK: - Translation Display
     private var translationSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            // Author Selector Menu
             HStack {
-                Menu {
-                    Button("Saheeh International (English)") {
-                        onSelectAuthor(.saheeh)
-                    }
-                    Button("Dr. Hilali & Dr. Muhsin Khan (English)") {
-                        onSelectAuthor(.hilaliKhan)
-                    }
-                    Button("Dr. Muhammad Hamidullah (Français)") {
-                        onSelectAuthor(.hamidullah)
-                    }
-                } label: {
-                    HStack(spacing: 6) {
+                if let authorName = translation?.authorCode.displayName {
+                    HStack(spacing: 5) {
                         Image(systemName: "character.book.closed.fill")
-                            .font(.system(size: 12))
-                        Text(translation?.authorCode.displayName ?? "Translation")
-                            .font(.system(size: 12, weight: .semibold))
-                        Image(systemName: "chevron.up.chevron.down")
-                            .font(.system(size: 10))
+                            .font(.system(size: 11))
+                        Text(authorName)
+                            .font(.system(size: 11, weight: .semibold))
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(AppColors.surfacePapyrus)
                     .foregroundStyle(AppColors.saddleAmber)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(AppColors.surfacePapyrus)
                     .clipShape(Capsule())
                 }
 
@@ -180,29 +164,24 @@ public struct AyahActionSheetView: View {
             }
 
             // Translation Text
-            if let text = translation?.text {
+            if let text = translation?.text, !text.isEmpty {
                 Text(text)
                     .font(AppTypography.englishTranslation)
                     .foregroundStyle(AppColors.inkUmber)
                     .lineSpacing(5)
+            } else {
+                Text("Loading translation...")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.sepiaMuted)
+                    .padding(.vertical, 4)
             }
         }
     }
 
-    // MARK: - Action Buttons (5 Pillars)
+    // MARK: - Action Buttons (Bookmark, Copy, Share)
     private var actionButtonsSection: some View {
         HStack(spacing: 12) {
-            // 1. Play Button
-            actionButton(
-                title: "Play",
-                systemImage: "play.circle.fill",
-                action: {
-                    triggerHaptic()
-                    onPlay()
-                }
-            )
-
-            // 2. Bookmark Button
+            // 1. Bookmark Button
             actionButton(
                 title: isBookmarked ? "Saved" : "Bookmark",
                 systemImage: isBookmarked ? "bookmark.fill" : "bookmark",
@@ -213,7 +192,7 @@ public struct AyahActionSheetView: View {
                 }
             )
 
-            // 3. Copy Button
+            // 2. Copy Button
             actionButton(
                 title: "Copy",
                 systemImage: "doc.on.doc",
@@ -222,7 +201,7 @@ public struct AyahActionSheetView: View {
                 }
             )
 
-            // 4. Share Link
+            // 3. Share Link
             ShareLink(
                 item: "\(ayah.textIndopak)\n\n\(translation?.text ?? "")\n— [Surah \(surah?.englishName ?? "") \(ayah.verseKey)]"
             ) {
@@ -239,41 +218,6 @@ public struct AyahActionSheetView: View {
             }
             .buttonStyle(SpringTouchDownStyle())
         }
-    }
-
-    // MARK: - Memorization Repeat Section
-    private var repeatLoopSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Image(systemName: "repeat")
-                    .font(.system(size: 12))
-                    .foregroundStyle(AppColors.saddleAmber)
-                Text("Memorization (Hifdh) Repeat Loop")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(AppColors.sepiaMuted)
-                Spacer()
-            }
-
-            HStack(spacing: 8) {
-                ForEach([1, 3, 5, 10], id: \.self) { count in
-                    Button(action: {
-                        triggerHaptic()
-                        withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
-                            repeatCount = count
-                        }
-                    }) {
-                        Text("\(count)×")
-                            .font(.system(size: 13, weight: .bold))
-                            .frame(maxWidth: .infinity, minHeight: 44) // 44pt Apple HIG compliance
-                            .background(repeatCount == count ? AppColors.saddleAmber : AppColors.surfacePapyrus)
-                            .foregroundStyle(repeatCount == count ? Color.white : AppColors.inkUmber)
-                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    }
-                    .buttonStyle(SpringTouchDownStyle())
-                }
-            }
-        }
-        .padding(.vertical, 4)
     }
 
     // MARK: - Action Button Builder

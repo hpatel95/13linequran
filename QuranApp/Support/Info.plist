@@ -26,6 +26,10 @@
     <array>
         <string>audio</string>
     </array>
+    <key>UIAppFonts</key>
+    <array>
+        <string>IndoPak-Nastaleeq.ttf</string>
+    </array>
     <key>UILaunchScreen</key>
     <dict/>
     <key>UIRequiredDeviceCapabilities</key>

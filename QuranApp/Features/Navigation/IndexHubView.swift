@@ -30,18 +30,13 @@ public struct IndexHubView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 // MARK: - Top Header & Controls
-                VStack(spacing: 10) {
+                VStack(spacing: 12) {
                     // Header Title Bar
                     headerTitleBar
 
-                    // Recessed Search Pill
-                    searchBar
-
                     // 3-Pill Segmented Control (Surahs / Juz / Pages)
-                    if viewModel.searchText.isEmpty {
-                        segmentedControl
-                        metadataBar
-                    }
+                    segmentedControl
+                    metadataBar
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
@@ -54,18 +49,14 @@ public struct IndexHubView: View {
                 ZStack {
                     AppColors.canvasVellum.ignoresSafeArea()
 
-                    if !viewModel.searchText.isEmpty {
-                        searchContent
-                    } else {
-                        switch viewModel.selectedTab {
-                        case .surahs:
-                            surahContent
-                        case .juz:
-                            juzContent
-                        case .pages:
-                            PageJumpView(juzs: viewModel.juzs) { targetPage in
-                                onSelectPage(targetPage)
-                            }
+                    switch viewModel.selectedTab {
+                    case .surahs:
+                        surahContent
+                    case .juz:
+                        juzContent
+                    case .pages:
+                        PageJumpView(juzs: viewModel.juzs) { targetPage in
+                            onSelectPage(targetPage)
                         }
                     }
                 }
@@ -81,9 +72,6 @@ public struct IndexHubView: View {
     // MARK: - Header Title Bar
     private var headerTitleBar: some View {
         HStack {
-            // Left ornamental space (for centering)
-            Color.clear.frame(width: 44, height: 44)
-
             Spacer()
 
             // Center Title
@@ -106,64 +94,8 @@ public struct IndexHubView: View {
             }
 
             Spacer()
-
-            // Right: Sort Menu Button (44x44pt)
-            Menu {
-                Picker("Sort Order", selection: $viewModel.sortOrder) {
-                    ForEach(IndexViewModel.SortOrder.allCases, id: \.self) { order in
-                        Text(order.rawValue).tag(order)
-                    }
-                }
-            } label: {
-                Image(systemName: "line.3.horizontal.decrease.circle")
-                    .font(.system(size: 20))
-                    .foregroundStyle(AppColors.saddleAmber)
-                    .frame(minWidth: 44, minHeight: 44)
-            }
-            .accessibilityLabel("Sort options")
         }
         .frame(height: 44)
-    }
-
-    // MARK: - Search Bar
-    private var searchBar: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 15))
-                .foregroundStyle(AppColors.sepiaMuted)
-
-            TextField("Search surah, meaning, or verse...", text: Binding(
-                get: { viewModel.searchText },
-                set: { viewModel.updateSearch($0) }
-            ))
-            .font(AppTypography.body)
-            .foregroundStyle(AppColors.inkUmber)
-            .autocorrectionDisabled()
-
-            if !viewModel.searchText.isEmpty {
-                Button(action: { viewModel.clearSearch() }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 16))
-                        .foregroundStyle(AppColors.sepiaMuted)
-                        .frame(minWidth: 44, minHeight: 44)
-                }
-                .accessibilityLabel("Clear search")
-            } else {
-                Text("13-line")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(AppColors.sepiaMuted)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(AppColors.paperAged)
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
-                    .overlay(RoundedRectangle(cornerRadius: 4).stroke(AppColors.borderSepia, lineWidth: 0.5))
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 4)
-        .background(AppColors.surfacePapyrus.opacity(0.9))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppColors.borderSepia, lineWidth: 1))
     }
 
     // MARK: - Segmented Control (Pill Switcher)
@@ -231,7 +163,7 @@ public struct IndexHubView: View {
 
             Spacer()
 
-            Text("Sort: \(viewModel.sortOrder.rawValue)")
+            Text("CANONICAL ORDER")
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(AppColors.saddleAmber)
         }
