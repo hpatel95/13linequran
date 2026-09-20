@@ -211,7 +211,9 @@ final class MushafCanvasView: UIView, UIGestureRecognizerDelegate {
         onSelectAyah?(word)
     }
 
-    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+    // UIView already implements this UIGestureRecognizerDelegate method, so the
+    // refinement must be declared as an override.
+    override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         guard gestureRecognizer === holdRecognizer else { return true }
         var ancestor = superview
         while let view = ancestor {

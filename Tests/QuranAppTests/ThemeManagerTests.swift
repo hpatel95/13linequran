@@ -13,14 +13,16 @@ import SwiftUI
 @MainActor
 final class ThemeManagerTests: XCTestCase {
 
-    override func setUp() {
-        super.setUp()
+    // Async overrides are used so the main-actor-isolated class does not attempt
+    // to override a nonisolated synchronous XCTestCase hook.
+    override func setUp() async throws {
+        try await super.setUp()
         UserDefaults.standard.removeObject(forKey: "selectedTheme")
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         UserDefaults.standard.removeObject(forKey: "selectedTheme")
-        super.tearDown()
+        try await super.tearDown()
     }
 
     func testThemeSwitchingAndPersistence() {
