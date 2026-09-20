@@ -322,7 +322,7 @@ public final class MushafReaderViewModel {
     }
 
     public func playAyah(_ ayah: Ayah) {
-        audioService.play(surah: ayah.surahId, ayah: ayah.verseNumber)
+        audioService.play(surahId: ayah.surahId, verseNumber: ayah.verseNumber, surahName: currentSurahName)
         playingVerseKeyObj = VerseKey(surah: ayah.surahId, ayah: ayah.verseNumber)
         isTranslationSheetPresented = false
     }
@@ -495,7 +495,7 @@ public final class MushafReaderViewModel {
             guard idx >= 1 && idx <= pages.count else { return nil }
             return pages[idx - 1]
         }
-        MushafImageLoader.shared.prefetch(pages: neighborSummaries)
+        await MushafImageLoader.shared.prefetch(pages: neighborSummaries)
         #endif
 
         // 2. Load ayahs and lines for text mode

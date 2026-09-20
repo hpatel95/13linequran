@@ -85,7 +85,7 @@ public final class LegacyMushafAdapter: MushafEditionRepositoryProtocol, @unchec
             imageSha256: nil
         )
 
-        let verses: [PageVerseMembership] = ayahs.enumerated().compactMap { order, ayah in
+        let verses: [PageVerseMembership] = ayahs.enumerated().compactMap { (order, ayah) -> PageVerseMembership? in
             guard let key = VerseKey(surah: ayah.surahId, ayah: ayah.verseNumber) else { return nil }
             return PageVerseMembership(
                 verseKey: key,
@@ -104,7 +104,7 @@ public final class LegacyMushafAdapter: MushafEditionRepositoryProtocol, @unchec
 
     public func fetchLocations(editionId: String, verse: VerseKey) async throws -> [ReaderLocation] {
         guard editionId == defaultEditionId else { return [] }
-        guard let ayah = try await quranService.fetchAyah(surahId: verse.surah, verseNumber: verse.ayah) else {
+        guard let ayah = try await quranService.fetchAyah(surah: verse.surah, verse: verse.ayah) else {
             return []
         }
         let loc = ReaderLocation(
@@ -137,18 +137,19 @@ public final class LegacyMushafAdapter: MushafEditionRepositoryProtocol, @unchec
             )
         case .juz:
             guard (1...30).contains(number) else { return nil }
-            let juzSurahs = try await quranService.fetchSurahs(forJuz: number)
-            let startPage = juzSurahs.first?.startPage ?? 1
-            return ReaderLocation(
-                editionId: defaultEditionId,
-                pageId: String(format: "p%04d", startPage),
-                navigationIndex: startPage,
-                quranOrdinal: startPage,
-                surahId: juzSurahs.first?.id,
-                juzNumber: number,
-                focusedVerse: nil,
-                label: "\(startPage)"
-            )
+            if let juz = try await quranService.fetchJuz(number: number) {
+                return ReaderLocation(
+                    editionId: defaultEditionId,
+                    pageId: String(format: "p%04d", juz.startPage),
+                    navigationIndex: juz.startPage,
+                    quranOrdinal: juz.startPage,
+                    surahId: juz.startSurahId,
+                    juzNumber: number,
+                    focusedVerse: VerseKey(surah: juz.startSurahId, ayah: juz.startVerseNumber),
+                    label: "\(juz.startPage)"
+                )
+            }
+            return nil
         case .rubElHizb, .manzil:
             return nil
         }

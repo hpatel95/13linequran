@@ -38,6 +38,7 @@ public enum AppTypography {
     // MARK: - Compatibility Aliases & Semantic Helpers
     public static let headline = headlineSmall
     public static let body = bodyMedium
+    public static let subheadline = bodyMedium
     public static let surahHeader = arabicCalligraphy(size: 20, weight: .bold)
     public static let arabic13Line = arabicCalligraphy(size: 22, weight: .regular)
     public static func arabic13Line(size: CGFloat) -> Font {

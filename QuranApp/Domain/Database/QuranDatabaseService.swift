@@ -314,6 +314,27 @@ public actor QuranDatabaseService: QuranRepositoryProtocol {
         return ayahs
     }
 
+    public func fetchAyahs(forPage pageNumber: Int) async throws -> [Ayah] {
+        let sql = """
+        SELECT id, surah_id, verse_number, page_number, juz_number, hizb_quarter, sajdah, text_indopak, text_clean
+        FROM ayahs
+        WHERE page_number = ?
+        ORDER BY id ASC;
+        """
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+            throw DatabaseError.statementPreparationFailed(lastErrorMessage())
+        }
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_int(statement, 1, Int32(pageNumber))
+
+        var ayahs: [Ayah] = []
+        while sqlite3_step(statement) == SQLITE_ROW {
+            ayahs.append(parseAyah(from: statement))
+        }
+        return ayahs
+    }
+
     public func fetchAyah(surah: Int, verse: Int) async throws -> Ayah? {
         let sql = """
         SELECT id, surah_id, verse_number, page_number, juz_number, hizb_quarter, sajdah, text_indopak, text_clean

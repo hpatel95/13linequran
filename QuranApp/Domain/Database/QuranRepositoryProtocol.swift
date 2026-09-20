@@ -29,6 +29,9 @@ public protocol QuranRepositoryProtocol: Sendable {
     /// Fetches all verses belonging to a specific Surah
     func fetchAyahs(forSurah surahId: Int) async throws -> [Ayah]
     
+    /// Fetches all verses belonging to a specific 13-line page
+    func fetchAyahs(forPage pageNumber: Int) async throws -> [Ayah]
+    
     /// Fetches a specific verse by Surah and verse number
     func fetchAyah(surah: Int, verse: Int) async throws -> Ayah?
     
