@@ -254,12 +254,25 @@ final class AuthenticMushafCanvasUIView: UIView, UIGestureRecognizerDelegate {
 
             guard !unionRect.isNull else { continue }
 
-            let el = UIAccessibilityElement(accessibilityContainer: self)
+            let el = MushafFacsimileAccessibilityElement(accessibilityContainer: self)
+            el.verseKey = key
             el.accessibilityIdentifier = "ayah-\(key.surah):\(key.ayah)"
             el.accessibilityLabel = "Surah \(key.surah), Ayah \(key.ayah)"
             el.accessibilityHint = "Opens verse options and translation"
             el.accessibilityTraits = [.button]
             el.accessibilityFrameInContainerSpace = unionRect
+            el.onActivate = { [weak self] in
+                guard let self = self else { return }
+                self.haptic.prepare()
+                self.haptic.selectionChanged()
+                self.onSelectAyah?(key)
+            }
+            el.accessibilityCustomActions = [
+                UIAccessibilityCustomAction(name: "Show or hide reading controls") { [weak self] _ in
+                    self?.onToggleChrome?()
+                    return self != nil
+                }
+            ]
             elements.append(el)
         }
 
@@ -269,31 +282,21 @@ final class AuthenticMushafCanvasUIView: UIView, UIGestureRecognizerDelegate {
     @objc private func handleHold(_ recognizer: UILongPressGestureRecognizer) {
         guard recognizer.state == .began else { return }
         let location = recognizer.location(in: self)
-        handleHit(at: location)
+        let geo = currentGeometry()
+        guard geo.displayedImageFrame.contains(location),
+              let regions = content?.regions,
+              let hit = geo.hitTest(containerPoint: location, regions: regions),
+              let key = hit.verseKey else {
+            return
+        }
+        haptic.prepare()
+        haptic.selectionChanged()
+        onSelectAyah?(key)
     }
 
     @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
         guard recognizer.state == .ended else { return }
-        let location = recognizer.location(in: self)
-        handleHit(at: location)
-    }
-
-    private func handleHit(at location: CGPoint) {
-        let geo = currentGeometry()
-        guard geo.displayedImageFrame.contains(location) else {
-            onToggleChrome?()
-            return
-        }
-
-        if let regions = content?.regions,
-           let hit = geo.hitTest(containerPoint: location, regions: regions),
-           let key = hit.verseKey {
-            haptic.prepare()
-            haptic.selectionChanged()
-            onSelectAyah?(key)
-        } else {
-            onToggleChrome?()
-        }
+        onToggleChrome?()
     }
 
     override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
@@ -313,6 +316,17 @@ final class AuthenticMushafCanvasUIView: UIView, UIGestureRecognizerDelegate {
             haptic.prepare()
         }
         return true
+    }
+}
+
+@MainActor
+private final class MushafFacsimileAccessibilityElement: UIAccessibilityElement {
+    var verseKey: VerseKey?
+    var onActivate: (() -> Void)?
+
+    override func accessibilityActivate() -> Bool {
+        onActivate?()
+        return onActivate != nil
     }
 }
 #endif
