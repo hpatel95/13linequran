@@ -103,25 +103,33 @@ final class UserDatabaseTests: XCTestCase {
             note: nil
         )
 
-        XCTAssertTrue(try await userDatabase.isAyahBookmarked(ayahId: 1))
+        let isBookmarked = try await userDatabase.isAyahBookmarked(ayahId: 1)
+        XCTAssertTrue(isBookmarked)
 
         try await userDatabase.removeAyahBookmark(ayahId: 1)
-        XCTAssertFalse(try await userDatabase.isAyahBookmarked(ayahId: 1))
-        XCTAssertTrue(try await userDatabase.fetchBookmarks().isEmpty)
+        let isStillBookmarked = try await userDatabase.isAyahBookmarked(ayahId: 1)
+        XCTAssertFalse(isStillBookmarked)
+
+        let bookmarks = try await userDatabase.fetchBookmarks()
+        XCTAssertTrue(bookmarks.isEmpty)
     }
 
     func testLastReadPagePersistence() async throws {
-        XCTAssertEqual(try await userDatabase.getLastReadPage(), 1)
+        let initialPage = try await userDatabase.getLastReadPage()
+        XCTAssertEqual(initialPage, 1)
 
         try await userDatabase.saveLastReadPage(55)
-        XCTAssertEqual(try await userDatabase.getLastReadPage(), 55)
+        let page55 = try await userDatabase.getLastReadPage()
+        XCTAssertEqual(page55, 55)
 
         try await userDatabase.saveLastReadPage(849)
-        XCTAssertEqual(try await userDatabase.getLastReadPage(), 849)
+        let page849 = try await userDatabase.getLastReadPage()
+        XCTAssertEqual(page849, 849)
     }
 
     func testAppPreferences() async throws {
-        XCTAssertNil(try await userDatabase.getPreference(key: "preferred_reciter"))
+        let initialPref = try await userDatabase.getPreference(key: "preferred_reciter")
+        XCTAssertNil(initialPref)
 
         try await userDatabase.setPreference(key: "preferred_reciter", value: "Khalifa Al Tunaiji")
         let reciter = try await userDatabase.getPreference(key: "preferred_reciter")

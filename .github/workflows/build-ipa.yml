@@ -152,8 +152,12 @@ jobs:
         run: |
           set -euo pipefail
           APP_PATH="$(find build/Verify/Build/Products -maxdepth 2 -name '13 Line Quran.app' | head -n 1)"
-          if [ -z "$APP_PATH" ]; then
-            echo "Built application not found; skipping screenshots."
+          if [ -z "$APP_PATH" ] || [ ! -f "$APP_PATH/Info.plist" ]; then
+            echo "Built application or Info.plist not found; skipping screenshots."
+            exit 0
+          fi
+          if ! /usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$APP_PATH/Info.plist" >/dev/null 2>&1; then
+            echo "Info.plist does not contain CFBundleVersion; skipping screenshots."
             exit 0
           fi
           echo "App: $APP_PATH"
