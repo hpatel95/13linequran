@@ -2,6 +2,15 @@
 
 This document tracks all actionable tasks across the lifecycle of the 13-Line Quran application. Items are marked with status checkboxes (`[ ]` for pending, `[x]` for complete).
 
+## Active correction: reader typography and Ayah selection
+
+The historical completed items below are **not evidence that the current renderer passed device acceptance**. Physical tests exposed unjustified text, missing row rules, and whole-line selection. The approved replacement and its current verification status are tracked in [READER_RENDERER_PROGRESS.md](READER_RENDERER_PROGRESS.md).
+
+- [x] Replace opaque SwiftUI line layout with shared Core Text drawing/hit-test geometry (awaiting CI + device confirmation).
+- [x] Add a precise thirteen-row lithograph grid and per-Ayah fragment highlights.
+- [ ] Verify through local data QA, GitHub Actions native tests/screenshots, and Sideloadly device testing.
+
+
 ---
 
 ## 1. Legal, Licensing & Scholarly Governance
@@ -71,7 +80,7 @@ This document tracks all actionable tasks across the lifecycle of the 13-Line Qu
 - [x] **Paging Viewport**:
   - [x] Build RTL horizontal paging container (`TabView` in `MushafReaderView.swift`).
   - [x] Build windowed memory cache (keeping only pages $N-1, N, N+1$ loaded in `MushafReaderViewModel.swift`).
-  - [x] Build 13-line layout engine (`MushafLineView.swift` & `MushafPageView.swift`).
+  - [x] Build 13-line layout engine (`MushafTextLayoutEngine` + `MushafTextCanvas`: one shaped stream per physical row, shared drawing/hit-test geometry).
 - [ ] **Zoom & Pan**:
   - [ ] Implement pinch-to-zoom (up to 2.5x).
   - [ ] Implement double-tap to reset zoom.
@@ -85,11 +94,14 @@ This document tracks all actionable tasks across the lifecycle of the 13-Line Qu
 
 ## 6. Interactive Ayah Highlighting & Selection (Phase 4)
 - [x] **Word & Line Ayah Clustering**: Each line parses words mapped directly to canonical `(surah, ayah)` keys.
-- [x] **Highlight Overlay**: Render semi-transparent golden rounded glaze (`AppColors.ayahHighlightGlaze` and `AppColors.ayahHighlightBorder`) over active ayah words with fluid spring animation (`.spring(response: 0.28, dampingFraction: 0.88)`).
-- [x] **Multi-Line Handling**: Verified that ayahs spanning multiple lines (e.g. Al-Fatihah 1:7 across lines 6, 7, and 8) highlight all segments simultaneously.
+- [x] **Highlight Overlay**: Semi-transparent golden glaze drawn from the final justified glyph geometry, per Ayah fragment, animated with `.spring(response: 0.28, dampingFraction: 0.88)` (`AppColors.ayahHighlightGlaze` / `AppColors.ayahHighlightBorder`).
+- [x] **Multi-Line Handling**: Verified that ayahs spanning multiple lines (e.g. Al-Fatihah 1:7 across lines 6, 7, and 8) highlight all of their own segments simultaneously without leaking into neighbouring ayahs on a shared row.
 - [x] **Touch Gestures & Haptics**:
-  - [x] Single tap: Selects ayah, triggers haptic feedback (`UISelectionFeedbackGenerator().selectionChanged()`).
-  - [x] Presents `AyahActionSheetView` with `.presentationDetents([.fraction(0.44), .medium, .large])`.
+  - [x] Single tap anywhere on the page: toggles reading chrome (navigation, banners and sheets remain SwiftUI).
+  - [x] Long press (0.4 s) on text: selects **the touched Ayah** and presents `AyahActionSheetView`; haptic fires on recognition, before any database work.
+  - [x] Horizontal movement lets native RTL paging win; there is no competing drag gesture.
+  - [x] Blank source rows and page margins never resolve to the first Ayah of a line.
+  - [x] `AyahActionSheetView` presented with `.presentationDetents([.fraction(0.44), .medium, .large])`.
 - [x] **Ayah Action Sheet** (`AyahActionSheetView.swift`):
   - [x] Display Surah name, Ayah number, page and juz badges.
   - [x] Display authentic IndoPak calligraphy text.

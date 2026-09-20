@@ -2,90 +2,52 @@
 //  MushafReaderView.swift
 //  QuranApp
 //
-//  Main reading canvas implementing horizontal paging, auto-hiding chrome,
-//  and bottom translation inspection sheet.
+//  Native RTL paging and SwiftUI chrome/sheets around the fixed-page renderer.
 //
 
 import SwiftUI
 
+@MainActor
 public struct MushafReaderView: View {
     @Bindable public var viewModel: MushafReaderViewModel
+    public let palette: ThemePalette
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    public init(viewModel: MushafReaderViewModel) {
+    public init(viewModel: MushafReaderViewModel, palette: ThemePalette = AppColors.palette(for: .sepia)) {
         self.viewModel = viewModel
+        self.palette = palette
     }
 
     public var body: some View {
         ZStack {
-            // Chassis background
-            AppColors.canvasVellum
-                .ignoresSafeArea()
-
-            // Horizontal Right-to-Left Paging Canvas
+            palette.canvasVellum.ignoresSafeArea()
             TabView(selection: $viewModel.currentPage) {
-                ForEach(1...849, id: \.self) { pageNum in
-                    let surah = viewModel.surahForPage(pageNum)
-                    let juz = viewModel.juzForPage(pageNum)
-
-                    MushafPageView(
-                        pageNumber: pageNum,
-                        lines: viewModel.pageLinesCache[pageNum] ?? [],
-                        surahName: surah?.englishName ?? "",
-                        surahArabicName: surah?.arabicName ?? "",
-                        juzNumber: juz?.id ?? 1,
-                        juzArabicName: juz?.nameArabic ?? "",
-                        revelationType: surah?.revelationType.rawValue,
-                        totalVerses: surah?.totalVerses,
-                        selectedVerseKey: viewModel.selectedVerseKey,
-                        onSelectAyah: { surahId, ayahNumber in
-                            Task { await viewModel.selectAyah(surahId: surahId, verseNumber: ayahNumber) }
+                ForEach(1...849, id: \.self) { page in
+                    Group {
+                        if abs(page - viewModel.currentPage) <= 1 {
+                            pageView(page)
+                        } else {
+                            Color.clear
                         }
-                    )
-                    .tag(pageNum)
-                    .padding(.top, viewModel.isChromeVisible ? 60 : 4)
-                    .padding(.bottom, viewModel.isChromeVisible ? 16 : 4)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        viewModel.toggleChrome()
                     }
+                    .tag(page)
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
-            .environment(\.layoutDirection, .rightToLeft) // Right-to-left Quranic paging
-
-            // Top Navigation Bar Chrome
-            if viewModel.isChromeVisible {
-                VStack {
+            .environment(\.layoutDirection, .rightToLeft)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                if viewModel.isChromeVisible {
                     topChromeBar
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                    Spacer()
+                        .padding(.vertical, 4)
+                        .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
                 }
             }
         }
-        .task {
-            await viewModel.onAppear()
-        }
+        .task { await viewModel.onAppear() }
         .sheet(isPresented: $viewModel.isTranslationSheetPresented) {
-            if let ayah = viewModel.selectedAyah {
-                let surah = viewModel.surahs.first(where: { $0.id == ayah.surahId })
-                AyahActionSheetView(
-                    ayah: ayah,
-                    surah: surah,
-                    translation: viewModel.activeAyahTranslation,
-                    isBookmarked: viewModel.bookmarks.contains(ayah.id),
-                    onPlay: {
-                        viewModel.isTranslationSheetPresented = false
-                    },
-                    onBookmark: {
-                        viewModel.toggleBookmark(ayahId: ayah.id)
-                    },
-                    onSelectAuthor: { author in
-                        Task { await viewModel.changeTranslationAuthor(author) }
-                    }
-                )
+            ayahSheet
                 .presentationDetents([.fraction(0.44), .medium, .large])
                 .presentationDragIndicator(.visible)
-            }
         }
         .sheet(isPresented: $viewModel.isBookmarksSheetPresented) {
             BookmarksListView(
@@ -93,82 +55,116 @@ public struct MushafReaderView: View {
                 currentPage: viewModel.currentPage,
                 onSelectBookmark: { bookmark in
                     viewModel.jumpToPage(bookmark.pageNumber)
-                    if let sId = bookmark.surahId, let vNum = bookmark.verseNumber {
-                        Task {
-                            await viewModel.selectAyah(surahId: sId, verseNumber: vNum)
-                        }
+                    if let surah = bookmark.surahId, let verse = bookmark.verseNumber {
+                        viewModel.beginSelectingAyah(surahId: surah, verseNumber: verse)
                     }
                 },
-                onDismiss: {
-                    viewModel.isBookmarksSheetPresented = false
-                }
+                onDismiss: { viewModel.isBookmarksSheetPresented = false }
             )
+        }
+        .alert("Reader", isPresented: Binding(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { viewModel.errorMessage = nil }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
         }
     }
 
-    // MARK: - Top Chrome Bar
+    private func pageView(_ page: Int) -> some View {
+        let surah = viewModel.surahForPage(page)
+        let juz = viewModel.juzForPage(page)
+        return MushafPageView(
+            pageNumber: page,
+            lines: viewModel.pageLinesCache[page] ?? [],
+            surahName: surah?.englishName ?? "",
+            surahArabicName: surah?.arabicName ?? "",
+            juzNumber: juz?.id ?? 1,
+            juzArabicName: juz?.nameArabic ?? "",
+            surahMetadata: viewModel.surahsByID,
+            selectedVerseKey: viewModel.selectedVerseKey,
+            palette: palette,
+            onSelectAyah: { surah, verse in
+                viewModel.beginSelectingAyah(surahId: surah, verseNumber: verse)
+            },
+            onToggleChrome: { viewModel.toggleChrome(reduceMotion: reduceMotion) }
+        )
+        .padding(.vertical, 2)
+    }
+
+    @ViewBuilder
+    private var ayahSheet: some View {
+        if let ayah = viewModel.selectedAyah {
+            AyahActionSheetView(
+                ayah: ayah,
+                surah: viewModel.surahsByID[ayah.surahId],
+                translation: viewModel.activeAyahTranslation,
+                isBookmarked: viewModel.bookmarks.contains(ayah.id),
+                onPlay: { viewModel.isTranslationSheetPresented = false },
+                onBookmark: { viewModel.toggleBookmark(ayahId: ayah.id) },
+                onSelectAuthor: { author in
+                    Task { await viewModel.changeTranslationAuthor(author) }
+                }
+            )
+        } else {
+            ProgressView("Loading verse…")
+        }
+    }
+
     private var topChromeBar: some View {
-        HStack {
+        HStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(viewModel.currentSurahName)
                     .font(AppTypography.headline)
-                    .foregroundStyle(AppColors.inkUmber)
+                    .foregroundStyle(palette.inkUmber)
+                    .lineLimit(1)
                 Text("Juz \(viewModel.currentJuzNumber) • Page \(viewModel.currentPage) of 849")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.sepiaMuted)
+                    .font(.caption2)
+                    .foregroundStyle(palette.sepiaMuted)
             }
-
-            Spacer()
-
-            HStack(spacing: 4) {
-                // Bookmarks List Button (44x44pt)
-                Button(action: {
-                    viewModel.isBookmarksSheetPresented = true
-                }) {
-                    Image(systemName: viewModel.isCurrentPageBookmarked ? "bookmark.fill" : "bookmark")
-                        .font(.system(size: 16))
-                        .foregroundStyle(viewModel.isCurrentPageBookmarked ? AppColors.saddleAmber : AppColors.sepiaMuted)
-                        .frame(minWidth: 44, minHeight: 44)
-                        .contentShape(Rectangle())
-                }
-                .accessibilityLabel(viewModel.isCurrentPageBookmarked ? "Bookmarks (Page \(viewModel.currentPage) bookmarked)" : "Bookmarks")
-
-                // Translation Switcher Capsule
-                Menu {
-                    Button("Saheeh International") {
-                        viewModel.selectedTranslationAuthor = .saheeh
-                    }
-                    Button("Dr. Hilali & Dr. Muhsin Khan") {
-                        viewModel.selectedTranslationAuthor = .hilaliKhan
-                    }
-                    Button("Hamidullah (Français)") {
-                        viewModel.selectedTranslationAuthor = .hamidullah
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "character.book.closed.fill")
-                            .font(.system(size: 13))
-                        Text(viewModel.selectedTranslationAuthor == .saheeh ? "Saheeh" : (viewModel.selectedTranslationAuthor == .hilaliKhan ? "Hilali-Khan" : "Français"))
-                            .font(AppTypography.caption)
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 10))
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(AppColors.surfacePapyrus)
-                    .foregroundStyle(AppColors.saddleAmber)
-                    .clipShape(Capsule())
-                    .overlay(Capsule().stroke(AppColors.borderSepia, lineWidth: 1))
-                }
+            Spacer(minLength: 0)
+            Button { viewModel.isBookmarksSheetPresented = true } label: {
+                Image(systemName: viewModel.isCurrentPageBookmarked ? "bookmark.fill" : "bookmark")
+                    .font(.system(size: 16))
+                    .foregroundStyle(viewModel.isCurrentPageBookmarked ? palette.saddleAmber : palette.sepiaMuted)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
             }
+            .accessibilityLabel("Bookmarks")
+            .accessibilityIdentifier("reader-bookmarks")
+
+            Menu {
+                ForEach(Translation.TranslationAuthor.allCases, id: \.self) { author in
+                    Button(author.displayName) { viewModel.selectedTranslationAuthor = author }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "character.book.closed.fill")
+                    Text(translationLabel).font(.caption)
+                    Image(systemName: "chevron.down").font(.caption2)
+                }
+                .padding(.horizontal, 10)
+                .frame(minHeight: 44)
+                .background(palette.surfacePapyrus, in: Capsule())
+                .foregroundStyle(palette.saddleAmber)
+                .overlay(Capsule().stroke(palette.borderSepia, lineWidth: 1))
+            }
+            .accessibilityLabel("Translation: \(viewModel.selectedTranslationAuthor.displayName)")
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(AppColors.paperAged.opacity(0.95))
-                .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 4)
-        )
+        .environment(\.layoutDirection, .leftToRight)
         .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(palette.paperAged.opacity(0.96), in: RoundedRectangle(cornerRadius: 12))
+        .padding(.horizontal, 10)
+        .accessibilityIdentifier("reader-chrome")
+    }
+
+    private var translationLabel: String {
+        switch viewModel.selectedTranslationAuthor {
+        case .saheeh: return "Saheeh"
+        case .hilaliKhan: return "Hilali-Khan"
+        case .hamidullah: return "Français"
+        }
     }
 }

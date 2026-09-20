@@ -22,6 +22,87 @@ function assert(condition, message) {
   }
 }
 
+/**
+ * Minimal TrueType cmap reader. Returns a code-point membership helper (or null)
+ * so the audit can prove that the bundled calligraphy font really maps every
+ * glyph used by the printed page text, including private-use verse ornaments.
+ */
+function readFontCmap(filePath) {
+  try {
+    const buf = fs.readFileSync(filePath);
+    const numTables = buf.readUInt16BE(4);
+    let cmapOffset = 0;
+    for (let i = 0; i < numTables; i++) {
+      const tag = buf.toString('ascii', 12 + i * 16, 16 + i * 16);
+      if (tag === 'cmap') { cmapOffset = buf.readUInt32BE(12 + i * 16 + 8); break; }
+    }
+    if (!cmapOffset) return null;
+
+    const numSubtables = buf.readUInt16BE(cmapOffset + 2);
+    const subtables = [];
+    for (let i = 0; i < numSubtables; i++) {
+      const record = cmapOffset + 4 + i * 8;
+      subtables.push({
+        platformId: buf.readUInt16BE(record),
+        encodingId: buf.readUInt16BE(record + 2),
+        offset: cmapOffset + buf.readUInt32BE(record + 4)
+      });
+    }
+    const rank = s => (s.platformId === 3 && s.encodingId === 10 ? 0 : s.platformId === 3 && s.encodingId === 1 ? 1 : s.platformId === 0 ? 2 : 3);
+    subtables.sort((a, b) => rank(a) - rank(b));
+
+    const codePoints = new Set();
+    const ranges = [];
+    for (const subtable of subtables) {
+      const format = buf.readUInt16BE(subtable.offset);
+      if (format === 4) {
+        const segCount = buf.readUInt16BE(subtable.offset + 6) / 2;
+        const endOffset = subtable.offset + 14;
+        const startOffset = endOffset + segCount * 2 + 2;
+        const deltaOffset = startOffset + segCount * 2;
+        const rangeOffsetOffset = deltaOffset + segCount * 2;
+        for (let segment = 0; segment < segCount; segment++) {
+          const end = buf.readUInt16BE(endOffset + segment * 2);
+          const start = buf.readUInt16BE(startOffset + segment * 2);
+          const delta = buf.readInt16BE(deltaOffset + segment * 2);
+          const rangeOffset = buf.readUInt16BE(rangeOffsetOffset + segment * 2);
+          if (start === 0xffff) continue;
+          for (let code = start; code <= end && code < 0xffff; code++) {
+            let glyphId;
+            if (rangeOffset === 0) {
+              glyphId = (code + delta) & 0xffff;
+            } else {
+              const index = rangeOffsetOffset + segment * 2 + rangeOffset + (code - start) * 2;
+              if (index + 1 >= buf.length) continue;
+              glyphId = buf.readUInt16BE(index);
+              if (glyphId !== 0) glyphId = (glyphId + delta) & 0xffff;
+            }
+            if (glyphId !== 0) codePoints.add(code);
+          }
+        }
+      } else if (format === 12) {
+        const groupCount = buf.readUInt32BE(subtable.offset + 12);
+        for (let group = 0; group < groupCount; group++) {
+          const base = subtable.offset + 16 + group * 12;
+          ranges.push([buf.readUInt32BE(base), buf.readUInt32BE(base + 4)]);
+        }
+      }
+      if (codePoints.size > 0 || ranges.length > 0) break;
+    }
+
+    return {
+      size: codePoints.size + ranges.reduce((total, [start, end]) => total + (end - start + 1), 0),
+      has(codePoint) {
+        if (codePoints.has(codePoint)) return true;
+        return ranges.some(([start, end]) => codePoint >= start && codePoint <= end);
+      }
+    };
+  } catch (error) {
+    console.error('  [WARN] Could not parse the bundled font cmap:', error.message);
+    return null;
+  }
+}
+
 async function runAudit() {
   console.log('====================================================');
   console.log('  13-LINE MUSHAF END-TO-END QA & PRE-RELEASE AUDIT  ');
@@ -156,6 +237,110 @@ async function runAudit() {
     }
     assert(formatAudioUrl(1, 1) === 'https://everyayah.com/data/khalefa_al_tunaiji_64kbps/001001.mp3', 'Fatihah 1:1 audio URL matches Sheikh Khalifa Al Tunaiji CDN pattern');
     assert(formatAudioUrl(114, 6) === 'https://everyayah.com/data/khalefa_al_tunaiji_64kbps/114006.mp3', 'An-Nas 114:6 audio URL matches CDN pattern');
+
+    // --- 8. RENDERER INVARIANTS (word ownership, shared rows, blank slots, font) ---
+    console.log('\n--- 8. Renderer Invariant Audit (word ownership & row geometry) ---');
+    const allLines = await all('SELECT page_number, line_number, line_type, is_centered, text_indopak, words_json FROM mushaf_lines ORDER BY page_number, line_number');
+
+    let ownershipMismatch = 0;
+    let duplicateLocations = 0;
+    let malformedLocations = 0;
+    let emptyTokens = 0;
+    let multiAyahRows = 0;
+    let rowsAcrossTwoSurahs = 0;
+    let nonAyahRowsWithWords = 0;
+    let ayahRowsWithoutTokens = 0;
+    let nonCenteredRowsWithOneLexicalWord = 0;
+    let puaCharacters = 0;
+    let replacementCharacters = 0;
+    let populatedRows = 0;
+    let centeredAyahRows = 0;
+    let bismillahRows = 0;
+    let surahHeaderRows = 0;
+    const distinctLocations = new Set();
+    const usedCodePoints = new Set();
+    const blankRowsByPage = new Map();
+
+    for (const row of allLines) {
+      const words = JSON.parse(row.words_json || '[]');
+      const isAyahRow = row.line_type === 'ayah_text';
+
+      if (!isAyahRow && words.length > 0) nonAyahRowsWithWords++;
+      if (isAyahRow && words.length === 0 && row.text_indopak.length > 0) ayahRowsWithoutTokens++;
+      if (row.line_type === 'bismillah') bismillahRows++;
+      if (row.line_type === 'surah_name') surahHeaderRows++;
+
+      if (isAyahRow && words.length > 0) {
+        populatedRows++;
+        if (row.is_centered === 1) centeredAyahRows++;
+
+        // The renderer maps a touch back to an Ayah through these tokens, so the
+        // tokens must be a lossless, ordered partition of the printed row.
+        if (words.map(w => w.text).join(' ') !== row.text_indopak) ownershipMismatch++;
+
+        const seen = new Set();
+        for (const word of words) {
+          distinctLocations.add(word.location);
+          if (seen.has(word.location)) duplicateLocations++; else seen.add(word.location);
+          if (word.location !== `${word.surah}:${word.ayah}:${word.word}` || !word.surah || !word.ayah || !word.word) malformedLocations++;
+          if (!word.text || word.text.length === 0) emptyTokens++;
+        }
+        if (new Set(words.map(w => w.surah)).size > 1) rowsAcrossTwoSurahs++;
+        if (new Set(words.map(w => `${w.surah}:${w.ayah}`)).size > 1) multiAyahRows++;
+        if (row.is_centered === 0 && words.filter(w => /\p{L}/u.test(w.text)).length < 2) nonCenteredRowsWithOneLexicalWord++;
+      } else if (isAyahRow) {
+        blankRowsByPage.set(row.page_number, (blankRowsByPage.get(row.page_number) || 0) + 1);
+      }
+
+      // Every row the renderer shapes — including the decorative Bismillah — must
+      // be fully covered by the bundled font's cmap.
+      for (const character of row.text_indopak) {
+        const codePoint = character.codePointAt(0);
+        usedCodePoints.add(codePoint);
+        if (codePoint >= 0xe000 && codePoint <= 0xf8ff) puaCharacters++;
+        if (codePoint === 0xfffd) replacementCharacters++;
+      }
+    }
+
+    assert(ownershipMismatch === 0, `Every Ayah row rebuilds its printed text exactly from word tokens (mismatches: ${ownershipMismatch})`);
+    assert(duplicateLocations === 0, `No Ayah row repeats a word location (duplicates: ${duplicateLocations})`);
+    assert(malformedLocations === 0, `Every word location matches surah:ayah:word (malformed: ${malformedLocations})`);
+    assert(emptyTokens === 0, `No word token is empty (empty: ${emptyTokens})`);
+    assert(nonAyahRowsWithWords === 0, 'Surah headers and Bismillah rows never claim selectable words');
+    assert(ayahRowsWithoutTokens === 0, 'No Ayah row has printed text without a token mapping');
+    assert(rowsAcrossTwoSurahs === 0, 'No single row mixes two Surahs, so a Surah banner always separates them');
+    assert(multiAyahRows > 0, `Shared rows exist and must be selectable per Ayah (rows with two Ayahs: ${multiAyahRows})`);
+    assert(nonCenteredRowsWithOneLexicalWord === 0, 'Every justified row has at least two word groups, so expansion always has a valid boundary');
+    assert(replacementCharacters === 0, 'The printed text contains no U+FFFD replacement characters');
+    assert(puaCharacters > 0, `Verse ornaments use font-specific private-use glyphs (PUA characters: ${puaCharacters})`);
+    assert(centeredAyahRows > 0 && bismillahRows > 0 && surahHeaderRows === 114,
+      `Centered rows (${centeredAyahRows}), Bismillah rows (${bismillahRows}) and all 114 Surah headers are preserved`);
+
+    // Page 28 row 10 is the canonical two-Ayah regression case.
+    const mixedRow = allLines.find(r => r.page_number === 28 && r.line_number === 10);
+    const mixedVerses = mixedRow ? [...new Set(JSON.parse(mixedRow.words_json).map(w => `${w.surah}:${w.ayah}`))].sort() : [];
+    assert(mixedRow && mixedVerses.join(',') === '2:143,2:144', `Page 28 row 10 owns both 2:143 and 2:144 (found: ${mixedVerses.join(',') || 'none'})`);
+
+    // Pages 1, 2 and 849 keep five deliberately unprinted slots at the end.
+    for (const page of [1, 2, 849]) {
+      const lines = allLines.filter(r => r.page_number === page);
+      const blankRows = lines.filter(r => r.line_type === 'ayah_text' && JSON.parse(r.words_json || '[]').length === 0).map(r => r.line_number);
+      assert(blankRows.join(',') === '9,10,11,12,13', `Page ${page} preserves exactly its five empty source slots (found: ${blankRows.join(',') || 'none'})`);
+    }
+    assert(distinctLocations.size > 80000, `Word tokens map to ${distinctLocations.size} distinct locations across ${populatedRows} populated rows`);
+
+    // --- 9. FONT COVERAGE AUDIT ---
+    console.log('\n--- 9. Bundled Calligraphy Font Coverage Audit ---');
+    const fontPath = path.join(__dirname, '..', 'QuranApp', 'Resources', 'Fonts', 'IndoPak-Nastaleeq.ttf');
+    assert(fs.existsSync(fontPath), 'IndoPak-Nastaleeq.ttf is bundled with the application');
+    if (fs.existsSync(fontPath)) {
+      const cmap = readFontCmap(fontPath);
+      assert(cmap !== null, 'The bundled font exposes a parsable cmap table');
+      if (cmap) {
+        const missing = [...usedCodePoints].filter(codePoint => !cmap.has(codePoint));
+        assert(missing.length === 0, `All ${usedCodePoints.size} code points used in the printed text are mapped by the bundled font (missing: ${missing.length})`);
+      }
+    }
 
   } finally {
     db.close();

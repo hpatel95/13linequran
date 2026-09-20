@@ -29,6 +29,12 @@ public enum AppTypography {
         return Font.custom("AlQuranIndoPakbyQuranWBW", size: size).weight(weight)
     }
 
+    /// Fixed-size metadata inside the physical Mushaf grid. The page is a
+    /// facsimile layout; scalable/reflowing Arabic remains available in the sheet.
+    public static func mushafMetadata(size: CGFloat) -> Font {
+        Font.custom("AlQuranIndoPakbyQuranWBW", fixedSize: size)
+    }
+
     // MARK: - Compatibility Aliases & Semantic Helpers
     public static let headline = headlineSmall
     public static let body = bodyMedium

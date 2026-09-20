@@ -30,7 +30,9 @@ let package = Package(
         .testTarget(
             name: "QuranAppTests",
             dependencies: ["QuranApp"],
-            path: "Tests"
+            // UI tests are excluded here: they require an iOS Simulator host and
+            // are executed through the generated Xcode scheme instead.
+            path: "Tests/QuranAppTests"
         )
     ]
 )

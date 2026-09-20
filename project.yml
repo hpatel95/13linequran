@@ -32,3 +32,55 @@ targets:
         CODE_SIGNING_REQUIRED: NO
         CODE_SIGNING_ALLOWED: NO
         AD_HOC_CODE_SIGNING_ALLOWED: YES
+
+  # Native geometry / hit-testing verification. Hosted by the app so the bundled
+  # SQLite database and registered Nastaleeq font are available to the tests.
+  QuranAppTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Tests/QuranAppTests
+    dependencies:
+      - target: QuranApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.quran.thirteenline.tests
+        SWIFT_VERSION: "5.9"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/13 Line Quran.app/13 Line Quran"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+
+  # Real-finger gesture verification: long press must resolve to the touched Ayah.
+  QuranAppUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Tests/QuranAppUITests
+    dependencies:
+      - target: QuranApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.quran.thirteenline.uitests
+        SWIFT_VERSION: "5.9"
+        TEST_TARGET_NAME: QuranApp
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+
+schemes:
+  QuranApp:
+    build:
+      targets:
+        QuranApp: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      gatherCoverageData: false
+      targets:
+        - QuranAppTests
+        - QuranAppUITests

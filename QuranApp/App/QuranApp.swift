@@ -19,9 +19,26 @@ struct ThirteenLineQuranApp: App {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
     @State private var showOnboarding: Bool = false
 
+    /// Diagnostic hooks used only by automated UI tests and CI screenshot
+    /// capture. Absent arguments leave production behaviour completely
+    /// unchanged: no default page override and the normal onboarding flow.
+    private static let isAutomatedRun = CommandLine.arguments.contains("-mushafAutomatedRun")
+
+    private static var requestedInitialPage: Int? {
+        guard isAutomatedRun,
+              let index = CommandLine.arguments.firstIndex(of: "-mushafInitialPage"),
+              CommandLine.arguments.indices.contains(index + 1),
+              let page = Int(CommandLine.arguments[index + 1]),
+              (1...849).contains(page) else { return nil }
+        return page
+    }
+
     init() {
         // Register custom IndoPak Nastaleeq font if needed at launch
         registerCustomFonts()
+        if let page = Self.requestedInitialPage {
+            _initialPage = State(initialValue: page)
+        }
     }
 
     var body: some Scene {
@@ -78,9 +95,13 @@ struct ThirteenLineQuranApp: App {
                     self.databaseService = quranService
                     self.userDatabaseService = userDb
                     self.downloadManager = dm
-                    self.initialPage = lastRead
+                    if let requested = Self.requestedInitialPage {
+                        self.initialPage = requested
+                    } else {
+                        self.initialPage = lastRead
+                    }
 
-                    if !hasCompletedOnboarding {
+                    if !hasCompletedOnboarding, !Self.isAutomatedRun {
                         self.showOnboarding = true
                     }
                 } catch {

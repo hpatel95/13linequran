@@ -6,6 +6,8 @@ on:
   workflow_dispatch:
 
 jobs:
+  # The IPA job stays independent so a test-harness problem can never block the
+  # installable artifact.
   build:
     name: Compile Native iOS IPA
     runs-on: macos-14
@@ -65,3 +67,90 @@ jobs:
           name: Quran13Line-ipa
           path: Quran13Line.ipa
           retention-days: 7
+
+  verify:
+    name: Native Layout, Gesture & Screenshot Verification
+    runs-on: macos-14
+    needs: build
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set Xcode Version
+        run: |
+          if [ -d "/Applications/Xcode_16.2.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_16.2.app
+          elif [ -d "/Applications/Xcode_16.1.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_16.1.app
+          elif [ -d "/Applications/Xcode_16.0.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_16.0.app
+          elif [ -d "/Applications/Xcode_16.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_16.app
+          fi
+          xcodebuild -version
+          xcrun simctl list devices available
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode Project
+        run: xcodegen generate
+
+      - name: Run native unit and UI tests
+        run: |
+          set -o pipefail
+          DEVICE_NAME="$(xcrun simctl list devices available | grep -oE 'iPhone 16 Pro Max|iPhone 16 Pro|iPhone 16|iPhone 15 Pro Max|iPhone 15|iPhone SE \(3rd generation\)' | head -n 1)"
+          if [ -z "$DEVICE_NAME" ]; then DEVICE_NAME="iPhone 16"; fi
+          echo "Testing on: $DEVICE_NAME"
+          xcodebuild test \
+            -project QuranApp.xcodeproj \
+            -scheme QuranApp \
+            -destination "platform=iOS Simulator,name=$DEVICE_NAME" \
+            -derivedDataPath build/Verify \
+            -resultBundlePath build/Verify.xcresult \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Capture per-page reader screenshots
+        if: always()
+        run: |
+          set -euo pipefail
+          DEVICE_NAME="$(xcrun simctl list devices available | grep -oE 'iPhone 16 Pro Max|iPhone 16 Pro|iPhone 16|iPhone 15 Pro Max|iPhone 15' | head -n 1)"
+          if [ -z "$DEVICE_NAME" ]; then DEVICE_NAME="iPhone 16"; fi
+          UDID="$(xcrun simctl list devices available -j | python3 -c "
+          import json,sys
+          name='$DEVICE_NAME'
+          data=json.load(sys.stdin)['devices']
+          for runtime,devices in data.items():
+              for d in devices:
+                  if d['name']==name and d.get('isAvailable'):
+                      print(d['udid']); raise SystemExit
+          ")"
+          echo "Simulator UDID: $UDID"
+          APP_PATH="$(find build/Verify/Build/Products -maxdepth 2 -name '13 Line Quran.app' | head -n 1)"
+          echo "App: $APP_PATH"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b || true
+          xcrun simctl install "$UDID" "$APP_PATH"
+          mkdir -p screenshots
+          for PAGE in 1 2 4 28 105 610 613 849; do
+            xcrun simctl terminate "$UDID" com.quran.thirteenline >/dev/null 2>&1 || true
+            sleep 1
+            xcrun simctl launch "$UDID" com.quran.thirteenline -mushafAutomatedRun 1 -mushafInitialPage "$PAGE"
+            sleep 4
+            xcrun simctl io "$UDID" screenshot "screenshots/page-$PAGE.png"
+          done
+          ls -lh screenshots
+
+      - name: Upload verification artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Quran13Line-verification
+          path: |
+            screenshots
+            build/Verify.xcresult
+          if-no-files-found: warn
+          retention-days: 14

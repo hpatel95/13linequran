@@ -39,7 +39,7 @@ public struct RootTabView: View {
     public var body: some View {
         TabView(selection: $selectedTab) {
             // Tab 1: Reader
-            MushafReaderView(viewModel: readerViewModel)
+            MushafReaderView(viewModel: readerViewModel, palette: themeManager.colors)
                 .tabItem {
                     Label("Read", systemImage: "book.pages.fill")
                 }

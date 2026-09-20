@@ -71,6 +71,7 @@ public struct AyahActionSheetView: View {
             }
             .background(AppColors.paperAged.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
+            .accessibilityIdentifier("ayah-sheet")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: { dismiss() }) {
@@ -107,6 +108,15 @@ public struct AyahActionSheetView: View {
                 Text("Page \(ayah.pageNumber) • Juz \(ayah.juzNumber)")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.sepiaMuted)
+
+                // Machine-readable verse key, asserted by automated UI tests to
+                // prove which Ayah the long press actually resolved.
+                Text("Verse key \(ayah.verseKey)")
+                    .font(.system(size: 1))
+                    .foregroundStyle(AppColors.sepiaMuted.opacity(0.001))
+                    .accessibilityIdentifier("ayah-sheet-key")
+                    .frame(height: 1)
+                    .accessibilityLabel("Selected verse \(ayah.verseKey)")
             }
 
             Spacer()
