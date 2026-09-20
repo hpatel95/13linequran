@@ -123,14 +123,13 @@ final class MushafInteractionUITests: XCTestCase {
 
     func testSingleTapTogglesReadingChrome() {
         launchReader(page: 4)
-        let bookmarks = app.buttons["reader-bookmarks"]
-        XCTAssertTrue(bookmarks.waitForExistence(timeout: 25), "Reading chrome should be visible on launch.")
+        let chrome = requireElement("reader-chrome")
 
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45)).tap()
-        waitForDisappearance(bookmarks, timeout: 8)
+        waitForDisappearance(chrome, timeout: 8)
 
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45)).tap()
-        XCTAssertTrue(bookmarks.waitForExistence(timeout: 8), "A second tap must restore the reading chrome.")
+        XCTAssertTrue(chrome.waitForExistence(timeout: 8), "A second tap must restore the reading chrome.")
     }
 
     // MARK: - Page coverage
@@ -149,7 +148,10 @@ final class MushafInteractionUITests: XCTestCase {
     func testFinalPageExposesTheLastAyahAndKeepsBlankSlotsInert() {
         launchReader(page: 849)
         let last = requireElement("ayah-114:6")
-        press(at: CGPoint(x: last.frame.midX, y: last.frame.midY))
+        // Row 8 contains the concluding words of 114:6 centered, while row 7 contains
+        // 114:5 with only the first word of 114:6 at the far left edge.
+        // Aiming near the bottom of last.frame targets row 8 directly.
+        press(at: CGPoint(x: last.frame.midX, y: last.frame.maxY - 12))
         assertSheetShows(verseKey: "114:6")
         dismissSheet()
     }

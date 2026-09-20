@@ -9,6 +9,8 @@
 import Foundation
 import SQLite3
 
+private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+
 public actor QuranDatabaseService: QuranRepositoryProtocol {
     private var db: OpaquePointer?
     private let databasePath: String
@@ -347,7 +349,6 @@ public actor QuranDatabaseService: QuranRepositoryProtocol {
         }
         defer { sqlite3_finalize(statement) }
         sqlite3_bind_int(statement, 1, Int32(ayahId))
-        let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
         sqlite3_bind_text(statement, 2, authorCode.rawValue, -1, SQLITE_TRANSIENT)
 
         if sqlite3_step(statement) == SQLITE_ROW {
@@ -383,7 +384,7 @@ public actor QuranDatabaseService: QuranRepositoryProtocol {
             throw DatabaseError.statementPreparationFailed(lastErrorMessage())
         }
         defer { sqlite3_finalize(statement) }
-        sqlite3_bind_text(statement, 1, ftsQuery, -1, nil)
+        sqlite3_bind_text(statement, 1, ftsQuery, -1, SQLITE_TRANSIENT)
         sqlite3_bind_int(statement, 2, Int32(limit))
 
         var results: [SearchResult] = []

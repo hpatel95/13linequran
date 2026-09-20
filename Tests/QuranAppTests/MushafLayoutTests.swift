@@ -256,7 +256,8 @@ final class MushafLayoutTests: XCTestCase {
         )
 
         // The regression: the old renderer always selected `line.words.first`.
-        XCTAssertEqual(mixed.words.first?.word.verseKey, "2:143")
+        XCTAssertEqual(mixed.source.words.first?.verseKey, "2:143", "In logical RTL order, the line starts with 2:143.")
+        XCTAssertEqual(mixed.words.last?.word.verseKey, "2:143", "The visually rightmost token in RTL belongs to 2:143.")
         let leftmost = mixed.words.min { $0.hitBounds.minX < $1.hitBounds.minX }!
         XCTAssertEqual(leftmost.word.verseKey, "2:144", "The visually leftmost token of the shared row belongs to 2:144.")
         XCTAssertEqual(
