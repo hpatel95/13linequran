@@ -36,7 +36,13 @@ public final class MushafReaderViewModel {
     public var isChromeVisible: Bool = true
     public var isTranslationSheetPresented: Bool = false {
         didSet {
-            if oldValue && !isTranslationSheetPresented { clearSelectionState() }
+            // Dismissing the sheet keeps the golden glaze so the reader can still
+            // see which verse was inspected; the selection is cleared when the page
+            // changes or another Ayah is chosen.
+            if oldValue && !isTranslationSheetPresented {
+                translationTask?.cancel()
+                translationGeneration += 1
+            }
         }
     }
     public var isBookmarksSheetPresented: Bool = false
@@ -188,10 +194,10 @@ public final class MushafReaderViewModel {
 
     public func dismissAyahSelection() {
         if isTranslationSheetPresented {
+            // Setting false cancels the pending translation request.
             isTranslationSheetPresented = false
-        } else {
-            clearSelectionState()
         }
+        clearSelectionState()
     }
 
     private func clearSelectionState() {

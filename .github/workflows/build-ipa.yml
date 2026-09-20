@@ -97,18 +97,52 @@ jobs:
       - name: Generate Xcode Project
         run: xcodegen generate
 
+      - name: Select simulator devices
+        id: devices
+        run: |
+          set -euo pipefail
+          xcrun simctl list devices available -j > "$RUNNER_TEMP/devices.json"
+
+          # Newest iOS runtime first, then the preferred device within that runtime.
+          select_udid() {
+            jq -r --arg prefs "$1" '
+              [ .devices
+                | to_entries[]
+                | select(.key | test("SimRuntime.iOS-"))
+                | { v: (.key | split(".") | last | ltrimstr("iOS-") | split("-") | map(tonumber)),
+                    devices: [ .value[] | select(.isAvailable) ] }
+              ]
+              | sort_by(.v) | reverse
+              | .[] as $rt
+              | ($prefs | split(","))[] as $n
+              | $rt.devices[] | select(.name == $n) | .udid
+            ' "$RUNNER_TEMP/devices.json" | sed -n 1p
+          }
+
+          # Tests run on the tightest geometry available so the thirteen-row grid is
+          # verified against the smallest screen; screenshots also cover a large one.
+          TEST_UDID="$(select_udid "iPhone SE (3rd generation),iPhone 16,iPhone 15,iPhone 16 Pro Max")"
+          SHOT_UDID="$(select_udid "iPhone 16 Pro Max,iPhone 15 Pro Max,iPhone 16 Pro,iPhone 15 Pro,iPhone 16")"
+          if [ -z "$TEST_UDID" ]; then
+            echo "No available iOS Simulator device was found."
+            exit 1
+          fi
+          if [ -z "$SHOT_UDID" ]; then SHOT_UDID="$TEST_UDID"; fi
+          echo "test_udid=$TEST_UDID" >> "$GITHUB_OUTPUT"
+          echo "shot_udid=$SHOT_UDID" >> "$GITHUB_OUTPUT"
+          echo "Test device: $TEST_UDID"
+          echo "Screenshot device: $SHOT_UDID"
+
       - name: Run native unit and UI tests
         run: |
           set -o pipefail
-          DEVICE_NAME="$(xcrun simctl list devices available | grep -oE 'iPhone 16 Pro Max|iPhone 16 Pro|iPhone 16|iPhone 15 Pro Max|iPhone 15|iPhone SE \(3rd generation\)' | head -n 1)"
-          if [ -z "$DEVICE_NAME" ]; then DEVICE_NAME="iPhone 16"; fi
-          echo "Testing on: $DEVICE_NAME"
           xcodebuild test \
             -project QuranApp.xcodeproj \
             -scheme QuranApp \
-            -destination "platform=iOS Simulator,name=$DEVICE_NAME" \
+            -destination "platform=iOS Simulator,id=${{ steps.devices.outputs.test_udid }}" \
             -derivedDataPath build/Verify \
             -resultBundlePath build/Verify.xcresult \
+            -parallel-testing-enabled NO \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
@@ -117,32 +151,30 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          DEVICE_NAME="$(xcrun simctl list devices available | grep -oE 'iPhone 16 Pro Max|iPhone 16 Pro|iPhone 16|iPhone 15 Pro Max|iPhone 15' | head -n 1)"
-          if [ -z "$DEVICE_NAME" ]; then DEVICE_NAME="iPhone 16"; fi
-          UDID="$(xcrun simctl list devices available -j | python3 -c "
-          import json,sys
-          name='$DEVICE_NAME'
-          data=json.load(sys.stdin)['devices']
-          for runtime,devices in data.items():
-              for d in devices:
-                  if d['name']==name and d.get('isAvailable'):
-                      print(d['udid']); raise SystemExit
-          ")"
-          echo "Simulator UDID: $UDID"
           APP_PATH="$(find build/Verify/Build/Products -maxdepth 2 -name '13 Line Quran.app' | head -n 1)"
+          if [ -z "$APP_PATH" ]; then
+            echo "Built application not found; skipping screenshots."
+            exit 0
+          fi
           echo "App: $APP_PATH"
-          xcrun simctl boot "$UDID" || true
-          xcrun simctl bootstatus "$UDID" -b || true
-          xcrun simctl install "$UDID" "$APP_PATH"
           mkdir -p screenshots
-          for PAGE in 1 2 4 28 105 610 613 849; do
-            xcrun simctl terminate "$UDID" com.quran.thirteenline >/dev/null 2>&1 || true
-            sleep 1
-            xcrun simctl launch "$UDID" com.quran.thirteenline -mushafAutomatedRun 1 -mushafInitialPage "$PAGE"
-            sleep 4
-            xcrun simctl io "$UDID" screenshot "screenshots/page-$PAGE.png"
-          done
-          ls -lh screenshots
+          capture() {
+            local udid="$1" label="$2"
+            xcrun simctl boot "$udid" 2>/dev/null || true
+            xcrun simctl bootstatus "$udid" -b >/dev/null 2>&1 || true
+            xcrun simctl install "$udid" "$APP_PATH"
+            mkdir -p "screenshots/$label"
+            for PAGE in 1 2 4 28 105 610 613 849; do
+              xcrun simctl terminate "$udid" com.quran.thirteenline >/dev/null 2>&1 || true
+              sleep 1
+              xcrun simctl launch "$udid" com.quran.thirteenline -mushafAutomatedRun 1 -mushafInitialPage "$PAGE" >/dev/null
+              sleep 4
+              xcrun simctl io "$udid" screenshot "screenshots/$label/page-$PAGE.png"
+            done
+          }
+          capture "${{ steps.devices.outputs.test_udid }}" "compact"
+          capture "${{ steps.devices.outputs.shot_udid }}" "large"
+          ls -lhR screenshots | head -50
 
       - name: Upload verification artifacts
         if: always()

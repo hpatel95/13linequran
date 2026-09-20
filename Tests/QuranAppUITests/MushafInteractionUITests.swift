@@ -44,8 +44,8 @@ final class MushafInteractionUITests: XCTestCase {
     }
 
     private func assertSheetShows(verseKey: String) {
-        XCTAssertTrue(requireElement("ayah-sheet").waitForExistence(timeout: 20), "The Ayah sheet did not open.")
-        let key = requireElement("ayah-sheet-key")
+        // The verse key label is a leaf element, so it is always exposed to XCUI.
+        let key = requireElement("ayah-sheet-key", timeout: 25)
         let description = "\(key.label) \(String(describing: key.value))"
         XCTAssertTrue(
             description.contains(verseKey),
@@ -57,7 +57,15 @@ final class MushafInteractionUITests: XCTestCase {
         let close = app.buttons["Close Ayah sheet"]
         XCTAssertTrue(close.waitForExistence(timeout: 10), "The Ayah sheet has no reachable close control.")
         close.tap()
-        waitForDisappearance(element("ayah-sheet"))
+        waitForDisappearance(element("ayah-sheet-key"))
+    }
+
+    /// Keeps a visual record of the glazed selection inside the CI result bundle.
+    private func attachScreenshot(_ name: String) {
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     private func waitForDisappearance(_ target: XCUIElement, timeout: TimeInterval = 10) {
@@ -83,7 +91,9 @@ final class MushafInteractionUITests: XCTestCase {
         press(at: CGPoint(x: second.frame.minX + 12, y: sharedRowBottom - rowHeight / 2))
 
         assertSheetShows(verseKey: "2:144")
+        attachScreenshot("page28-sheet-2-144")
         dismissSheet()
+        attachScreenshot("page28-glaze-2-144")
     }
 
     func testHoldingTheRightHalfOfASharedRowSelectsTheFirstAyah() {
@@ -96,6 +106,7 @@ final class MushafInteractionUITests: XCTestCase {
 
         assertSheetShows(verseKey: "2:143")
         dismissSheet()
+        attachScreenshot("page28-glaze-2-143")
     }
 
     func testHoldingAMultiRowAyahHighlightsEveryOneOfItsRows() {
