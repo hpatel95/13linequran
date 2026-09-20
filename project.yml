@@ -22,6 +22,9 @@ targets:
     settings:
       base:
         PRODUCT_NAME: "13 Line Quran"
+        # Keep a stable Swift module name independent of the spaced product name,
+        # otherwise Xcode derives `_3_Line_Quran` and `@testable import QuranApp` fails.
+        PRODUCT_MODULE_NAME: QuranApp
         PRODUCT_BUNDLE_IDENTIFIER: com.quran.thirteenline
         INFOPLIST_FILE: QuranApp/Support/Info.plist
         SWIFT_VERSION: "5.9"
