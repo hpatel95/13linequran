@@ -2,8 +2,10 @@
 //  MushafReaderViewModel.swift
 //  QuranApp
 //
-//  Main actor-isolated, @Observable state manager for the 13-line Mushaf reader.
-//  Implements windowed page caching (N-1, N, N+1) and smooth navigation.
+//  Main actor-isolated, @Observable state manager for the authentic 13-line Mushaf reader.
+//  Coordinates authentic facsimile pages, accessible text fallback, windowed image prefetching,
+//  audio recitation follow, and user bookmark persistence.
+//  Thread-safe and strictly compliant with Swift 6 concurrency.
 //
 
 import SwiftUI
@@ -12,49 +14,66 @@ import Observation
 @Observable
 @MainActor
 public final class MushafReaderViewModel {
-    // MARK: - State
-    public var currentPage: Int = 1 {
+    // MARK: - Display Mode
+    public enum ReaderDisplayMode: String, CaseIterable, Sendable {
+        case authenticFacsimile = "Authentic Scan"
+        case accessibleText = "Accessible Text"
+    }
+
+    // MARK: - Active State
+    public var activeEditionId: String = "taj-company-13-847"
+    public var displayMode: ReaderDisplayMode = .authenticFacsimile
+
+    /// 1-based navigation index in the active edition (e.g. 1 ... 848).
+    public var currentPageIndex: Int = 1 {
         didSet {
-            if currentPage != oldValue {
-                dismissAyahSelection()
-                pageLoadTask?.cancel()
-                pageLoadTask = Task { [weak self] in
-                    guard let self else { return }
-                    await self.loadSurroundingPages()
-                }
-                scheduleLastReadAutoSave()
-                Task { await checkCurrentPageBookmarked() }
+            if currentPageIndex != oldValue {
+                onPageIndexChanged(from: oldValue, to: currentPageIndex)
             }
         }
     }
-    
+
+    /// Backward compatibility property: resolves to the 1-based Quran page number (1...847),
+    /// or navigation index if ordinal is unavailable.
+    public var currentPage: Int {
+        get {
+            currentPageSummary?.quranOrdinal ?? currentPageIndex
+        }
+        set {
+            jumpToQuranOrdinal(newValue)
+        }
+    }
+
+    public var pages: [MushafPageSummary] = []
+    public var pageContentCache: [String: MushafPageContent] = [:]
+    public var pageAyahsCache: [Int: [Ayah]] = [:]
+    public var pageLinesCache: [Int: [MushafLine]] = [:]
+
     public var selectedTranslationAuthor: Translation.TranslationAuthor = .saheeh {
         didSet {
             if oldValue != selectedTranslationAuthor { loadSelectedTranslation() }
         }
     }
+
     public var isChromeVisible: Bool = true
     public var isTranslationSheetPresented: Bool = false {
         didSet {
-            // Dismissing the sheet keeps the golden glaze so the reader can still
-            // see which verse was inspected; the selection is cleared when the page
-            // changes or another Ayah is chosen.
             if oldValue && !isTranslationSheetPresented {
                 translationTask?.cancel()
                 translationGeneration += 1
             }
         }
     }
+
     public var isBookmarksSheetPresented: Bool = false
     public var isCurrentPageBookmarked: Bool = false
     public private(set) var activeAyahTranslation: Translation?
     public private(set) var selectedAyah: Ayah?
-    /// Available synchronously on recognition, before either database request.
     public private(set) var selectedVerseKey: String?
+    public private(set) var selectedVerseKeyObj: VerseKey?
+    public private(set) var playingVerseKeyObj: VerseKey?
     public var bookmarks: Set<Int> = []
 
-    // Windowed Cache: [PageNumber: [MushafLine]]
-    public var pageLinesCache: [Int: [MushafLine]] = [:]
     public var surahs: [Surah] = []
     public private(set) var surahsByID: [Int: Surah] = [:]
     public var juzs: [Juz] = []
@@ -64,7 +83,9 @@ public final class MushafReaderViewModel {
     // MARK: - Dependencies
     public let repository: QuranRepositoryProtocol
     public let userDatabase: UserDatabaseServiceProtocol
+    public let editionRepository: any MushafEditionRepositoryProtocol
     public let audioService: AudioPlayerService
+
     @ObservationIgnored private var lastReadSaveTask: Task<Void, Never>?
     @ObservationIgnored private var pageLoadTask: Task<Void, Never>?
     @ObservationIgnored private var selectionTask: Task<Void, Never>?
@@ -72,20 +93,25 @@ public final class MushafReaderViewModel {
     @ObservationIgnored private var pageGeneration = 0
     @ObservationIgnored private var selectionGeneration = 0
     @ObservationIgnored private var translationGeneration = 0
+    private let locationResolver: ReaderLocationResolver
 
     public init(
         repository: QuranRepositoryProtocol,
         userDatabase: UserDatabaseServiceProtocol,
+        editionRepository: (any MushafEditionRepositoryProtocol)? = nil,
         initialPage: Int = 1
     ) {
         self.repository = repository
         self.userDatabase = userDatabase
-        self.currentPage = max(1, min(849, initialPage))
+        let editionRepo: any MushafEditionRepositoryProtocol = editionRepository ?? (try? MushafEditionDatabaseService()) ?? LegacyMushafAdapter(quranService: repository)
+        self.editionRepository = editionRepo
+        self.locationResolver = ReaderLocationResolver(repository: editionRepo)
         self.audioService = AudioPlayerService(repository: repository)
+        self.currentPageIndex = max(1, initialPage)
         setupAudioSync()
     }
 
-
+    // MARK: - Audio Sync
     private func setupAudioSync() {
         audioService.onVerseChanged = { [weak self] surahId, verseNumber in
             Task { @MainActor in
@@ -95,31 +121,74 @@ public final class MushafReaderViewModel {
     }
 
     private func handleAudioVerseChanged(surahId: Int, verseNumber: Int) async {
-        do {
-            if let ayah = try await repository.fetchAyah(surah: surahId, verse: verseNumber) {
-                // Do not replace a verse the user is currently inspecting.
-                guard selectionTask == nil, !isTranslationSheetPresented else { return }
-                if ayah.pageNumber != currentPage {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 1.0)) {
-                        self.currentPage = ayah.pageNumber
+        guard let key = VerseKey(surah: surahId, ayah: verseNumber) else { return }
+        self.playingVerseKeyObj = key
+
+        // Check if verse appears on the current page
+        let currentPageId = currentPageSummary?.id ?? ""
+        let isPresentOnCurrentPage = pageContentCache[currentPageId]?.verses.contains(where: { $0.verseKey == key }) ?? false
+
+        if !isPresentOnCurrentPage {
+            // Find destination page for this verse in the active edition
+            do {
+                let locations = try await editionRepository.fetchLocations(editionId: activeEditionId, verse: key)
+                if let target = locations.first {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
+                        self.currentPageIndex = target.navigationIndex
                     }
                 }
+            } catch {
+                print("Failed to navigate for audio: \(error)")
+            }
+        }
+
+        // Preload Ayah details for quick sheet access
+        if selectedTaskOrSheetIdle {
+            if let ayah = try? await repository.fetchAyah(surah: surahId, verse: verseNumber) {
                 self.selectedAyah = ayah
                 self.selectedVerseKey = ayah.verseKey
+                self.selectedVerseKeyObj = key
             }
-        } catch {
-            print("Failed to sync verse with audio: \(error)")
         }
     }
 
-    // MARK: - Actions
+    private var selectedTaskOrSheetIdle: Bool {
+        selectionTask == nil && !isTranslationSheetPresented
+    }
+
+    // MARK: - Page Index Changed
+    private func onPageIndexChanged(from oldIndex: Int, to newIndex: Int) {
+        dismissAyahSelection()
+        pageLoadTask?.cancel()
+        pageLoadTask = Task { [weak self] in
+            guard let self else { return }
+            await self.loadSurroundingPages()
+        }
+        scheduleLastReadAutoSave()
+        Task { await checkCurrentPageBookmarked() }
+    }
+
+    // MARK: - Lifecycle
     public func onAppear() async {
-        if surahs.isEmpty {
+        if surahs.isEmpty || pages.isEmpty {
             isLoading = true
             do {
-                self.surahs = try await repository.fetchSurahs()
-                self.surahsByID = Dictionary(uniqueKeysWithValues: surahs.map { ($0.id, $0) })
-                self.juzs = (try? await repository.fetchJuzs()) ?? []
+                async let fetchedSurahs = repository.fetchSurahs()
+                async let fetchedJuzs = repository.fetchJuzs()
+                async let fetchedPages = editionRepository.fetchPages(editionId: activeEditionId)
+
+                let (s, j, p) = try await (fetchedSurahs, fetchedJuzs, fetchedPages)
+                self.surahs = s
+                self.surahsByID = Dictionary(uniqueKeysWithValues: s.map { ($0.id, $0) })
+                self.juzs = j
+                self.pages = p
+
+                // Clamp current index within loaded pages
+                if !p.isEmpty {
+                    let clamped = max(1, min(p.count, currentPageIndex))
+                    self.currentPageIndex = clamped
+                }
+
                 await loadSurroundingPages()
                 isLoading = false
             } catch {
@@ -130,23 +199,64 @@ public final class MushafReaderViewModel {
         await refreshBookmarks()
     }
 
-    public func toggleChrome(reduceMotion: Bool = false) {
-        if reduceMotion {
-            isChromeVisible.toggle()
+    // MARK: - Navigation
+    public func jumpToPage(_ index: Int) {
+        let maxPages = pages.isEmpty ? 848 : pages.count
+        let clamped = max(1, min(maxPages, index))
+        self.currentPageIndex = clamped
+    }
+
+    public func jumpToQuranOrdinal(_ ordinal: Int) {
+        if let match = pages.first(where: { $0.quranOrdinal == ordinal }) {
+            self.currentPageIndex = match.navigationIndex
         } else {
-            withAnimation(.spring(response: 0.35, dampingFraction: 1.0)) {
-                isChromeVisible.toggle()
+            jumpToPage(ordinal)
+        }
+    }
+
+    public func jumpToSurah(_ surah: Surah) {
+        Task {
+            do {
+                let loc = try await locationResolver.resolve(
+                    destination: .surah(surahId: surah.id, ayahNumber: 1),
+                    editionId: activeEditionId
+                )
+                self.currentPageIndex = loc.navigationIndex
+            } catch {
+                jumpToQuranOrdinal(surah.startPage)
             }
         }
     }
 
-    public func jumpToPage(_ page: Int) {
-        let clamped = max(1, min(849, page))
-        self.currentPage = clamped
+    public func jumpToJuz(_ juz: Juz) {
+        Task {
+            do {
+                let loc = try await locationResolver.resolve(
+                    destination: .juz(juzNumber: juz.id),
+                    editionId: activeEditionId
+                )
+                self.currentPageIndex = loc.navigationIndex
+            } catch {
+                jumpToQuranOrdinal(juz.startPage)
+            }
+        }
     }
 
-    public func jumpToSurah(_ surah: Surah) {
-        self.jumpToPage(surah.startPage)
+    public func jumpTo(destination: ReaderDestination) async {
+        do {
+            let loc = try await locationResolver.resolve(destination: destination, editionId: activeEditionId)
+            self.currentPageIndex = loc.navigationIndex
+            if let focused = loc.focusedVerse {
+                beginSelectingAyah(surahId: focused.surah, verseNumber: focused.ayah)
+            }
+        } catch {
+            print("Failed to resolve destination: \(error)")
+        }
+    }
+
+    // MARK: - Ayah Selection
+    public func selectAyahKey(_ key: VerseKey) {
+        beginSelectingAyah(surahId: key.surah, verseNumber: key.ayah)
     }
 
     public func beginSelectingAyah(surahId: Int, verseNumber: Int) {
@@ -156,7 +266,10 @@ public final class MushafReaderViewModel {
         translationGeneration += 1
         let generation = selectionGeneration
         let key = "\(surahId):\(verseNumber)"
+        let verseKeyObj = VerseKey(surah: surahId, ayah: verseNumber)
+
         selectedVerseKey = key
+        selectedVerseKeyObj = verseKeyObj
         selectedAyah = nil
         activeAyahTranslation = nil
         errorMessage = nil
@@ -174,8 +287,6 @@ public final class MushafReaderViewModel {
                 self.selectionTask = nil
                 self.isTranslationSheetPresented = true
                 self.loadSelectedTranslation()
-                // Ayah.pageNumber is its first fragment, not necessarily the
-                // touched page. Opening a continuation must never jump backwards.
             } catch {
                 guard let self, !Task.isCancelled, self.selectionGeneration == generation else { return }
                 self.dismissAyahSelection()
@@ -184,8 +295,6 @@ public final class MushafReaderViewModel {
         }
     }
 
-    /// Async convenience for index/bookmark callers; gesture callers use the
-    /// synchronous entry point so the gold glaze does not wait for a task hop.
     public func selectAyah(surahId: Int, verseNumber: Int) async {
         beginSelectingAyah(surahId: surahId, verseNumber: verseNumber)
         let pending = selectionTask
@@ -194,7 +303,6 @@ public final class MushafReaderViewModel {
 
     public func dismissAyahSelection() {
         if isTranslationSheetPresented {
-            // Setting false cancels the pending translation request.
             isTranslationSheetPresented = false
         }
         clearSelectionState()
@@ -208,10 +316,18 @@ public final class MushafReaderViewModel {
         selectionTask = nil
         translationTask = nil
         selectedVerseKey = nil
+        selectedVerseKeyObj = nil
         selectedAyah = nil
         activeAyahTranslation = nil
     }
 
+    public func playAyah(_ ayah: Ayah) {
+        audioService.play(surah: ayah.surahId, ayah: ayah.verseNumber)
+        playingVerseKeyObj = VerseKey(surah: ayah.surahId, ayah: ayah.verseNumber)
+        isTranslationSheetPresented = false
+    }
+
+    // MARK: - Bookmarks
     public func toggleBookmark(ayahId: Int) {
         if bookmarks.contains(ayahId) {
             bookmarks.remove(ayahId)
@@ -223,6 +339,9 @@ public final class MushafReaderViewModel {
             let ayah = selectedAyah
             let trans = activeAyahTranslation?.text ?? ""
             let sName = currentSurahName
+            let pageId = currentPageSummary?.id ?? String(format: "p%04d", currentPage)
+            let editionId = activeEditionId
+
             Task {
                 if let a = ayah, a.id == ayahId {
                     let title = "\(sName) \(a.surahId):\(a.verseNumber)"
@@ -236,6 +355,20 @@ public final class MushafReaderViewModel {
                         translation: trans,
                         note: nil
                     )
+                    // Also save to V2
+                    let bookmarkV2 = ReaderBookmark(
+                        id: 0,
+                        editionId: editionId,
+                        pageId: pageId,
+                        anchorSurahId: a.surahId,
+                        anchorVerseNumber: a.verseNumber,
+                        title: title,
+                        arabicSnippet: a.textClean,
+                        translationSnippet: trans,
+                        note: nil,
+                        legacyPageNumber: a.pageNumber
+                    )
+                    _ = try? await userDatabase.addReaderBookmark(bookmarkV2)
                 }
             }
         }
@@ -247,11 +380,26 @@ public final class MushafReaderViewModel {
         let isBookmarked = isCurrentPageBookmarked
         let sName = currentSurahName
         let jNum = currentJuzNumber
+        let pageId = currentPageSummary?.id ?? String(format: "p%04d", page)
+        let editionId = activeEditionId
 
         Task {
             if isBookmarked {
                 let title = "Page \(page) • \(sName) (Juz \(jNum))"
                 _ = try? await userDatabase.addPageBookmark(pageNumber: page, title: title, note: nil)
+                let bookmarkV2 = ReaderBookmark(
+                    id: 0,
+                    editionId: editionId,
+                    pageId: pageId,
+                    anchorSurahId: nil,
+                    anchorVerseNumber: nil,
+                    title: title,
+                    arabicSnippet: nil,
+                    translationSnippet: nil,
+                    note: nil,
+                    legacyPageNumber: page
+                )
+                _ = try? await userDatabase.addReaderBookmark(bookmarkV2)
             } else {
                 try? await userDatabase.removePageBookmark(pageNumber: page)
             }
@@ -277,14 +425,25 @@ public final class MushafReaderViewModel {
 
     private func scheduleLastReadAutoSave() {
         lastReadSaveTask?.cancel()
+        let currentLoc = ReaderLocation(
+            editionId: activeEditionId,
+            pageId: currentPageSummary?.id ?? String(format: "p%04d", currentPage),
+            navigationIndex: currentPageIndex,
+            quranOrdinal: currentPageSummary?.quranOrdinal,
+            surahId: surahForPage(currentPage)?.id,
+            juzNumber: currentJuzNumber,
+            focusedVerse: nil,
+            label: currentPageSummary?.printedLabel
+        )
         lastReadSaveTask = Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: 2_000_000_000) // 2.0-second dwell time
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
             guard !Task.isCancelled, let self = self else { return }
             try? await self.userDatabase.saveLastReadPage(self.currentPage)
+            try? await self.userDatabase.saveReaderLastLocation(currentLoc)
         }
     }
 
-
+    // MARK: - Translation
     public func changeTranslationAuthor(_ author: Translation.TranslationAuthor) async {
         selectedTranslationAuthor = author
         let pending = translationTask
@@ -315,37 +474,81 @@ public final class MushafReaderViewModel {
     private func loadSurroundingPages() async {
         pageGeneration += 1
         let generation = pageGeneration
-        let center = currentPage
-        let targets = [center, center - 1, center + 1].filter { (1...849).contains($0) }
-        let keepSet = Set(targets)
-        pageLinesCache = pageLinesCache.filter { keepSet.contains($0.key) }
+        let centerIndex = currentPageIndex
+        let targetIndices = [centerIndex, centerIndex - 1, centerIndex + 1].filter {
+            $0 >= 1 && (pages.isEmpty || $0 <= pages.count)
+        }
 
-        await withTaskGroup(of: (Int, [MushafLine]?).self) { group in
-            for page in targets where pageLinesCache[page] == nil {
-                group.addTask { [repository] in
-                    let lines = try? await repository.fetchLines(forPage: page)
-                    return (page, lines)
+        // 1. Load edition page content and trigger image prefetching
+        for idx in targetIndices {
+            guard idx >= 1 && idx <= pages.count else { continue }
+            let summary = pages[idx - 1]
+            if pageContentCache[summary.id] == nil {
+                if let content = try? await editionRepository.fetchPage(editionId: activeEditionId, pageId: summary.id) {
+                    pageContentCache[summary.id] = content
                 }
             }
-            for await (page, lines) in group {
-                guard !Task.isCancelled, generation == pageGeneration, center == currentPage else {
-                    group.cancelAll()
-                    continue
+        }
+
+        #if canImport(UIKit)
+        let neighborSummaries = targetIndices.compactMap { idx -> MushafPageSummary? in
+            guard idx >= 1 && idx <= pages.count else { return nil }
+            return pages[idx - 1]
+        }
+        MushafImageLoader.shared.prefetch(pages: neighborSummaries)
+        #endif
+
+        // 2. Load ayahs and lines for text mode
+        let currentOrdinal = currentPageSummary?.quranOrdinal ?? centerIndex
+        let textTargets = [currentOrdinal, currentOrdinal - 1, currentOrdinal + 1].filter { (1...849).contains($0) }
+
+        for p in textTargets {
+            if pageAyahsCache[p] == nil {
+                if let ayahs = try? await repository.fetchAyahs(forPage: p) {
+                    pageAyahsCache[p] = ayahs
                 }
-                if let lines {
-                    pageLinesCache[page] = lines
-                } else if page == center {
-                    errorMessage = "Page \(page) could not be loaded from the bundled Quran."
+            }
+            if pageLinesCache[p] == nil {
+                if let lines = try? await repository.fetchLines(forPage: p) {
+                    pageLinesCache[p] = lines
                 }
             }
         }
     }
 
+    // MARK: - Display Mode & Chrome
+    public func toggleDisplayMode() {
+        withAnimation(.easeInOut(duration: 0.25)) {
+            displayMode = (displayMode == .authenticFacsimile) ? .accessibleText : .authenticFacsimile
+        }
+    }
+
+    public func toggleChrome(reduceMotion: Bool = false) {
+        if reduceMotion {
+            isChromeVisible.toggle()
+        } else {
+            withAnimation(.spring(response: 0.35, dampingFraction: 1.0)) {
+                isChromeVisible.toggle()
+            }
+        }
+    }
+
     // MARK: - Helpers
+    public var currentPageSummary: MushafPageSummary? {
+        guard currentPageIndex >= 1 && currentPageIndex <= pages.count else { return nil }
+        return pages[currentPageIndex - 1]
+    }
+
+    public func summaryForIndex(_ index: Int) -> MushafPageSummary? {
+        guard index >= 1 && index <= pages.count else { return nil }
+        return pages[index - 1]
+    }
+
     public func surahForPage(_ page: Int) -> Surah? {
-        if let firstLine = pageLinesCache[page]?.first(where: { $0.surahId != nil }),
-           let sId = firstLine.surahId,
-           let surah = surahsByID[sId] {
+        if let summary = currentPageSummary,
+           let content = pageContentCache[summary.id],
+           let firstVerse = content.verses.first?.verseKey,
+           let surah = surahsByID[firstVerse.surah] {
             return surah
         }
         return surahs.last(where: { $0.startPage <= page }) ?? surahs.first

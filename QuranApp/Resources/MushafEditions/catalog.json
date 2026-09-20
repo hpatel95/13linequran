@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "canonicalDatabaseSHA256": "468a57eccd63f8796728b618658a7f256647173a5a78721a980bfd23e32926b2",
+  "sidecarDatabaseSHA256": "66e5c27f93a8cda9d8795de6cf3f3808f7d85d888875a0214bd404d8e126ef06",
+  "defaultEditionID": "taj-company-13-847",
+  "editions": [
+    {
+      "editionID": "taj-company-13-847",
+      "contentVersion": 1,
+      "displayName": "Taj Company 13-Line (Color Tajweed)",
+      "publisher": "Taj Company Ltd. / Qamar Apps",
+      "rendererKind": "facsimile",
+      "approvalStatus": "approved",
+      "quranPageCount": 847,
+      "navigationPageCount": 848,
+      "noticePath": "notices/taj-company-13-847.txt",
+      "coordinateSpace": "normalized-top-left"
+    }
+  ]
+}

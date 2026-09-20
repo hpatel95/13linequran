@@ -54,6 +54,14 @@ tmp/
 raw_scans/
 *.tmp
 pipeline/temp_*
+pipeline/*.apk
+pipeline/sample_archive/
+pipeline/check_*.js
+pipeline/compare_*.js
+pipeline/list_*.js
+pipeline/measure_*.js
+assets/
+Quran13Line-verification/
 QuranAppExpo/
 web_simulator.html
 pipeline/check_font.js

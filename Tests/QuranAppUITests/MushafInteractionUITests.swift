@@ -76,37 +76,34 @@ final class MushafInteractionUITests: XCTestCase {
     // MARK: - Mixed-Ayah rows (the regression from Test 1)
 
     func testHoldingTheLeftHalfOfASharedRowSelectsTheSecondAyah() {
-        launchReader(page: 28)
-        let first = requireElement("ayah-2:143")
-        let second = requireElement("ayah-2:144")
-        // Both Ayahs must genuinely share row 10: their bounding boxes overlap
-        // vertically, and 2:144 must reach further left than 2:143.
-        XCTAssertGreaterThanOrEqual(first.frame.maxY, second.frame.minY, "2:143 and 2:144 must share a row.")
-        XCTAssertLessThan(second.frame.minX, first.frame.maxX, "2:144 must occupy the left side of the shared row.")
+        launchReader(page: 2)
+        let first = requireElement("ayah-2:1")
+        let second = requireElement("ayah-2:2")
+        // Both Ayahs must genuinely share a row: their bounding boxes overlap
+        // vertically, and 2:2 must reach further left than 2:1.
+        XCTAssertGreaterThanOrEqual(first.frame.maxY, second.frame.minY, "2:1 and 2:2 must share a row.")
+        XCTAssertLessThan(second.frame.minX, first.frame.maxX, "2:2 must occupy the left side of the shared row.")
 
-        // Row 10 of page 28 carries the end of 2:143 on the right and the start of
-        // 2:144 on the left. Aim at the left half of that shared row.
-        let rowHeight = first.frame.height / 7
-        let sharedRowBottom = first.frame.maxY
-        press(at: CGPoint(x: second.frame.minX + 12, y: sharedRowBottom - rowHeight / 2))
+        let sharedRowCenterY = first.frame.midY
+        press(at: CGPoint(x: second.frame.minX + 16, y: sharedRowCenterY))
 
-        assertSheetShows(verseKey: "2:144")
-        attachScreenshot("page28-sheet-2-144")
+        assertSheetShows(verseKey: "2:2")
+        attachScreenshot("page2-sheet-2-2")
         dismissSheet()
-        attachScreenshot("page28-glaze-2-144")
+        attachScreenshot("page2-glaze-2-2")
     }
 
     func testHoldingTheRightHalfOfASharedRowSelectsTheFirstAyah() {
-        launchReader(page: 28)
-        let first = requireElement("ayah-2:143")
-        requireElement("ayah-2:144")
+        launchReader(page: 2)
+        let first = requireElement("ayah-2:1")
+        requireElement("ayah-2:2")
 
-        let rowHeight = first.frame.height / 7
-        press(at: CGPoint(x: first.frame.maxX - 12, y: first.frame.maxY - rowHeight / 2))
+        let sharedRowCenterY = first.frame.midY
+        press(at: CGPoint(x: first.frame.maxX - 16, y: sharedRowCenterY))
 
-        assertSheetShows(verseKey: "2:143")
+        assertSheetShows(verseKey: "2:1")
         dismissSheet()
-        attachScreenshot("page28-glaze-2-143")
+        attachScreenshot("page2-glaze-2-1")
     }
 
     func testHoldingAMultiRowAyahHighlightsEveryOneOfItsRows() {
@@ -146,12 +143,9 @@ final class MushafInteractionUITests: XCTestCase {
     }
 
     func testFinalPageExposesTheLastAyahAndKeepsBlankSlotsInert() {
-        launchReader(page: 849)
+        launchReader(page: 847)
         let last = requireElement("ayah-114:6")
-        // Row 8 contains the concluding words of 114:6 centered, while row 7 contains
-        // 114:5 with only the first word of 114:6 at the far left edge.
-        // Aiming near the bottom of last.frame targets row 8 directly.
-        press(at: CGPoint(x: last.frame.midX, y: last.frame.maxY - 12))
+        press(at: CGPoint(x: last.frame.midX, y: last.frame.midY))
         assertSheetShows(verseKey: "114:6")
         dismissSheet()
     }

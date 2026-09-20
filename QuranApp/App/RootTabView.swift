@@ -50,13 +50,12 @@ public struct RootTabView: View {
                 repository: readerViewModel.repository,
                 currentReadingPage: readerViewModel.currentPage,
                 onSelectPage: { targetPage in
-                    readerViewModel.jumpToPage(targetPage)
+                    readerViewModel.jumpToQuranOrdinal(targetPage)
                     selectedTab = .read
                 },
                 onSelectAyah: { surahId, verseNumber, pageNumber in
-                    readerViewModel.jumpToPage(pageNumber)
                     Task {
-                        await readerViewModel.selectAyah(surahId: surahId, verseNumber: verseNumber)
+                        await readerViewModel.jumpTo(destination: .surah(surahId: surahId, ayahNumber: verseNumber))
                     }
                     selectedTab = .read
                 }

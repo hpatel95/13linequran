@@ -65,8 +65,9 @@ public actor UserDatabaseService: UserDatabaseServiceProtocol {
         sqlite3_exec(db, "PRAGMA foreign_keys = ON;", nil, nil, nil)
         sqlite3_exec(db, "PRAGMA synchronous = NORMAL;", nil, nil, nil)
 
-        // Initialize schema
+        // Initialize schema and run migrations
         try Self.createSchema(db: connection)
+        try UserDatabaseMigrations.migrate(db: connection)
     }
 
     deinit {
@@ -437,6 +438,275 @@ public actor UserDatabaseService: UserDatabaseServiceProtocol {
             pages.append(Int(sqlite3_column_int(statement, 0)))
         }
         return pages
+    }
+
+    // MARK: - V2 Edition-Aware Methods
+    public func fetchReaderBookmarks(editionId: String? = nil) async throws -> [ReaderBookmark] {
+        var sql = """
+        SELECT id, edition_id, page_id, anchor_surah_id, anchor_verse_number,
+               title, arabic_snippet, translation_snippet, note, legacy_page_number, created_at
+        FROM reader_bookmarks_v2
+        """
+        if editionId != nil {
+            sql += " WHERE edition_id = ?"
+        }
+        sql += " ORDER BY id DESC;"
+
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+            throw DatabaseError.statementPreparationFailed(lastErrorMessage())
+        }
+        defer { sqlite3_finalize(statement) }
+
+        if let eid = editionId {
+            sqlite3_bind_text(statement, 1, (eid as NSString).utf8String, -1, nil)
+        }
+
+        var results: [ReaderBookmark] = []
+        while sqlite3_step(statement) == SQLITE_ROW {
+            let id = Int(sqlite3_column_int(statement, 0))
+            let eId = String(cString: sqlite3_column_text(statement, 1))
+            let pId = String(cString: sqlite3_column_text(statement, 2))
+            let sId: Int? = sqlite3_column_type(statement, 3) != SQLITE_NULL ? Int(sqlite3_column_int(statement, 3)) : nil
+            let vNum: Int? = sqlite3_column_type(statement, 4) != SQLITE_NULL ? Int(sqlite3_column_int(statement, 4)) : nil
+            let title = String(cString: sqlite3_column_text(statement, 5))
+            let arabic = sqlite3_column_type(statement, 6) != SQLITE_NULL ? String(cString: sqlite3_column_text(statement, 6)) : nil
+            let trans = sqlite3_column_type(statement, 7) != SQLITE_NULL ? String(cString: sqlite3_column_text(statement, 7)) : nil
+            let note = sqlite3_column_type(statement, 8) != SQLITE_NULL ? String(cString: sqlite3_column_text(statement, 8)) : nil
+            let legPage: Int? = sqlite3_column_type(statement, 9) != SQLITE_NULL ? Int(sqlite3_column_int(statement, 9)) : nil
+            let dateStr = String(cString: sqlite3_column_text(statement, 10))
+            let createdAt = dateFormatter.date(from: dateStr) ?? Date()
+
+            results.append(ReaderBookmark(
+                id: id,
+                editionId: eId,
+                pageId: pId,
+                anchorSurahId: sId,
+                anchorVerseNumber: vNum,
+                title: title,
+                arabicSnippet: arabic,
+                translationSnippet: trans,
+                note: note,
+                legacyPageNumber: legPage,
+                createdAt: createdAt
+            ))
+        }
+        return results
+    }
+
+    public func addReaderBookmark(_ bookmark: ReaderBookmark) async throws -> ReaderBookmark {
+        let sql = """
+        INSERT INTO reader_bookmarks_v2 (
+            edition_id, page_id, anchor_surah_id, anchor_verse_number,
+            title, arabic_snippet, translation_snippet, note, legacy_page_number, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        """
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+            throw DatabaseError.statementPreparationFailed(lastErrorMessage())
+        }
+        defer { sqlite3_finalize(statement) }
+
+        let dateStr = dateFormatter.string(from: bookmark.createdAt)
+        sqlite3_bind_text(statement, 1, (bookmark.editionId as NSString).utf8String, -1, nil)
+        sqlite3_bind_text(statement, 2, (bookmark.pageId as NSString).utf8String, -1, nil)
+
+        if let s = bookmark.anchorSurahId {
+            sqlite3_bind_int(statement, 3, Int32(s))
+        } else {
+            sqlite3_bind_null(statement, 3)
+        }
+
+        if let v = bookmark.anchorVerseNumber {
+            sqlite3_bind_int(statement, 4, Int32(v))
+        } else {
+            sqlite3_bind_null(statement, 4)
+        }
+
+        sqlite3_bind_text(statement, 5, (bookmark.title as NSString).utf8String, -1, nil)
+
+        if let ar = bookmark.arabicSnippet {
+            sqlite3_bind_text(statement, 6, (ar as NSString).utf8String, -1, nil)
+        } else {
+            sqlite3_bind_null(statement, 6)
+        }
+
+        if let tr = bookmark.translationSnippet {
+            sqlite3_bind_text(statement, 7, (tr as NSString).utf8String, -1, nil)
+        } else {
+            sqlite3_bind_null(statement, 7)
+        }
+
+        if let n = bookmark.note {
+            sqlite3_bind_text(statement, 8, (n as NSString).utf8String, -1, nil)
+        } else {
+            sqlite3_bind_null(statement, 8)
+        }
+
+        if let leg = bookmark.legacyPageNumber {
+            sqlite3_bind_int(statement, 9, Int32(leg))
+        } else {
+            sqlite3_bind_null(statement, 9)
+        }
+
+        sqlite3_bind_text(statement, 10, (dateStr as NSString).utf8String, -1, nil)
+
+        guard sqlite3_step(statement) == SQLITE_DONE else {
+            throw DatabaseError.executionFailed(lastErrorMessage())
+        }
+
+        let rowId = Int(sqlite3_last_insert_rowid(db))
+        return ReaderBookmark(
+            id: rowId,
+            editionId: bookmark.editionId,
+            pageId: bookmark.pageId,
+            anchorSurahId: bookmark.anchorSurahId,
+            anchorVerseNumber: bookmark.anchorVerseNumber,
+            title: bookmark.title,
+            arabicSnippet: bookmark.arabicSnippet,
+            translationSnippet: bookmark.translationSnippet,
+            note: bookmark.note,
+            legacyPageNumber: bookmark.legacyPageNumber,
+            createdAt: bookmark.createdAt
+        )
+    }
+
+    public func removeReaderBookmark(id: Int) async throws {
+        let sql = "DELETE FROM reader_bookmarks_v2 WHERE id = ?;"
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+            throw DatabaseError.statementPreparationFailed(lastErrorMessage())
+        }
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_int(statement, 1, Int32(id))
+        guard sqlite3_step(statement) == SQLITE_DONE else {
+            throw DatabaseError.executionFailed(lastErrorMessage())
+        }
+    }
+
+    public func isReaderAyahBookmarked(editionId: String, surahId: Int, verseNumber: Int) async throws -> Bool {
+        let sql = """
+        SELECT 1 FROM reader_bookmarks_v2
+        WHERE edition_id = ? AND anchor_surah_id = ? AND anchor_verse_number = ?
+        LIMIT 1;
+        """
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+            throw DatabaseError.statementPreparationFailed(lastErrorMessage())
+        }
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_text(statement, 1, (editionId as NSString).utf8String, -1, nil)
+        sqlite3_bind_int(statement, 2, Int32(surahId))
+        sqlite3_bind_int(statement, 3, Int32(verseNumber))
+        return sqlite3_step(statement) == SQLITE_ROW
+    }
+
+    public func isReaderPageBookmarked(editionId: String, pageId: String) async throws -> Bool {
+        let sql = """
+        SELECT 1 FROM reader_bookmarks_v2
+        WHERE edition_id = ? AND page_id = ? AND anchor_surah_id IS NULL
+        LIMIT 1;
+        """
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+            throw DatabaseError.statementPreparationFailed(lastErrorMessage())
+        }
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_text(statement, 1, (editionId as NSString).utf8String, -1, nil)
+        sqlite3_bind_text(statement, 2, (pageId as NSString).utf8String, -1, nil)
+        return sqlite3_step(statement) == SQLITE_ROW
+    }
+
+    public func saveReaderLastLocation(_ location: ReaderLocation) async throws {
+        let sql = """
+        INSERT INTO reader_last_locations_v2 (
+            edition_id, page_id, navigation_index, quran_ordinal,
+            surah_id, juz_number, label, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(edition_id) DO UPDATE SET
+            page_id = excluded.page_id,
+            navigation_index = excluded.navigation_index,
+            quran_ordinal = excluded.quran_ordinal,
+            surah_id = excluded.surah_id,
+            juz_number = excluded.juz_number,
+            label = excluded.label,
+            updated_at = excluded.updated_at;
+        """
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+            throw DatabaseError.statementPreparationFailed(lastErrorMessage())
+        }
+        defer { sqlite3_finalize(statement) }
+
+        let nowStr = dateFormatter.string(from: Date())
+        sqlite3_bind_text(statement, 1, (location.editionId as NSString).utf8String, -1, nil)
+        sqlite3_bind_text(statement, 2, (location.pageId as NSString).utf8String, -1, nil)
+        sqlite3_bind_int(statement, 3, Int32(location.navigationIndex))
+
+        if let q = location.quranOrdinal {
+            sqlite3_bind_int(statement, 4, Int32(q))
+        } else {
+            sqlite3_bind_null(statement, 4)
+        }
+
+        if let s = location.surahId {
+            sqlite3_bind_int(statement, 5, Int32(s))
+        } else {
+            sqlite3_bind_null(statement, 5)
+        }
+
+        if let j = location.juzNumber {
+            sqlite3_bind_int(statement, 6, Int32(j))
+        } else {
+            sqlite3_bind_null(statement, 6)
+        }
+
+        if let lbl = location.label {
+            sqlite3_bind_text(statement, 7, (lbl as NSString).utf8String, -1, nil)
+        } else {
+            sqlite3_bind_null(statement, 7)
+        }
+
+        sqlite3_bind_text(statement, 8, (nowStr as NSString).utf8String, -1, nil)
+
+        guard sqlite3_step(statement) == SQLITE_DONE else {
+            throw DatabaseError.executionFailed(lastErrorMessage())
+        }
+    }
+
+    public func fetchReaderLastLocation(editionId: String) async throws -> ReaderLocation? {
+        let sql = """
+        SELECT edition_id, page_id, navigation_index, quran_ordinal, surah_id, juz_number, label
+        FROM reader_last_locations_v2
+        WHERE edition_id = ?
+        LIMIT 1;
+        """
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+            throw DatabaseError.statementPreparationFailed(lastErrorMessage())
+        }
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_text(statement, 1, (editionId as NSString).utf8String, -1, nil)
+
+        guard sqlite3_step(statement) == SQLITE_ROW else { return nil }
+        let eId = String(cString: sqlite3_column_text(statement, 0))
+        let pId = String(cString: sqlite3_column_text(statement, 1))
+        let navIndex = Int(sqlite3_column_int(statement, 2))
+        let qOrdinal: Int? = sqlite3_column_type(statement, 3) != SQLITE_NULL ? Int(sqlite3_column_int(statement, 3)) : nil
+        let surahId: Int? = sqlite3_column_type(statement, 4) != SQLITE_NULL ? Int(sqlite3_column_int(statement, 4)) : nil
+        let juzNum: Int? = sqlite3_column_type(statement, 5) != SQLITE_NULL ? Int(sqlite3_column_int(statement, 5)) : nil
+        let label = sqlite3_column_text(statement, 6).map { String(cString: $0) }
+
+        return ReaderLocation(
+            editionId: eId,
+            pageId: pId,
+            navigationIndex: navIndex,
+            quranOrdinal: qOrdinal,
+            surahId: surahId,
+            juzNumber: juzNum,
+            focusedVerse: nil,
+            label: label
+        )
     }
 
     // MARK: - Helper

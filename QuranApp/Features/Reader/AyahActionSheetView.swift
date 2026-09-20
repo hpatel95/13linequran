@@ -188,10 +188,21 @@ public struct AyahActionSheetView: View {
         }
     }
 
-    // MARK: - Action Buttons (Bookmark, Copy, Share)
+    // MARK: - Action Buttons (Play, Bookmark, Copy, Share)
     private var actionButtonsSection: some View {
-        HStack(spacing: 12) {
-            // 1. Bookmark Button
+        HStack(spacing: 10) {
+            // 1. Play Button
+            actionButton(
+                title: "Play",
+                systemImage: "play.fill",
+                action: {
+                    triggerHaptic()
+                    onPlay()
+                    dismiss()
+                }
+            )
+
+            // 2. Bookmark Button
             actionButton(
                 title: isBookmarked ? "Saved" : "Bookmark",
                 systemImage: isBookmarked ? "bookmark.fill" : "bookmark",

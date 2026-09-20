@@ -38,4 +38,13 @@ public protocol UserDatabaseServiceProtocol: Sendable {
     // MARK: - Reading Sessions
     func recordReadingSession(pageNumber: Int, durationSeconds: Double) async throws
     func fetchRecentPages(limit: Int) async throws -> [Int]
+
+    // MARK: - V2 Edition-Aware Methods
+    func fetchReaderBookmarks(editionId: String?) async throws -> [ReaderBookmark]
+    func addReaderBookmark(_ bookmark: ReaderBookmark) async throws -> ReaderBookmark
+    func removeReaderBookmark(id: Int) async throws
+    func isReaderAyahBookmarked(editionId: String, surahId: Int, verseNumber: Int) async throws -> Bool
+    func isReaderPageBookmarked(editionId: String, pageId: String) async throws -> Bool
+    func saveReaderLastLocation(_ location: ReaderLocation) async throws
+    func fetchReaderLastLocation(editionId: String) async throws -> ReaderLocation?
 }

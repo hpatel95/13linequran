@@ -1,0 +1,16 @@
+{
+  "sourceAssetID": "522",
+  "reason": "Repair zero-area coordinates for 26:143 and 26:144, and correct misattributed 26:145 ranges on rows 2 and 3",
+  "originalDefectiveRegions": [
+    { "coords": "0,0,0,0", "rel": "026143" },
+    { "coords": "0,0,0,0", "rel": "026144" },
+    { "coords": "21.99,109.01,562.3,174.97", "rel": "026145" },
+    { "coords": "21.99,186.28,697.38,252.25", "rel": "026145" }
+  ],
+  "replacementRegions": [
+    { "minX": 225.0, "minY": 109.01, "maxX": 562.3, "maxY": 174.97, "rel": "026143", "description": "Row 2: Inni lakum rasoolun ameen (143)" },
+    { "minX": 21.99, "minY": 109.01, "maxX": 225.0, "maxY": 174.97, "rel": "026144", "description": "Row 2 fragment 1: Fattaqullaha wa" },
+    { "minX": 510.0, "minY": 186.28, "maxX": 697.38, "maxY": 252.25, "rel": "026144", "description": "Row 3 fragment 2: Atee-oon (144)" },
+    { "minX": 21.99, "minY": 186.28, "maxX": 510.0, "maxY": 252.25, "rel": "026145", "description": "Row 3 fragment 1: Wa ma as'alukum alayhi min ajrin in" }
+  ]
+}

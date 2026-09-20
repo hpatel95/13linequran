@@ -10,13 +10,15 @@ import SwiftUI
 
 public struct PageJumpView: View {
     public let juzs: [Juz]
+    public let maxPage: Int
     public let onSelectPage: (Int) -> Void
 
     @State private var inputPageText: String = ""
     @State private var inputErrorMessage: String?
 
-    public init(juzs: [Juz], onSelectPage: @escaping (Int) -> Void) {
+    public init(juzs: [Juz], maxPage: Int = 847, onSelectPage: @escaping (Int) -> Void) {
         self.juzs = juzs
+        self.maxPage = maxPage
         self.onSelectPage = onSelectPage
     }
 
@@ -33,7 +35,7 @@ public struct PageJumpView: View {
                         HStack {
                             Image(systemName: "book.pages")
                                 .foregroundStyle(AppColors.sepiaMuted)
-                            TextField("Enter page (1–849)", text: $inputPageText)
+                            TextField("Enter page (1–\(maxPage))", text: $inputPageText)
                                 .font(AppTypography.body)
                                 .keyboardType(.numberPad)
                                 .foregroundStyle(AppColors.inkUmber)
@@ -122,7 +124,7 @@ public struct PageJumpView: View {
             return
         }
 
-        if page >= 1 && page <= 849 {
+        if page >= 1 && page <= maxPage {
             inputErrorMessage = nil
             #if canImport(UIKit)
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
@@ -130,7 +132,7 @@ public struct PageJumpView: View {
             #endif
             onSelectPage(page)
         } else {
-            inputErrorMessage = "Page must be between 1 and 849"
+            inputErrorMessage = "Page must be between 1 and \(maxPage)"
         }
     }
 }

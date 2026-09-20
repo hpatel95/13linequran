@@ -30,9 +30,12 @@ public struct IndexHubView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 // MARK: - Top Header & Controls
-                VStack(spacing: 12) {
+                VStack(spacing: 10) {
                     // Header Title Bar
                     headerTitleBar
+
+                    // Search Field
+                    searchBar
 
                     // 3-Pill Segmented Control (Surahs / Juz / Pages)
                     segmentedControl
@@ -49,14 +52,18 @@ public struct IndexHubView: View {
                 ZStack {
                     AppColors.canvasVellum.ignoresSafeArea()
 
-                    switch viewModel.selectedTab {
-                    case .surahs:
-                        surahContent
-                    case .juz:
-                        juzContent
-                    case .pages:
-                        PageJumpView(juzs: viewModel.juzs) { targetPage in
-                            onSelectPage(targetPage)
+                    if !viewModel.searchText.trimmingCharacters(in: .whitespaces).isEmpty {
+                        searchContent
+                    } else {
+                        switch viewModel.selectedTab {
+                        case .surahs:
+                            surahContent
+                        case .juz:
+                            juzContent
+                        case .pages:
+                            PageJumpView(juzs: viewModel.juzs) { targetPage in
+                                onSelectPage(targetPage)
+                            }
                         }
                     }
                 }
@@ -96,6 +103,39 @@ public struct IndexHubView: View {
             Spacer()
         }
         .frame(height: 44)
+    }
+
+    // MARK: - Search Bar
+    private var searchBar: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 15))
+                .foregroundStyle(AppColors.sepiaMuted)
+
+            TextField("Search Surahs, verses, translation...", text: $viewModel.searchText)
+                .font(AppTypography.subheadline)
+                .foregroundStyle(AppColors.inkUmber)
+                .textFieldStyle(.plain)
+                .autocorrectionDisabled()
+                .accessibilityIdentifier("index-search-field")
+
+            if !viewModel.searchText.isEmpty {
+                Button(action: {
+                    viewModel.searchText = ""
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(AppColors.sepiaMuted)
+                }
+                .frame(minWidth: 32, minHeight: 32)
+                .accessibilityLabel("Clear search text")
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(AppColors.surfacePapyrus)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(AppColors.borderSepia, lineWidth: 1))
     }
 
     // MARK: - Segmented Control (Pill Switcher)
