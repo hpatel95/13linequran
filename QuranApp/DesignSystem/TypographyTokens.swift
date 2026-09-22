@@ -47,4 +47,12 @@ public enum AppTypography {
     public static let pageNumber = Font.system(size: 11, weight: .semibold, design: .default)
     public static let englishTranslation = Font.system(.body, design: .serif)
     public static let bodyEnglish = englishTranslation
+
+    // MARK: - Eastern Arabic Numerals
+    public static func easternArabicDigits(_ value: Int) -> String {
+        let digits = Array("٠١٢٣٤٥٦٧٨٩")
+        return String(String(value).map { character in
+            character.wholeNumberValue.map { digits[$0] } ?? character
+        })
+    }
 }

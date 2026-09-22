@@ -92,6 +92,25 @@ public struct MushafReaderView: View {
     @ViewBuilder
     private func pageContent(summary: MushafPageSummary, index: Int) -> some View {
         switch viewModel.displayMode {
+        case .enhancedVector:
+            let pageOrdinal = summary.quranOrdinal ?? index
+            MushafPageView(
+                pageNumber: pageOrdinal,
+                lines: viewModel.pageLinesCache[pageOrdinal] ?? [],
+                surahName: viewModel.surahsByID[summary.firstSurahId]?.englishName ?? "",
+                surahArabicName: viewModel.surahsByID[summary.firstSurahId]?.arabicName ?? "",
+                juzNumber: summary.juzNumber,
+                surahMetadata: viewModel.surahsByID,
+                selectedVerseKey: viewModel.selectedVerseKey,
+                palette: palette,
+                onSelectAyah: { surah, verse in
+                    viewModel.beginSelectingAyah(surahId: surah, verseNumber: verse)
+                },
+                onToggleChrome: {
+                    viewModel.toggleChrome(reduceMotion: reduceMotion)
+                }
+            )
+
         case .authenticFacsimile:
             AuthenticMushafPageView(
                 summary: summary,
@@ -185,11 +204,11 @@ public struct MushafReaderView: View {
 
             Spacer(minLength: 0)
 
-            // Display Mode Switcher (Authentic Facsimile vs Accessible Text)
+            // Display Mode Switcher (Vector Mushaf vs Authentic Scan vs Accessible Text)
             Button {
                 viewModel.toggleDisplayMode()
             } label: {
-                Image(systemName: viewModel.displayMode == .authenticFacsimile ? "text.aligncenter" : "doc.text.image")
+                Image(systemName: modeIcon)
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(palette.inkUmber)
                     .frame(minWidth: 40, minHeight: 44)
@@ -243,6 +262,14 @@ public struct MushafReaderView: View {
         case .saheeh: return "Saheeh"
         case .hilaliKhan: return "Hilali-Khan"
         case .hamidullah: return "Français"
+        }
+    }
+
+    private var modeIcon: String {
+        switch viewModel.displayMode {
+        case .enhancedVector: return "sparkles.rectangle.stack"
+        case .authenticFacsimile: return "photo.artframe"
+        case .accessibleText: return "text.aligncenter"
         }
     }
 }

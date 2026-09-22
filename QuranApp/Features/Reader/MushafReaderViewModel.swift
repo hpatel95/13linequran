@@ -16,13 +16,14 @@ import Observation
 public final class MushafReaderViewModel {
     // MARK: - Display Mode
     public enum ReaderDisplayMode: String, CaseIterable, Sendable {
+        case enhancedVector = "Vector Mushaf"
         case authenticFacsimile = "Authentic Scan"
         case accessibleText = "Accessible Text"
     }
 
     // MARK: - Active State
     public var activeEditionId: String = "taj-company-13-847"
-    public var displayMode: ReaderDisplayMode = .authenticFacsimile
+    public var displayMode: ReaderDisplayMode = .enhancedVector
 
     /// 1-based navigation index in the active edition (e.g. 1 ... 848).
     public var currentPageIndex: Int = 1 {
@@ -519,7 +520,14 @@ public final class MushafReaderViewModel {
     // MARK: - Display Mode & Chrome
     public func toggleDisplayMode() {
         withAnimation(.easeInOut(duration: 0.25)) {
-            displayMode = (displayMode == .authenticFacsimile) ? .accessibleText : .authenticFacsimile
+            switch displayMode {
+            case .enhancedVector:
+                displayMode = .authenticFacsimile
+            case .authenticFacsimile:
+                displayMode = .accessibleText
+            case .accessibleText:
+                displayMode = .enhancedVector
+            }
         }
     }
 

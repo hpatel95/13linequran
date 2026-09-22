@@ -168,7 +168,7 @@ jobs:
             xcrun simctl bootstatus "$udid" -b >/dev/null 2>&1 || true
             xcrun simctl install "$udid" "$APP_PATH"
             mkdir -p "screenshots/$label"
-            for PAGE in 1 2 4 28 105 610 613 847 848; do
+            for PAGE in 1 2 3 4 5 28 105 610 613 847 848; do
               xcrun simctl terminate "$udid" com.quran.thirteenline >/dev/null 2>&1 || true
               sleep 1
               xcrun simctl launch "$udid" com.quran.thirteenline -mushafAutomatedRun 1 -mushafInitialPage "$PAGE" >/dev/null

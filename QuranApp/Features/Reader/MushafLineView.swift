@@ -14,11 +14,12 @@ struct MushafLineView: View {
     let palette: ThemePalette
 
     var body: some View {
-        IslamicBanner(
+        SurahCartoucheView(
             surahNumber: line.surahId ?? 1,
             arabicName: surah?.arabicName ?? "",
             revelationType: surah?.revelationType.rawValue,
             totalVerses: surah?.totalVerses ?? 0,
+            totalRukus: SurahCartoucheView.defaultRukus(for: line.surahId ?? 1),
             palette: palette
         )
         .accessibilityElement(children: .ignore)

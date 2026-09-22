@@ -23,7 +23,7 @@ struct MushafPageGrid: Equatable, Sendable {
     }
 
     var bounds: CGRect { CGRect(origin: .zero, size: size) }
-    var ruleThickness: CGFloat { 1 / displayScale }
+    var ruleThickness: CGFloat { max(0.75, 1 / displayScale) }
 
     /// Round each absolute boundary, not a row height that accumulates rounding error.
     func boundary(_ index: Int) -> CGFloat {
