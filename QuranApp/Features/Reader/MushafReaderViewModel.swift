@@ -474,7 +474,6 @@ public final class MushafReaderViewModel {
     // MARK: - Windowed Page Loading (N-1, N, N+1)
     private func loadSurroundingPages() async {
         pageGeneration += 1
-        let generation = pageGeneration
         let centerIndex = currentPageIndex
         let targetIndices = [centerIndex, centerIndex - 1, centerIndex + 1].filter {
             $0 >= 1 && (pages.isEmpty || $0 <= pages.count)

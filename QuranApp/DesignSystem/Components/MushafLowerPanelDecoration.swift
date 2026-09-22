@@ -19,7 +19,6 @@ public struct MushafLowerPanelDecoration: View {
 
     public var body: some View {
         GeometryReader { proxy in
-            let rect = CGRect(origin: .zero, size: proxy.size)
             ZStack {
                 // Subtle vellum tint
                 RoundedRectangle(cornerRadius: 2)

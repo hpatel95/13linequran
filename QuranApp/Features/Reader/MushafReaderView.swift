@@ -94,12 +94,15 @@ public struct MushafReaderView: View {
         switch viewModel.displayMode {
         case .enhancedVector:
             let pageOrdinal = summary.quranOrdinal ?? index
+            let surah = viewModel.surahForPage(pageOrdinal)
+            let juz = viewModel.juzForPage(pageOrdinal)
             MushafPageView(
                 pageNumber: pageOrdinal,
                 lines: viewModel.pageLinesCache[pageOrdinal] ?? [],
-                surahName: viewModel.surahsByID[summary.firstSurahId]?.englishName ?? "",
-                surahArabicName: viewModel.surahsByID[summary.firstSurahId]?.arabicName ?? "",
-                juzNumber: summary.juzNumber,
+                surahName: surah?.englishName ?? summary.title,
+                surahArabicName: surah?.arabicName ?? "",
+                juzNumber: juz?.id ?? 1,
+                juzArabicName: juz?.nameArabic ?? "",
                 surahMetadata: viewModel.surahsByID,
                 selectedVerseKey: viewModel.selectedVerseKey,
                 palette: palette,
