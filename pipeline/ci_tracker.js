@@ -24,8 +24,20 @@ const headers = {
   Accept: 'application/vnd.github.v3+json',
 };
 
+function getRepo() {
+  if (process.env.GITHUB_REPOSITORY) return process.env.GITHUB_REPOSITORY;
+  try {
+    const remote = execSync('git config --get remote.origin.url', { stdio: ['pipe', 'pipe', 'ignore'] }).toString().trim();
+    const match = remote.match(/github\.com[:\/]([^\/]+\/[^\/\.]+)/);
+    if (match) return match[1].replace(/\.git$/, '');
+  } catch (e) {}
+  throw new Error('Unable to determine repository name from GITHUB_REPOSITORY or git remote origin');
+}
+
+const repo = getRepo();
+
 async function api(path) {
-  const url = path.startsWith('http') ? path : `https://api.github.com/repos/hpatel95/13linequran${path}`;
+  const url = path.startsWith('http') ? path : `https://api.github.com/repos/${repo}${path}`;
   const res = await fetch(url, { headers });
   if (!res.ok) {
     throw new Error(`API ${res.status} ${res.statusText}: ${await res.text()}`);

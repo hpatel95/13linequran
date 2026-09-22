@@ -26,8 +26,20 @@ const headers = {
   Accept: 'application/vnd.github.v3+json',
 };
 
+function getRepo() {
+  if (process.env.GITHUB_REPOSITORY) return process.env.GITHUB_REPOSITORY;
+  try {
+    const remote = execSync('git config --get remote.origin.url', { stdio: ['pipe', 'pipe', 'ignore'] }).toString().trim();
+    const match = remote.match(/github\.com[:\/]([^\/]+\/[^\/\.]+)/);
+    if (match) return match[1].replace(/\.git$/, '');
+  } catch (e) {}
+  throw new Error('Unable to determine repository name from GITHUB_REPOSITORY or git remote origin');
+}
+
+const repo = getRepo();
+
 async function downloadVerificationArtifact(runId, outDir) {
-  const listUrl = `https://api.github.com/repos/hpatel95/13linequran/actions/runs/${runId}/artifacts`;
+  const listUrl = `https://api.github.com/repos/${repo}/actions/runs/${runId}/artifacts`;
   const res = await fetch(listUrl, { headers });
   if (!res.ok) throw new Error(`Failed to list artifacts: ${res.statusText}`);
   const data = await res.json();

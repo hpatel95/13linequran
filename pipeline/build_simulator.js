@@ -798,10 +798,10 @@ const htmlContent = `<!DOCTYPE html>
 // Save in workspace root
 fs.writeFileSync(path.join(__dirname, '..', 'web_simulator.html'), htmlContent, 'utf8');
 
-// Save in artifact dir
+// Save in artifact dir if environment variable is set
 const artifactDir = process.env.ARTIFACT_DIR;
 if (artifactDir && fs.existsSync(artifactDir)) {
   fs.writeFileSync(path.join(artifactDir, 'web_simulator.html'), htmlContent, 'utf8');
 }
 
-console.log('Successfully generated web_simulator.html in workspace and brain directory!');
+console.log('Successfully generated web_simulator.html!');
