@@ -25,7 +25,7 @@ public struct MushafPageView: View {
     public let onToggleChrome: () -> Void
     @Environment(\.displayScale) private var displayScale
 
-    private static let marginWidth: CGFloat = 34.0
+    private static let marginWidth: CGFloat = 26.0
 
     public init(
         pageNumber: Int,
@@ -70,17 +70,16 @@ public struct MushafPageView: View {
                 let totalWidth = proxy.size.width
                 let totalHeight = proxy.size.height
                 let marginW = Self.marginWidth
-                let textWidth = max(0, totalWidth - marginW)
+                let textWidth = max(0, totalWidth - (2 * marginW))
                 let textGrid = MushafPageGrid(
                     size: CGSize(width: textWidth, height: totalHeight),
                     displayScale: displayScale
                 )
 
-                let textOffsetX: CGFloat = isOuterMarginOnRight ? 0 : marginW
-                let marginOffsetX: CGFloat = isOuterMarginOnRight ? textWidth : 0
+                let textOffsetX: CGFloat = marginW
 
                 ZStack(alignment: .topLeading) {
-                    // MARK: - Central 13-Line Text Canvas
+                    // MARK: - Central 13-Line Text Canvas (Strictly centered on all pages)
                     ZStack(alignment: .topLeading) {
                         MushafTextCanvas(
                             lines: lines,
@@ -126,31 +125,60 @@ public struct MushafPageView: View {
                     .frame(width: textWidth, height: totalHeight)
                     .offset(x: textOffsetX, y: 0)
 
-                    // MARK: - Vertical Dividing Rule (Jadwal)
+                    // MARK: - Twin Vertical Dividing Rules (Jadwal) on Both Left & Right
+                    // Left Jadwal Rule
                     Rectangle()
                         .fill(palette.borderSepia.opacity(0.45))
                         .frame(width: 0.75, height: totalHeight)
-                        .offset(x: isOuterMarginOnRight ? textWidth : marginW, y: 0)
+                        .offset(x: marginW, y: 0)
                         .allowsHitTesting(false)
 
-                    // MARK: - Outer Margin Editorial Badges
+                    // Right Jadwal Rule
+                    Rectangle()
+                        .fill(palette.borderSepia.opacity(0.45))
+                        .frame(width: 0.75, height: totalHeight)
+                        .offset(x: marginW + textWidth, y: 0)
+                        .allowsHitTesting(false)
+
+                    // MARK: - Left Margin Column
                     ZStack(alignment: .topLeading) {
-                        // Margin tap target
                         Color.clear
                             .frame(width: marginW, height: totalHeight)
                             .contentShape(Rectangle())
                             .onTapGesture(perform: onToggleChrome)
 
-                        // Margin Ruku Ain Badges
-                        ForEach(editorialMarks.rukuMarks) { ruku in
-                            let rowMidY = textGrid.rowRect(ruku.lineNumber).midY
-                            MarginRukuView(rukuMark: ruku, palette: palette)
-                                .position(x: marginW / 2, y: rowMidY)
-                                .allowsHitTesting(false)
+                        // Even pages: Outer margin on Left
+                        if !isOuterMarginOnRight {
+                            ForEach(editorialMarks.rukuMarks) { ruku in
+                                let rowMidY = textGrid.rowRect(ruku.lineNumber).midY
+                                MarginRukuView(rukuMark: ruku, palette: palette)
+                                    .position(x: marginW / 2, y: rowMidY)
+                                    .allowsHitTesting(false)
+                            }
                         }
                     }
                     .frame(width: marginW, height: totalHeight)
-                    .offset(x: marginOffsetX, y: 0)
+                    .offset(x: 0, y: 0)
+
+                    // MARK: - Right Margin Column
+                    ZStack(alignment: .topLeading) {
+                        Color.clear
+                            .frame(width: marginW, height: totalHeight)
+                            .contentShape(Rectangle())
+                            .onTapGesture(perform: onToggleChrome)
+
+                        // Odd pages: Outer margin on Right
+                        if isOuterMarginOnRight {
+                            ForEach(editorialMarks.rukuMarks) { ruku in
+                                let rowMidY = textGrid.rowRect(ruku.lineNumber).midY
+                                MarginRukuView(rukuMark: ruku, palette: palette)
+                                    .position(x: marginW / 2, y: rowMidY)
+                                    .allowsHitTesting(false)
+                            }
+                        }
+                    }
+                    .frame(width: marginW, height: totalHeight)
+                    .offset(x: marginW + textWidth, y: 0)
                 }
             }
             .environment(\.layoutDirection, .leftToRight)
