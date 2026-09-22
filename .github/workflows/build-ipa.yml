@@ -172,7 +172,7 @@ jobs:
               xcrun simctl terminate "$udid" com.quran.thirteenline >/dev/null 2>&1 || true
               sleep 1
               xcrun simctl launch "$udid" com.quran.thirteenline -mushafAutomatedRun 1 -mushafInitialPage "$PAGE" >/dev/null
-              sleep 4
+              sleep 6
               xcrun simctl io "$udid" screenshot "screenshots/$label/page-$PAGE.png"
             done
           }
