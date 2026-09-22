@@ -32,7 +32,7 @@ public struct SurahCartoucheView: View {
         self.surahNumber = surahNumber
         self.arabicName = arabicName
         self.revelationType = revelationType
-        self.totalVerses = totalVerses
+        self.totalVerses = totalVerses > 0 ? totalVerses : Self.defaultVerses(for: surahNumber)
         self.totalRukus = totalRukus > 0 ? totalRukus : Self.defaultRukus(for: surahNumber)
         self.palette = palette
     }
@@ -55,16 +55,17 @@ public struct SurahCartoucheView: View {
                 // 3-Panel Content
                 HStack(spacing: 0) {
                     // Right Panel: Ayah Count
-                    HStack {
+                    HStack(spacing: 2) {
                         if totalVerses > 0 {
-                            Text("آيَاتُهَا \(AppTypography.easternArabicDigits(totalVerses))")
-                                .font(AppTypography.mushafMetadata(size: 11 * scale))
+                            Text("آيَاتُهَا")
+                                .font(AppTypography.mushafMetadata(size: 10 * scale))
                                 .foregroundStyle(palette.sepiaMuted)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.8)
+                            Text(AppTypography.easternArabicDigits(totalVerses))
+                                .font(.system(size: 11 * scale, weight: .semibold, design: .serif))
+                                .foregroundStyle(palette.inkUmber)
                         }
                     }
-                    .frame(width: proxy.size.width * 0.23, alignment: .center)
+                    .frame(width: proxy.size.width * 0.24, alignment: .center)
 
                     // Vertical Divider 1
                     CartoucheDivider(palette: palette)
@@ -90,20 +91,21 @@ public struct SurahCartoucheView: View {
                     CartoucheDivider(palette: palette)
 
                     // Left Panel: Ruku Count
-                    HStack {
+                    HStack(spacing: 2) {
                         if totalRukus > 0 {
-                            Text("رُكُوعَاتُهَا \(AppTypography.easternArabicDigits(totalRukus))")
-                                .font(AppTypography.mushafMetadata(size: 11 * scale))
+                            Text("رُكُوعَاتُهَا")
+                                .font(AppTypography.mushafMetadata(size: 10 * scale))
                                 .foregroundStyle(palette.sepiaMuted)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.8)
+                            Text(AppTypography.easternArabicDigits(totalRukus))
+                                .font(.system(size: 11 * scale, weight: .semibold, design: .serif))
+                                .foregroundStyle(palette.inkUmber)
                         } else {
                             Text("(\(AppTypography.easternArabicDigits(surahNumber)))")
-                                .font(AppTypography.mushafMetadata(size: 11 * scale))
+                                .font(.system(size: 11 * scale, weight: .semibold, design: .serif))
                                 .foregroundStyle(palette.sepiaMuted)
                         }
                     }
-                    .frame(width: proxy.size.width * 0.23, alignment: .center)
+                    .frame(width: proxy.size.width * 0.24, alignment: .center)
                 }
                 .environment(\.layoutDirection, .rightToLeft)
                 .padding(.horizontal, 4)
@@ -126,6 +128,18 @@ public struct SurahCartoucheView: View {
         if type.contains("meccan") || type.contains("makki") { return "مَكِّيَّةٌ" }
         if type.contains("medinan") || type.contains("madani") { return "مَدَنِيَّةٌ" }
         return ""
+    }
+
+    /// Precomputed total verses for key Surahs (fallback when metadata dictionary is loading)
+    public static func defaultVerses(for surahNumber: Int) -> Int {
+        switch surahNumber {
+        case 1: return 7
+        case 2: return 286
+        case 3: return 200
+        case 4: return 176
+        case 114: return 6
+        default: return 0
+        }
     }
 
     /// Precomputed Ruku counts for key Surahs (fallback for all 114)

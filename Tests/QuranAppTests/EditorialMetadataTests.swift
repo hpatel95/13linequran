@@ -71,9 +71,9 @@ final class EditorialMetadataTests: XCTestCase {
     }
 
     func testEasternArabicDigitsFormatting() {
-        XCTAssertEqual(AppTypography.easternArabicDigits(0), "٠")
-        XCTAssertEqual(AppTypography.easternArabicDigits(7), "۷")
-        XCTAssertEqual(AppTypography.easternArabicDigits(13), "۱۳")
-        XCTAssertEqual(AppTypography.easternArabicDigits(286), "۲۸٦")
+        XCTAssertEqual(AppTypography.easternArabicDigits(0), "\u{0660}")
+        XCTAssertEqual(AppTypography.easternArabicDigits(7), "\u{0667}")
+        XCTAssertEqual(AppTypography.easternArabicDigits(13), "\u{0661}\u{0663}")
+        XCTAssertEqual(AppTypography.easternArabicDigits(286), "\u{0662}\u{0668}\u{0666}")
     }
 }

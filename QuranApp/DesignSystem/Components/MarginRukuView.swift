@@ -22,37 +22,44 @@ public struct MarginRukuView: View {
     }
 
     public var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 1) {
             // Top: Ruku number in Surah (e.g. ۱, ۲)
             Text(AppTypography.easternArabicDigits(rukuMark.rukuInSurah))
-                .font(AppTypography.mushafMetadata(size: 10))
-                .fontWeight(.bold)
+                .font(.system(size: 9.5, weight: .bold, design: .serif))
                 .foregroundStyle(palette.saddleAmber)
                 .lineLimit(1)
 
             // Center: Calligraphic Ain with Ayah count in belly
             ZStack {
                 Text("ع")
-                    .font(AppTypography.arabicCalligraphy(size: 24, weight: .bold))
+                    .font(AppTypography.arabicCalligraphy(size: 18, weight: .bold))
                     .foregroundStyle(palette.inkUmber)
 
                 // Middle number: Total Ayahs in this Ruku (e.g. ۷, ۱۳)
                 Text(AppTypography.easternArabicDigits(rukuMark.ayahsInRuku))
-                    .font(AppTypography.mushafMetadata(size: 9))
-                    .fontWeight(.semibold)
+                    .font(.system(size: 8, weight: .bold, design: .serif))
                     .foregroundStyle(palette.inkUmber)
-                    .offset(x: -1, y: 1)
+                    .offset(x: -0.5, y: 1)
             }
-            .frame(height: 20)
+            .frame(width: 24, height: 18)
 
             // Bottom: Cumulative Ruku in Juz (e.g. ۲, ۳)
             Text(AppTypography.easternArabicDigits(rukuMark.rukuInJuz))
-                .font(AppTypography.mushafMetadata(size: 10))
-                .fontWeight(.medium)
+                .font(.system(size: 9.5, weight: .bold, design: .serif))
                 .foregroundStyle(palette.sepiaMuted)
                 .lineLimit(1)
         }
-        .frame(width: 26)
+        .padding(.horizontal, 2)
+        .padding(.vertical, 3)
+        .background(
+            RoundedRectangle(cornerRadius: 4)
+                .fill(palette.surfacePapyrus.opacity(0.85))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 4)
+                .strokeBorder(palette.saddleAmber.opacity(0.35), lineWidth: 0.5)
+        )
+        .frame(width: 28)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(
             "Ruku \(rukuMark.rukuInSurah) of Surah, \(rukuMark.ayahsInRuku) verses, Ruku \(rukuMark.rukuInJuz) of Juz"

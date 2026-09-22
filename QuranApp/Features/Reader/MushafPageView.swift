@@ -25,7 +25,7 @@ public struct MushafPageView: View {
     public let onToggleChrome: () -> Void
     @Environment(\.displayScale) private var displayScale
 
-    private static let marginWidth: CGFloat = 28.0
+    private static let marginWidth: CGFloat = 34.0
 
     public init(
         pageNumber: Int,
