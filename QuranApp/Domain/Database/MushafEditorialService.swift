@@ -36,8 +36,7 @@ public final class MushafEditorialService: Sendable {
             pageNumber: 2,
             rukuMarks: [],
             rubrics: [
-                MarginRubric(pageNumber: 2, lineNumber: 4, kind: .juzStart(number: 1, arabicName: "الم")),
-                MarginRubric(pageNumber: 2, lineNumber: 4, kind: .muanaqah)
+                MarginRubric(pageNumber: 2, lineNumber: 3, kind: .muanaqah)
             ],
             hasFrontispiece: true
         )
@@ -97,9 +96,7 @@ public final class MushafEditorialService: Sendable {
         // MARK: - Page 245: First Sajdah Tilawah (Line 1: 7:206)
         marks[245] = PageEditorialMarks(
             pageNumber: 245,
-            rukuMarks: [
-                RukuMark(pageNumber: 245, lineNumber: 1, surahId: 7, rukuInSurah: 24, ayahsInRuku: 14, rukuInJuz: 16)
-            ],
+            rukuMarks: [],
             rubrics: [
                 MarginRubric(pageNumber: 245, lineNumber: 1, kind: .sajdah(number: 1))
             ],

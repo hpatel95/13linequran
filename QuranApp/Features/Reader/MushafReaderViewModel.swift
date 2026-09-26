@@ -109,11 +109,7 @@ public final class MushafReaderViewModel {
         self.locationResolver = ReaderLocationResolver(repository: editionRepo)
         self.audioService = AudioPlayerService(repository: repository)
         self.currentPageIndex = max(1, initialPage)
-        if (2...5).contains(initialPage) {
-            self.displayMode = .enhancedVector
-        } else {
-            self.displayMode = .authenticFacsimile
-        }
+        self.displayMode = .enhancedVector
         setupAudioSync()
     }
 
