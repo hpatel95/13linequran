@@ -143,7 +143,7 @@ final class MushafInteractionUITests: XCTestCase {
     }
 
     func testFinalPageExposesTheLastAyahAndKeepsBlankSlotsInert() {
-        launchReader(page: 847)
+        launchReader(page: 849)
         let last = requireElement("ayah-114:6")
         press(at: CGPoint(x: last.frame.midX, y: last.frame.midY))
         assertSheetShows(verseKey: "114:6")

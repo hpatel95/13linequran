@@ -22,7 +22,7 @@ public final class MushafReaderViewModel {
     }
 
     // MARK: - Active State
-    public var activeEditionId: String = "taj-company-13-847"
+    public var activeEditionId: String = "legacy-qudratullah-13-849"
     public var displayMode: ReaderDisplayMode = .enhancedVector
 
     /// 1-based navigation index in the active edition (e.g. 1 ... 848).
@@ -523,10 +523,17 @@ public final class MushafReaderViewModel {
             switch displayMode {
             case .enhancedVector:
                 displayMode = .authenticFacsimile
+                activeEditionId = "taj-company-13-847"
             case .authenticFacsimile:
                 displayMode = .accessibleText
             case .accessibleText:
                 displayMode = .enhancedVector
+                activeEditionId = "legacy-qudratullah-13-849"
+            }
+        }
+        Task {
+            if let p = try? await editionRepository.fetchPages(editionId: activeEditionId) {
+                self.pages = p
             }
         }
     }

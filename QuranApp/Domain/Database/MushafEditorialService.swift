@@ -88,7 +88,7 @@ public final class MushafEditorialService: Sendable {
                 RukuMark(pageNumber: 28, lineNumber: 9, surahId: 2, rukuInSurah: 17, ayahsInRuku: 2, rukuInJuz: 16)
             ],
             rubrics: [
-                MarginRubric(pageNumber: 28, lineNumber: 10, kind: .juzStart(number: 2, arabicName: "سَيَقُولُ"))
+                MarginRubric(pageNumber: 28, lineNumber: 1, kind: .juzStart(number: 2, arabicName: "سَيَقُولُ"))
             ],
             hasFrontispiece: false
         )

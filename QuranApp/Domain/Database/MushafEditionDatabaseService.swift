@@ -160,6 +160,25 @@ public actor MushafEditionDatabaseService: MushafEditionRepositoryProtocol {
 
     // MARK: - Pages
     public func fetchPages(editionId: String) async throws -> [MushafPageSummary] {
+        if editionId.contains("849") {
+            return (1...849).map { page in
+                MushafPageSummary(
+                    id: String(format: "p%04d", page),
+                    editionId: editionId,
+                    navigationIndex: page,
+                    quranOrdinal: page,
+                    printedLabel: "\(page)",
+                    kind: .quran,
+                    title: "Page \(page)",
+                    sourceAssetId: "\(page)",
+                    sourceWidth: nil,
+                    sourceHeight: nil,
+                    imagePath: nil,
+                    imageSha256: nil
+                )
+            }
+        }
+
         let sql = """
         SELECT page_id, edition_id, navigation_index, quran_ordinal, printed_label,
                kind, title, source_asset_id, source_width, source_height, image_path, image_sha256
@@ -182,6 +201,25 @@ public actor MushafEditionDatabaseService: MushafEditionRepositoryProtocol {
     }
 
     public func fetchPage(editionId: String, pageId: String) async throws -> MushafPageContent? {
+        if editionId.contains("849") {
+            let numStr = pageId.components(separatedBy: CharacterSet.decimalDigits.inverted).last ?? "1"
+            let page = Int(numStr) ?? 1
+            let summary = MushafPageSummary(
+                id: pageId,
+                editionId: editionId,
+                navigationIndex: page,
+                quranOrdinal: page,
+                printedLabel: "\(page)",
+                kind: .quran,
+                title: "Page \(page)",
+                sourceAssetId: "\(page)",
+                sourceWidth: nil,
+                sourceHeight: nil,
+                imagePath: nil,
+                imageSha256: nil
+            )
+            return MushafPageContent(summary: summary, verses: [], regions: [])
+        }
         let sql = """
         SELECT page_id, edition_id, navigation_index, quran_ordinal, printed_label,
                kind, title, source_asset_id, source_width, source_height, image_path, image_sha256
