@@ -59,13 +59,42 @@ final class MushafTextLayoutEngine {
             throw MushafLayoutError.invalidSize
         }
 
-        var rendered: [MushafRenderedLine] = []
+        var textRows: [(MushafLine, MushafTextSource)] = []
         for line in lines.sorted(by: { $0.lineNumber < $1.lineNumber }) {
             let source = try MushafTextSource(line: line)
             // Headers are SwiftUI decorations in this same grid. Empty canonical
             // slots are still ruled, but must never become selectable text.
             guard line.lineType != .surahName, !source.text.isEmpty else { continue }
-            rendered.append(try render(line, source: source, grid: grid))
+            textRows.append((line, source))
+        }
+
+        // Determine a unified page font size based on the densest row on the page.
+        // This ensures stroke weight and character sizing are 100% uniform across all rows.
+        let referenceSize: CGFloat = 32
+        var minFitSize: CGFloat = .greatestFiniteMagnitude
+
+        for (row, source) in textRows where !row.isCentered && row.lineType != .bismillah {
+            let target = grid.textRect(row.lineNumber)
+            let reference = try shape(source, size: referenceSize, row: row)
+            guard !reference.ink.isNull, reference.ink.width > 0, reference.ink.height > 0 else {
+                throw MushafLayoutError.cannotFit(page: row.pageNumber, line: row.lineNumber)
+            }
+            let preferredSize = target.width / 13
+            let rowFit = min(
+                preferredSize * 1.18,
+                referenceSize * target.width / reference.ink.width,
+                referenceSize * target.height / reference.ink.height
+            ) * 0.995
+            if rowFit < minFitSize {
+                minFitSize = rowFit
+            }
+        }
+
+        let unifiedFontSize = minFitSize < .greatestFiniteMagnitude ? max(10, minFitSize) : (grid.textRect(1).width / 13)
+
+        var rendered: [MushafRenderedLine] = []
+        for (line, source) in textRows {
+            rendered.append(try render(line, source: source, grid: grid, unifiedFontSize: unifiedFontSize))
         }
         return MushafPageLayout(grid: grid, lines: rendered)
     }
@@ -146,23 +175,10 @@ final class MushafTextLayoutEngine {
         return result
     }
 
-    private func render(_ row: MushafLine, source: MushafTextSource, grid: MushafPageGrid) throws -> MushafRenderedLine {
+    private func render(_ row: MushafLine, source: MushafTextSource, grid: MushafPageGrid, unifiedFontSize: CGFloat) throws -> MushafRenderedLine {
         let target = grid.textRect(row.lineNumber)
         let centered = row.isCentered || row.lineType == .bismillah
-        let referenceSize: CGFloat = 32
-        let reference = try shape(source, size: referenceSize, row: row)
-        guard !reference.ink.isNull, reference.ink.width > 0, reference.ink.height > 0 else {
-            throw MushafLayoutError.cannotFit(page: row.pageNumber, line: row.lineNumber)
-        }
-
-        // Actual ink bounds, not point size or the font's very tall hhea metrics,
-        // determine whether Nastaleeq marks fit safely between the rules.
-        let preferredSize = target.width / 13
-        var fontSize = min(
-            preferredSize * (centered ? 1 : 1.18),
-            referenceSize * target.width / reference.ink.width,
-            referenceSize * target.height / reference.ink.height
-        ) * 0.995
+        var fontSize = centered ? min(unifiedFontSize, target.width / 13) : unifiedFontSize
 
         // Native Arabic justification can change glyphs. Recheck vertical ink
         // after justification rather than relying only on the unexpanded line.

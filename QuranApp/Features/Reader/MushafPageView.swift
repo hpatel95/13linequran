@@ -105,6 +105,34 @@ public struct MushafPageView: View {
                             }
                         }
 
+                        // Juz Opening Highlight Band (Surbrillance) across the row
+                        ForEach(editorialMarks.rubrics) { rubric in
+                            if case .juzStart = rubric.kind {
+                                let rect = textGrid.rowRect(rubric.lineNumber)
+                                RoundedRectangle(cornerRadius: 3)
+                                    .fill(palette.saddleAmber.opacity(0.12))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 3)
+                                            .strokeBorder(palette.saddleAmber.opacity(0.25), lineWidth: 0.5)
+                                    )
+                                    .frame(width: rect.width - 2, height: max(0, rect.height - 2))
+                                    .position(x: rect.midX, y: rect.midY)
+                                    .allowsHitTesting(false)
+                            }
+                        }
+
+                        // Sajdah Tilawah Overline Bar
+                        ForEach(editorialMarks.rubrics) { rubric in
+                            if case .sajdah = rubric.kind {
+                                let rect = textGrid.textRect(rubric.lineNumber)
+                                Rectangle()
+                                    .fill(palette.saddleAmber.opacity(0.85))
+                                    .frame(width: min(rect.width * 0.45, 120), height: 1.25)
+                                    .position(x: rect.minX + min(rect.width * 0.45, 120) / 2 + 10, y: rect.minY + 3.0)
+                                    .allowsHitTesting(false)
+                            }
+                        }
+
                         // Frontispiece Lower Decorative Panel (Rows 9–13 on Pages 1 and 2)
                         if editorialMarks.hasFrontispiece && (pageNumber == 1 || pageNumber == 2) {
                             let topY = textGrid.boundary(8)
@@ -155,6 +183,15 @@ public struct MushafPageView: View {
                                     .position(x: marginW / 2, y: rowMidY)
                                     .allowsHitTesting(false)
                             }
+
+                            ForEach(editorialMarks.rubrics) { rubric in
+                                if rubric.kind != .juzStart {
+                                    let rowMidY = textGrid.rowRect(rubric.lineNumber).midY
+                                    MarginRubricView(rubric: rubric, palette: palette)
+                                        .position(x: marginW / 2, y: rowMidY)
+                                        .allowsHitTesting(false)
+                                }
+                            }
                         }
                     }
                     .frame(width: marginW, height: totalHeight)
@@ -174,6 +211,15 @@ public struct MushafPageView: View {
                                 MarginRukuView(rukuMark: ruku, palette: palette)
                                     .position(x: marginW / 2, y: rowMidY)
                                     .allowsHitTesting(false)
+                            }
+
+                            ForEach(editorialMarks.rubrics) { rubric in
+                                if rubric.kind != .juzStart {
+                                    let rowMidY = textGrid.rowRect(rubric.lineNumber).midY
+                                    MarginRubricView(rubric: rubric, palette: palette)
+                                        .position(x: marginW / 2, y: rowMidY)
+                                        .allowsHitTesting(false)
+                                }
                             }
                         }
                     }

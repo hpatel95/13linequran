@@ -36,7 +36,8 @@ public final class MushafEditorialService: Sendable {
             pageNumber: 2,
             rukuMarks: [],
             rubrics: [
-                MarginRubric(pageNumber: 2, lineNumber: 1, kind: .juzStart(number: 1, arabicName: "الم"))
+                MarginRubric(pageNumber: 2, lineNumber: 4, kind: .juzStart(number: 1, arabicName: "الم")),
+                MarginRubric(pageNumber: 2, lineNumber: 4, kind: .muanaqah)
             ],
             hasFrontispiece: true
         )
@@ -77,6 +78,40 @@ public final class MushafEditorialService: Sendable {
             ],
             rubrics: [
                 MarginRubric(pageNumber: 6, lineNumber: 1, kind: .quarter(.rub))
+            ],
+            hasFrontispiece: false
+        )
+
+        // MARK: - Page 28: Start of Juz 2 (Line 10: سَيَقُولُ) & Ruku 17 (Line 9)
+        marks[28] = PageEditorialMarks(
+            pageNumber: 28,
+            rukuMarks: [
+                RukuMark(pageNumber: 28, lineNumber: 9, surahId: 2, rukuInSurah: 17, ayahsInRuku: 2, rukuInJuz: 16)
+            ],
+            rubrics: [
+                MarginRubric(pageNumber: 28, lineNumber: 10, kind: .juzStart(number: 2, arabicName: "سَيَقُولُ"))
+            ],
+            hasFrontispiece: false
+        )
+
+        // MARK: - Page 245: First Sajdah Tilawah (Line 1: 7:206)
+        marks[245] = PageEditorialMarks(
+            pageNumber: 245,
+            rukuMarks: [
+                RukuMark(pageNumber: 245, lineNumber: 1, surahId: 7, rukuInSurah: 24, ayahsInRuku: 14, rukuInJuz: 16)
+            ],
+            rubrics: [
+                MarginRubric(pageNumber: 245, lineNumber: 1, kind: .sajdah(number: 1))
+            ],
+            hasFrontispiece: false
+        )
+
+        // MARK: - Page 411: Surah Al-Kahf 18:19 (Line 1: وَلْيَتَلَطَّفْ / Middle of Quran)
+        marks[411] = PageEditorialMarks(
+            pageNumber: 411,
+            rukuMarks: [],
+            rubrics: [
+                MarginRubric(pageNumber: 411, lineNumber: 1, kind: .middleOfQuran)
             ],
             hasFrontispiece: false
         )

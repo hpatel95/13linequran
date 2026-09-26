@@ -49,6 +49,8 @@ public struct MarginRubric: Identifiable, Hashable, Sendable, Codable {
         case quarter(QuarterType)
         case sajdah(number: Int)
         case manzil(number: Int)
+        case middleOfQuran
+        case muanaqah
     }
 
     public enum QuarterType: String, Hashable, Sendable, Codable {
@@ -63,6 +65,8 @@ public struct MarginRubric: Identifiable, Hashable, Sendable, Codable {
         case .quarter(let q): return "quarter_\(q.rawValue)"
         case .sajdah(let num): return "sajdah_\(num)"
         case .manzil(let num): return "manzil_\(num)"
+        case .middleOfQuran: return "nisf_al_quran"
+        case .muanaqah: return "muanaqah"
         }
     }
 
