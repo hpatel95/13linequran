@@ -69,7 +69,7 @@ public struct MushafReaderView: View {
 
     // MARK: - TabView Content
     private var tabViewContent: some View {
-        let totalPages = max(1, viewModel.pages.isEmpty ? 848 : viewModel.pages.count)
+        let totalPages = viewModel.totalPages
         return TabView(selection: $viewModel.currentPageIndex) {
             ForEach(1...totalPages, id: \.self) { index in
                 Group {
@@ -191,8 +191,9 @@ public struct MushafReaderView: View {
                     .lineLimit(1)
 
                 let subtitle: String = {
+                    let totalCount = viewModel.displayMode == .enhancedVector ? 849 : 847
                     if let ordinal = viewModel.currentPageSummary?.quranOrdinal {
-                        return "Juz \(viewModel.currentJuzNumber) • Page \(ordinal) of 847"
+                        return "Juz \(viewModel.currentJuzNumber) • Page \(ordinal) of \(totalCount)"
                     } else if let title = viewModel.currentPageSummary?.title {
                         return "Juz \(viewModel.currentJuzNumber) • \(title)"
                     } else {

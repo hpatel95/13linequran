@@ -22,8 +22,15 @@ public final class MushafReaderViewModel {
     }
 
     // MARK: - Active State
-    public var activeEditionId: String = "legacy-qudratullah-13-849"
+    public var activeEditionId: String = "taj-company-13-847"
     public var displayMode: ReaderDisplayMode = .enhancedVector
+
+    public var totalPages: Int {
+        if displayMode == .enhancedVector {
+            return 849
+        }
+        return pages.isEmpty ? 848 : pages.count
+    }
 
     /// 1-based navigation index in the active edition (e.g. 1 ... 848).
     public var currentPageIndex: Int = 1 {
@@ -187,7 +194,8 @@ public final class MushafReaderViewModel {
 
                 // Clamp current index within loaded pages
                 if !p.isEmpty {
-                    let clamped = max(1, min(p.count, currentPageIndex))
+                    let maxP = totalPages
+                    let clamped = max(1, min(maxP, currentPageIndex))
                     self.currentPageIndex = clamped
                 }
 
@@ -203,7 +211,7 @@ public final class MushafReaderViewModel {
 
     // MARK: - Navigation
     public func jumpToPage(_ index: Int) {
-        let maxPages = pages.isEmpty ? 848 : pages.count
+        let maxPages = totalPages
         let clamped = max(1, min(maxPages, index))
         self.currentPageIndex = clamped
     }
@@ -523,17 +531,10 @@ public final class MushafReaderViewModel {
             switch displayMode {
             case .enhancedVector:
                 displayMode = .authenticFacsimile
-                activeEditionId = "taj-company-13-847"
             case .authenticFacsimile:
                 displayMode = .accessibleText
             case .accessibleText:
                 displayMode = .enhancedVector
-                activeEditionId = "legacy-qudratullah-13-849"
-            }
-        }
-        Task {
-            if let p = try? await editionRepository.fetchPages(editionId: activeEditionId) {
-                self.pages = p
             }
         }
     }
@@ -550,11 +551,26 @@ public final class MushafReaderViewModel {
 
     // MARK: - Helpers
     public var currentPageSummary: MushafPageSummary? {
-        guard currentPageIndex >= 1 && currentPageIndex <= pages.count else { return nil }
-        return pages[currentPageIndex - 1]
+        summaryForIndex(currentPageIndex)
     }
 
     public func summaryForIndex(_ index: Int) -> MushafPageSummary? {
+        if index == 849 && displayMode == .enhancedVector {
+            return MushafPageSummary(
+                id: "p0849",
+                editionId: activeEditionId,
+                navigationIndex: 849,
+                quranOrdinal: 849,
+                printedLabel: "849",
+                kind: .quran,
+                title: "Page 849",
+                sourceAssetId: "849",
+                sourceWidth: nil,
+                sourceHeight: nil,
+                imagePath: nil,
+                imageSha256: nil
+            )
+        }
         guard index >= 1 && index <= pages.count else { return nil }
         return pages[index - 1]
     }

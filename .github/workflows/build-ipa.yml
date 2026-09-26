@@ -170,7 +170,7 @@ jobs:
             mkdir -p "screenshots/$label"
             for PAGE in 1 2 3 4 5 6 28 245 411 849; do
               xcrun simctl terminate "$udid" com.quran.thirteenline >/dev/null 2>&1 || true
-              sleep 1
+              sleep 2
               xcrun simctl launch "$udid" com.quran.thirteenline -mushafAutomatedRun 1 -mushafInitialPage "$PAGE" >/dev/null
               sleep 6
               xcrun simctl io "$udid" screenshot "screenshots/$label/page-$PAGE.png"

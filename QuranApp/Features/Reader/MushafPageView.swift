@@ -141,6 +141,8 @@ public struct MushafPageView: View {
                             MushafLowerPanelDecoration(palette: palette)
                                 .frame(width: textWidth - 4, height: panelHeight)
                                 .position(x: textWidth / 2, y: topY + panelHeight / 2 + 1)
+                                .allowsHitTesting(false)
+                                .accessibilityHidden(true)
                         }
 
                         if lines.isEmpty {
