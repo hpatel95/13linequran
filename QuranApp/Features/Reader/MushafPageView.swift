@@ -185,7 +185,7 @@ public struct MushafPageView: View {
                             }
 
                             ForEach(editorialMarks.rubrics) { rubric in
-                                if rubric.kind != .juzStart {
+                                if !rubric.kind.isJuzStart {
                                     let rowMidY = textGrid.rowRect(rubric.lineNumber).midY
                                     MarginRubricView(rubric: rubric, palette: palette)
                                         .position(x: marginW / 2, y: rowMidY)
@@ -214,7 +214,7 @@ public struct MushafPageView: View {
                             }
 
                             ForEach(editorialMarks.rubrics) { rubric in
-                                if rubric.kind != .juzStart {
+                                if !rubric.kind.isJuzStart {
                                     let rowMidY = textGrid.rowRect(rubric.lineNumber).midY
                                     MarginRubricView(rubric: rubric, palette: palette)
                                         .position(x: marginW / 2, y: rowMidY)

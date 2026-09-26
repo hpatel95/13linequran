@@ -51,6 +51,11 @@ public struct MarginRubric: Identifiable, Hashable, Sendable, Codable {
         case manzil(number: Int)
         case middleOfQuran
         case muanaqah
+
+        public var isJuzStart: Bool {
+            if case .juzStart = self { return true }
+            return false
+        }
     }
 
     public enum QuarterType: String, Hashable, Sendable, Codable {
