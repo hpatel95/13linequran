@@ -364,8 +364,6 @@ final class MushafLayoutTests: XCTestCase {
         }
         XCTAssertThrowsError(try engine.layout(lines: Array(lines.prefix(12)), grid: MushafPageGrid(size: CGSize(width: 327, height: 520), displayScale: 3)))
     }
-        XCTAssertThrowsError(try engine.layout(lines: Array(lines.prefix(12)), grid: MushafPageGrid(size: CGSize(width: 327, height: 520), displayScale: 3)))
-    }
 
     func testSourceOwnershipRejectsNormalisationOrReordering() {
         let line = MushafLine(
