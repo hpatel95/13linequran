@@ -132,8 +132,8 @@ final class MushafInteractionUITests: XCTestCase {
     // MARK: - Page coverage
 
     func testSurahTransitionPageRendersSelectableAyahsForBothSurahs() {
-        launchReader(page: 610)
-        // Page 610 finishes Surah Fatir and opens Surah YaSin.
+        launchReader(page: 611)
+        // Page 611 finishes Surah Fatir and opens Surah YaSin.
         requireElement("ayah-35:45")
         requireElement("ayah-36:1")
         let yasin = requireElement("ayah-36:1")
@@ -143,7 +143,7 @@ final class MushafInteractionUITests: XCTestCase {
     }
 
     func testFinalPageExposesTheLastAyahAndKeepsBlankSlotsInert() {
-        launchReader(page: 849)
+        launchReader(page: 848)
         let last = requireElement("ayah-114:6")
         press(at: CGPoint(x: last.frame.midX, y: last.frame.midY))
         assertSheetShows(verseKey: "114:6")

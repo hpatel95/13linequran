@@ -11,56 +11,73 @@ import XCTest
 final class EditorialMetadataTests: XCTestCase {
     private let service = MushafEditorialService.shared
 
-    func testPage1AlFatihahFrontispiece() {
+    func testPage1OpeningFrontispiece() {
         let marks = service.marks(for: 1)
         XCTAssertTrue(marks.hasFrontispiece, "Page 1 must be marked as frontispiece")
-        XCTAssertEqual(marks.rukuMarks.count, 1, "Page 1 has 1 Ruku at Al-Fatihah conclusion")
+        XCTAssertEqual(marks.rukuMarks.count, 0, "Page 1 has no Ruku")
+        XCTAssertFalse(MushafEditorialService.isOuterMarginOnRight(pageNumber: 1), "Odd page 1 outer margin is on Left")
+    }
+
+    func testPage2AlFatihahFrontispiece() {
+        let marks = service.marks(for: 2)
+        XCTAssertTrue(marks.hasFrontispiece, "Page 2 must be marked as frontispiece")
+        XCTAssertEqual(marks.rukuMarks.count, 1, "Page 2 has 1 Ruku at Al-Fatihah conclusion")
         let ruku = marks.rukuMarks.first!
         XCTAssertEqual(ruku.lineNumber, 8)
         XCTAssertEqual(ruku.rukuInSurah, 1)
         XCTAssertEqual(ruku.ayahsInRuku, 7)
         XCTAssertEqual(ruku.rukuInJuz, 1)
-        XCTAssertTrue(MushafEditorialService.isOuterMarginOnRight(pageNumber: 1), "Odd page 1 outer margin is on Right")
+        XCTAssertTrue(MushafEditorialService.isOuterMarginOnRight(pageNumber: 2), "Even page 2 outer margin is on Right")
     }
 
-    func testPage2AlBaqarahOpeningFrontispiece() {
-        let marks = service.marks(for: 2)
-        XCTAssertTrue(marks.hasFrontispiece, "Page 2 must be marked as frontispiece")
-        XCTAssertEqual(marks.rukuMarks.count, 0, "Page 2 has no Ruku conclusion (Ruku 1 ends on Page 3)")
-        XCTAssertFalse(MushafEditorialService.isOuterMarginOnRight(pageNumber: 2), "Even page 2 outer margin is on Left")
-    }
-
-    func testPage3AlBaqarahRuku1Mark() {
+    func testPage3AlBaqarahOpeningFrontispiece() {
         let marks = service.marks(for: 3)
-        XCTAssertFalse(marks.hasFrontispiece, "Page 3 is standard text layout")
-        XCTAssertEqual(marks.rukuMarks.count, 1, "Page 3 has Ruku 1 conclusion at Line 5")
+        XCTAssertTrue(marks.hasFrontispiece, "Page 3 must be marked as frontispiece")
+        XCTAssertEqual(marks.rukuMarks.count, 0, "Page 3 has no Ruku conclusion (Ruku 1 ends on Page 4)")
+        XCTAssertFalse(MushafEditorialService.isOuterMarginOnRight(pageNumber: 3), "Odd page 3 outer margin is on Left")
+    }
+
+    func testPage4AlBaqarahRuku1Mark() {
+        let marks = service.marks(for: 4)
+        XCTAssertFalse(marks.hasFrontispiece, "Page 4 is standard text layout")
+        XCTAssertEqual(marks.rukuMarks.count, 1, "Page 4 has Ruku 1 conclusion at Line 5")
         let ruku = marks.rukuMarks.first!
         XCTAssertEqual(ruku.lineNumber, 5, "Ruku 1 concludes on Line 5 (verse 2:7)")
         XCTAssertEqual(ruku.surahId, 2)
         XCTAssertEqual(ruku.rukuInSurah, 1, "Top numeral: 1st Ruku of Surah Al-Baqarah")
         XCTAssertEqual(ruku.ayahsInRuku, 7, "Middle numeral: 7 ayahs in this Ruku")
         XCTAssertEqual(ruku.rukuInJuz, 2, "Bottom numeral: 2nd Ruku of Juz 1")
-        XCTAssertTrue(MushafEditorialService.isOuterMarginOnRight(pageNumber: 3), "Odd page 3 outer margin is on Right")
+        XCTAssertTrue(MushafEditorialService.isOuterMarginOnRight(pageNumber: 4), "Even page 4 outer margin is on Right")
     }
 
-    func testPage4ContinuousTextNoRukuMark() {
-        let marks = service.marks(for: 4)
-        XCTAssertFalse(marks.hasFrontispiece)
-        XCTAssertEqual(marks.rukuMarks.count, 0, "Page 4 is continuous reading text with no Ruku breaks")
-        XCTAssertFalse(MushafEditorialService.isOuterMarginOnRight(pageNumber: 4), "Even page 4 outer margin is on Left")
-    }
-
-    func testPage5AlBaqarahRuku2Mark() {
+    func testPage5ContinuousTextNoRukuMark() {
         let marks = service.marks(for: 5)
         XCTAssertFalse(marks.hasFrontispiece)
-        XCTAssertEqual(marks.rukuMarks.count, 1, "Page 5 has Ruku 2 conclusion at Line 1")
+        XCTAssertEqual(marks.rukuMarks.count, 0, "Page 5 is continuous reading text with no Ruku breaks")
+        XCTAssertFalse(MushafEditorialService.isOuterMarginOnRight(pageNumber: 5), "Odd page 5 outer margin is on Left")
+    }
+
+    func testPage6AlBaqarahRuku2Mark() {
+        let marks = service.marks(for: 6)
+        XCTAssertFalse(marks.hasFrontispiece)
+        XCTAssertEqual(marks.rukuMarks.count, 1, "Page 6 has Ruku 2 conclusion at Line 1")
         let ruku = marks.rukuMarks.first!
         XCTAssertEqual(ruku.lineNumber, 1, "Ruku 2 concludes on Line 1 (verse 2:20)")
         XCTAssertEqual(ruku.surahId, 2)
         XCTAssertEqual(ruku.rukuInSurah, 2, "Top numeral: 2nd Ruku of Surah Al-Baqarah")
         XCTAssertEqual(ruku.ayahsInRuku, 13, "Middle numeral: 13 ayahs in this Ruku (2:8 to 2:20)")
         XCTAssertEqual(ruku.rukuInJuz, 3, "Bottom numeral: 3rd Ruku of Juz 1")
-        XCTAssertTrue(MushafEditorialService.isOuterMarginOnRight(pageNumber: 5), "Odd page 5 outer margin is on Right")
+        XCTAssertTrue(MushafEditorialService.isOuterMarginOnRight(pageNumber: 6), "Even page 6 outer margin is on Right")
+    }
+
+    func testPage411MiddleOfQuranRubric() {
+        let marks = service.marks(for: 411)
+        XCTAssertFalse(marks.hasFrontispiece)
+        XCTAssertEqual(marks.rubrics.count, 1)
+        let rubric = marks.rubrics.first!
+        XCTAssertEqual(rubric.lineNumber, 10, "Mid-Quran rubric is at Line 10 of Page 411")
+        XCTAssertEqual(rubric.kind, .middleOfQuran)
+        XCTAssertFalse(MushafEditorialService.isOuterMarginOnRight(pageNumber: 411), "Odd page 411 outer margin is on Left")
     }
 
     func testSurahCartoucheDefaultRukus() {

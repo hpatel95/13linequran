@@ -17,10 +17,10 @@ final class MushafLayoutTests: XCTestCase {
     private var repository: QuranDatabaseService!
     private let engine = MushafTextLayoutEngine()
 
-    /// Pages chosen to cover: Surah header + blank slots (1, 2), dense text (4),
-    /// a mixed two-Ayah row with a continuation (28), a centered row (105),
-    /// a Surah transition mid-page (610, 849), and a plain interior page (613).
-    private let auditedPages = [1, 2, 4, 28, 105, 610, 613, 849]
+    /// Pages chosen to cover: Surah header + blank slots (2, 3), dense text (4),
+    /// a mixed two-Ayah row with a continuation (29), a centered row (106),
+    /// a Surah transition mid-page (611, 848), and a plain interior page (614).
+    private let auditedPages = [2, 3, 4, 29, 106, 611, 614, 848]
 
     override func setUp() async throws {
         try await super.setUp()
@@ -144,10 +144,10 @@ final class MushafLayoutTests: XCTestCase {
     }
 
     func testHeaderAndBlankSlotsProduceNoSelectableGeometry() async throws {
-        for page in [1, 2, 849] {
+        for page in [2, 3, 848] {
             let lines = try await pageLines(page)
             let blankRows = lines.filter { $0.words.isEmpty && $0.lineType == .ayahText }.map(\.lineNumber)
-            XCTAssertFalse(blankRows.isEmpty, "Pages 1, 2 and 849 are expected to contain deliberately empty slots.")
+            XCTAssertFalse(blankRows.isEmpty, "Pages 2, 3 and 848 are expected to contain deliberately empty slots.")
             let layout = try await makeLayout(page: page)
             for line in layout.lines {
                 XCTAssertFalse(blankRows.contains(line.source.lineNumber), "A blank slot must never render or accept touches.")
@@ -168,7 +168,7 @@ final class MushafLayoutTests: XCTestCase {
     }
 
     func testTouchOutsideTheGridResolvesToNothing() async throws {
-        let layout = try await makeLayout(page: 28)
+        let layout = try await makeLayout(page: 29)
         XCTAssertNil(layout.word(at: CGPoint(x: -5, y: 20)))
         XCTAssertNil(layout.word(at: CGPoint(x: 20, y: -5)))
         XCTAssertNil(layout.word(at: CGPoint(x: 20, y: layout.grid.size.height + 10)))
@@ -200,7 +200,7 @@ final class MushafLayoutTests: XCTestCase {
     }
 
     func testJustifiedRowsUseWholeWordGroupsRatherThanStretchedGlyphs() async throws {
-        let layout = try await makeLayout(page: 28)
+        let layout = try await makeLayout(page: 29)
         for line in layout.lines {
             if line.usedSpacingFallback {
                 XCTAssertGreaterThanOrEqual(line.additionalGap, 0, "Spacing fallback may never compress glyphs.")
@@ -212,17 +212,17 @@ final class MushafLayoutTests: XCTestCase {
     }
 
     func testCenteredRowsStayCenteredAndAreNeverStretchedToFill() async throws {
-        let layout = try await makeLayout(page: 105)
+        let layout = try await makeLayout(page: 106)
         let centered = layout.lines.filter { $0.source.isCentered }
-        XCTAssertFalse(centered.isEmpty, "Page 105 is expected to begin with a centered row.")
+        XCTAssertFalse(centered.isEmpty, "Page 106 is expected to contain centered rows.")
         for line in centered {
             let target = layout.grid.textRect(line.source.lineNumber)
             XCTAssertEqual(line.inkBounds.midX, target.midX, accuracy: 1.5, "Centered rows must remain optically centered.")
             XCTAssertLessThanOrEqual(line.inkBounds.width, target.width + 0.5)
             XCTAssertFalse(line.usedSpacingFallback, "A centered row must never be expanded to fill the row width.")
         }
-        // Al-Fatihah 1:1 is a short centered Ayah row: it must not be spread edge to edge.
-        let fatihah = try await makeLayout(page: 1)
+        // Al-Fatihah 1:1 is a short centered Ayah row on Page 2: it must not be spread edge to edge.
+        let fatihah = try await makeLayout(page: 2)
         let ayahOneOne = fatihah.lines.first { $0.source.lineNumber == 2 }
         XCTAssertNotNil(ayahOneOne)
         if let line = ayahOneOne {
@@ -233,58 +233,57 @@ final class MushafLayoutTests: XCTestCase {
     // MARK: - Selection (Test 1: whole-line / first-word selection)
 
     func testSharedRowResolvesEachAyahIndependently() async throws {
-        let layout = try await makeLayout(page: 28)
-        guard let mixed = layout.lines.first(where: { $0.source.lineNumber == 10 }) else {
-            return XCTFail("Page 28 row 10 is expected to be present.")
+        let layout = try await makeLayout(page: 2)
+        guard let mixed = layout.lines.first(where: { $0.source.lineNumber == 4 }) else {
+            return XCTFail("Page 2 row 4 is expected to be present.")
         }
         let keys = Set(mixed.words.map(\.word.verseKey))
-        XCTAssertEqual(keys, ["2:143", "2:144"], "Row 10 must carry the end of 2:143 and the start of 2:144.")
+        XCTAssertEqual(keys, ["1:3", "1:4"], "Row 4 must carry the end of 1:3 and the start of 1:4.")
 
-        let owners = mixed.words.filter { $0.word.verseKey == "2:143" }
-        let successors = mixed.words.filter { $0.word.verseKey == "2:144" }
+        let owners = mixed.words.filter { $0.word.verseKey == "1:3" }
+        let successors = mixed.words.filter { $0.word.verseKey == "1:4" }
         XCTAssertFalse(owners.isEmpty)
         XCTAssertFalse(successors.isEmpty)
 
         // In RTL the earlier Ayah occupies the right side of the row.
         let ownerRight = owners.map(\.hitBounds.maxX).max()!
         let successorLeft = successors.map(\.hitBounds.minX).min()!
-        XCTAssertGreaterThan(ownerRight, successorLeft, "2:143 must sit to the right of 2:144 on the same row.")
+        XCTAssertGreaterThan(ownerRight, successorLeft, "1:3 must sit to the right of 1:4 on the same row.")
         XCTAssertLessThanOrEqual(
             successors.map(\.hitBounds.maxX).max()!,
             owners.map(\.hitBounds.minX).min()! + 0.6,
             "Hit regions of neighbouring Ayahs must not overlap on a shared row."
         )
 
-        // The regression: the old renderer always selected `line.words.first`.
-        XCTAssertEqual(mixed.source.words.first?.verseKey, "2:143", "In logical RTL order, the line starts with 2:143.")
-        XCTAssertEqual(mixed.words.last?.word.verseKey, "2:143", "The visually rightmost token in RTL belongs to 2:143.")
+        XCTAssertEqual(mixed.source.words.first?.verseKey, "1:3", "In logical RTL order, the line starts with 1:3.")
+        XCTAssertEqual(mixed.words.last?.word.verseKey, "1:3", "The visually rightmost token in RTL belongs to 1:3.")
         let leftmost = mixed.words.min { $0.hitBounds.minX < $1.hitBounds.minX }!
-        XCTAssertEqual(leftmost.word.verseKey, "2:144", "The visually leftmost token of the shared row belongs to 2:144.")
+        XCTAssertEqual(leftmost.word.verseKey, "1:4", "The visually leftmost token of the shared row belongs to 1:4.")
         XCTAssertEqual(
             layout.word(at: CGPoint(x: leftmost.hitBounds.midX, y: leftmost.hitBounds.midY))?.verseKey,
-            "2:144",
-            "Touching the left side of a shared row must select 2:144, never the first word of the line."
+            "1:4",
+            "Touching the left side of a shared row must select 1:4, never the first word of the line."
         )
         let rightmost = mixed.words.max { $0.hitBounds.minX < $1.hitBounds.minX }!
         XCTAssertEqual(
             layout.word(at: CGPoint(x: rightmost.hitBounds.midX, y: rightmost.hitBounds.midY))?.verseKey,
-            "2:143"
+            "1:3"
         )
 
-        // Whole-row coverage: every horizontal sample inside the row resolves to one of the two Ayahs.
-        let row = layout.grid.rowRect(10)
+        // Whole-row coverage
+        let row = layout.grid.rowRect(4)
         var samples: Set<String> = []
         for step in 1..<20 {
             let x = row.minX + row.width * CGFloat(step) / 20
             guard let word = layout.word(at: CGPoint(x: x, y: row.midY)) else { continue }
             samples.insert(word.verseKey)
         }
-        XCTAssertEqual(samples, ["2:143", "2:144"], "Both Ayahs must be reachable by touch across the shared row.")
+        XCTAssertEqual(samples, ["1:3", "1:4"], "Both Ayahs must be reachable by touch across the shared row.")
     }
 
     func testHighlightFragmentsFollowTheAyahAcrossRowsOnly() async throws {
-        // Al-Fatihah 1:7 continues across rows 6, 7 and 8.
-        let fatihah = try await makeLayout(page: 1)
+        // Al-Fatihah 1:7 continues across rows 6, 7 and 8 on Page 2.
+        let fatihah = try await makeLayout(page: 2)
         let rows = Set(fatihah.fragments(for: "1:7").map(\.lineNumber))
         XCTAssertEqual(rows, [6, 7, 8], "A multi-row Ayah must highlight every one of its own fragments.")
 
@@ -292,7 +291,7 @@ final class MushafLayoutTests: XCTestCase {
         XCTAssertEqual(oneSix, [6], "Row 6 also carries 1:6 and must highlight separately.")
 
         // Fragments must cover exactly the Ayah's own tokens and nothing else.
-        let lines = try await pageLines(1)
+        let lines = try await pageLines(2)
         for key in ["1:1", "1:2", "1:3", "1:4", "1:5", "1:6", "1:7"] {
             let ownedRows = Set(lines.filter { line in line.words.contains { $0.verseKey == key } }.map(\.lineNumber))
             let fragmentRows = Set(fatihah.fragments(for: key).map(\.lineNumber))
@@ -301,23 +300,21 @@ final class MushafLayoutTests: XCTestCase {
     }
 
     func testFragmentsDoNotLeakBetweenNeighbouringAyahsOnASharedRow() async throws {
-        let layout = try await makeLayout(page: 28)
-        let end = layout.fragments(for: "2:143").filter { $0.lineNumber == 10 }
-        let start = layout.fragments(for: "2:144").filter { $0.lineNumber == 10 }
-        XCTAssertEqual(end.count, 1, "2:143 must contribute exactly one fragment to the shared row.")
-        XCTAssertEqual(start.count, 1, "2:144 must contribute exactly one fragment to the shared row.")
+        let layout = try await makeLayout(page: 2)
+        let end = layout.fragments(for: "1:3").filter { $0.lineNumber == 4 }
+        let start = layout.fragments(for: "1:4").filter { $0.lineNumber == 4 }
+        XCTAssertEqual(end.count, 1, "1:3 must contribute exactly one fragment to the shared row.")
+        XCTAssertEqual(start.count, 1, "1:4 must contribute exactly one fragment to the shared row.")
         XCTAssertLessThanOrEqual(
             start[0].rect.maxX, end[0].rect.minX + 0.6,
-            "2:144's shared-row highlight must stop where 2:143's highlight begins."
+            "1:4's shared-row highlight must stop where 1:3's highlight begins."
         )
         XCTAssertGreaterThan(start[0].rect.width, 0)
         XCTAssertGreaterThan(end[0].rect.width, 0)
     }
 
     func testContinuationRowsResolveWithoutLeavingTheDisplayedPage() async throws {
-        // 2:144 begins on page 28 and continues on page 29; its pageNumber metadata
-        // points at page 28. Touch resolution must be driven by geometry alone.
-        let layout = try await makeLayout(page: 28)
+        let layout = try await makeLayout(page: 29)
         let row = layout.grid.rowRect(13)
         let word = layout.word(at: CGPoint(x: row.midX, y: row.midY))
         XCTAssertEqual(word?.surah, 2)
@@ -346,8 +343,8 @@ final class MushafLayoutTests: XCTestCase {
     }
 
     func testLayoutIsStableAndDeterministicAcrossPages() async throws {
-        let first = try await makeLayout(page: 610)
-        let second = try await makeLayout(page: 610)
+        let first = try await makeLayout(page: 611)
+        let second = try await makeLayout(page: 611)
         XCTAssertEqual(first.lines.count, second.lines.count)
         for (a, b) in zip(first.lines, second.lines) {
             XCTAssertEqual(a.inkBounds.minX, b.inkBounds.minX, accuracy: 0.001)
@@ -356,16 +353,17 @@ final class MushafLayoutTests: XCTestCase {
             XCTAssertEqual(a.inkBounds.height, b.inkBounds.height, accuracy: 0.001)
             XCTAssertEqual(a.glyphs, b.glyphs)
         }
-        // A Surah header mid-page (page 610 row 3) must not disturb neighbouring rows.
         XCTAssertFalse(first.lines.contains { $0.source.lineType == .surahName })
         XCTAssertTrue(first.lines.contains { $0.source.lineType == .bismillah })
     }
 
     func testDegenerateGeometryFailsLoudlyInsteadOfClipping() async throws {
-        let lines = try await pageLines(28)
+        let lines = try await pageLines(29)
         XCTAssertThrowsError(try engine.layout(lines: lines, grid: MushafPageGrid(size: CGSize(width: 30, height: 40), displayScale: 2))) { error in
             XCTAssertTrue(error is MushafLayoutError)
         }
+        XCTAssertThrowsError(try engine.layout(lines: Array(lines.prefix(12)), grid: MushafPageGrid(size: CGSize(width: 327, height: 520), displayScale: 3)))
+    }
         XCTAssertThrowsError(try engine.layout(lines: Array(lines.prefix(12)), grid: MushafPageGrid(size: CGSize(width: 327, height: 520), displayScale: 3)))
     }
 
@@ -412,7 +410,7 @@ final class MushafLayoutTests: XCTestCase {
             centeredRows += layout.lines.filter { $0.source.isCentered || $0.source.lineType == .bismillah }.count
         }
         XCTAssertGreaterThan(renderedRows, 40, "Audited pages should render the majority of their populated rows.")
-        XCTAssertEqual(emptyRows, 15, "Pages 1, 2 and 849 each hold five deliberately empty slots.")
+        XCTAssertEqual(emptyRows, 16, "Pages 2, 3 and 848 hold deliberately empty slots (5 + 5 + 6).")
         XCTAssertGreaterThan(centeredRows, 0)
     }
 }

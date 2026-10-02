@@ -60,42 +60,47 @@ final class QuranIntegrityTests: XCTestCase {
     }
 
     func testPhysical13LinePageBounds() async throws {
-        // Page 1
+        // Page 1: Physical frontispiece / title page (13 empty lines)
         let p1Lines = try await repository.fetchLines(forPage: 1)
         XCTAssertEqual(p1Lines.count, 13, "Page 1 must contain exactly 13 lines.")
-        XCTAssertEqual(p1Lines[0].lineType, .surahName, "Page 1 Line 1 must be the Surah Name header.")
+        XCTAssertTrue(p1Lines.allSatisfy { $0.words.isEmpty }, "Page 1 is the frontispiece and has no Ayah tokens.")
 
-        // Page 1 Line 2 is verbatim Al-Fatihah 1:1 rendered as a centered Ayah row.
-        // It must remain selectable text rather than a decorative Bismillah glyph,
-        // otherwise 1:1 could never be long-pressed for its translation.
-        XCTAssertEqual(p1Lines[1].lineType, .ayahText, "Page 1 Line 2 must be the centered text of Ayah 1:1.")
-        XCTAssertTrue(p1Lines[1].isCentered, "Al-Fatihah 1:1 is typeset as a centered row.")
-        XCTAssertEqual(Set(p1Lines[1].words.map(\.verseKey)), ["1:1"], "Page 1 Line 2 must own exactly Ayah 1:1.")
-        XCTAssertFalse(p1Lines[1].words.isEmpty, "Al-Fatihah 1:1 must be selectable Ayah text, not a decorative row.")
+        // Page 2: Surah Al-Fatihah
+        let p2Lines = try await repository.fetchLines(forPage: 2)
+        XCTAssertEqual(p2Lines.count, 13, "Page 2 must contain exactly 13 lines.")
+        XCTAssertEqual(p2Lines[0].lineType, .surahName, "Page 2 Line 1 must be the Surah Name header.")
 
-        // Pages 1, 2 and 849 end with five deliberately unprinted slots.
-        for page in [1, 2, 849] {
+        // Page 2 Line 2 is verbatim Al-Fatihah 1:1 rendered as a centered Ayah row.
+        XCTAssertEqual(p2Lines[1].lineType, .ayahText, "Page 2 Line 2 must be the centered text of Ayah 1:1.")
+        XCTAssertTrue(p2Lines[1].isCentered, "Al-Fatihah 1:1 is typeset as a centered row.")
+        XCTAssertEqual(Set(p2Lines[1].words.map(\.verseKey)), ["1:1"], "Page 2 Line 2 must own exactly Ayah 1:1.")
+        XCTAssertFalse(p2Lines[1].words.isEmpty, "Al-Fatihah 1:1 must be selectable Ayah text, not a decorative row.")
+
+        // Pages 2 and 3 end with five deliberately unprinted slots.
+        for page in [2, 3] {
             let lines = try await repository.fetchLines(forPage: page)
             let blank = lines.filter { $0.lineType == .ayahText && $0.words.isEmpty }
             XCTAssertEqual(blank.count, 5, "Page \(page) must preserve its five empty source slots.")
             XCTAssertEqual(blank.map(\.lineNumber), [9, 10, 11, 12, 13], "Page \(page) empty slots must be rows 9-13.")
         }
 
-        // Page 2 Line 2 is the decorative Bismillah row for Al-Baqarah.
-        let p2Lines = try await repository.fetchLines(forPage: 2)
-        XCTAssertEqual(p2Lines.count, 13, "Page 2 must contain exactly 13 lines.")
-        XCTAssertEqual(p2Lines[1].lineType, .bismillah, "Page 2 Line 2 must be the Al-Baqarah Bismillah.")
-        XCTAssertTrue(p2Lines[1].words.isEmpty, "The decorative Bismillah row owns no selectable words.")
+        // Page 3 Line 2 is the decorative Bismillah row for Al-Baqarah.
+        let p3Lines = try await repository.fetchLines(forPage: 3)
+        XCTAssertEqual(p3Lines.count, 13, "Page 3 must contain exactly 13 lines.")
+        XCTAssertEqual(p3Lines[1].lineType, .bismillah, "Page 3 Line 2 must be the Al-Baqarah Bismillah.")
+        XCTAssertTrue(p3Lines[1].words.isEmpty, "The decorative Bismillah row owns no selectable words.")
 
-        // Page 849 (Final page)
-        let p849Lines = try await repository.fetchLines(forPage: 849)
-        XCTAssertEqual(p849Lines.count, 13, "Page 849 must contain exactly 13 lines.")
+        // Page 848 (Final page with An-Nas ending at Line 7)
+        let p848Lines = try await repository.fetchLines(forPage: 848)
+        XCTAssertEqual(p848Lines.count, 13, "Page 848 must contain exactly 13 lines.")
+        let p848Blank = p848Lines.filter { $0.lineType == .ayahText && $0.words.isEmpty }
+        XCTAssertEqual(p848Blank.count, 6, "Page 848 ends with rows 8-13 unprinted.")
     }
 
     func testEveryAyahRowReconstructsExactlyFromItsWordTokens() async throws {
         // Guards the invariant that layout/hit-test geometry depends on: the word
         // tokens must be a lossless, ordered partition of the printed row text.
-        for page in [1, 2, 4, 28, 105, 610, 613, 849] {
+        for page in [2, 3, 4, 29, 105, 411, 611, 848] {
             for line in try await repository.fetchLines(forPage: page) where line.lineType == .ayahText && !line.words.isEmpty {
                 let rebuilt = line.words.map(\.text).joined(separator: " ")
                 XCTAssertEqual(
@@ -116,21 +121,20 @@ final class QuranIntegrityTests: XCTestCase {
 
     func testSharedRowsCarryMoreThanOneAyah() async throws {
         // The previous renderer selected `line.words.first`, which is wrong on any
-        // row containing two Ayahs. Page 28 row 10 is the canonical regression case.
-        let p28 = try await repository.fetchLines(forPage: 28)
-        guard let mixed = p28.first(where: { $0.lineNumber == 10 }) else {
-            return XCTFail("Page 28 row 10 must exist.")
+        // row containing two Ayahs. Page 2 row 4 carries 1:3 and 1:4.
+        let p2 = try await repository.fetchLines(forPage: 2)
+        guard let mixed = p2.first(where: { $0.lineNumber == 4 }) else {
+            return XCTFail("Page 2 row 4 must exist.")
         }
-        XCTAssertEqual(Set(mixed.words.map(\.verseKey)), ["2:143", "2:144"])
+        XCTAssertEqual(Set(mixed.words.map(\.verseKey)), ["1:3", "1:4"])
         XCTAssertNotEqual(mixed.words.first?.verseKey, mixed.words.last?.verseKey)
     }
 
-    func testYasinBeginsOnPage610InTheQudratullahEdition() async throws {
+    func testYasinBeginsOnPage611InTheTajCompanyEdition() async throws {
         let yasin = try await repository.fetchSurah(id: 36)
-        XCTAssertEqual(yasin?.startPage, 610, "Surah YaSin starts on page 610 of this 849-page edition.")
-        let lines = try await repository.fetchLines(forPage: 610)
+        XCTAssertEqual(yasin?.startPage, 611, "Surah YaSin starts on page 611 of this 848-page edition.")
+        let lines = try await repository.fetchLines(forPage: 611)
         XCTAssertTrue(lines.contains { $0.lineType == .surahName && $0.surahId == 36 })
-        XCTAssertFalse(lines.contains { $0.lineType == .surahName && $0.surahId == 37 })
     }
 
     func testTranslationsIntegrity() async throws {
@@ -155,12 +159,12 @@ final class QuranIntegrityTests: XCTestCase {
     }
 
     func testAyahSelectionAndMultiLineSpanning() async throws {
-        // Page 1 lines: Surah 1 Ayah 7 spans lines 6, 7, and 8
-        let p1Lines = try await repository.fetchLines(forPage: 1)
+        // Page 2 lines: Surah 1 Ayah 7 spans lines 6, 7, and 8
+        let p2Lines = try await repository.fetchLines(forPage: 2)
         
-        let line6 = p1Lines[5] // 0-indexed line 6
-        let line7 = p1Lines[6] // 0-indexed line 7
-        let line8 = p1Lines[7] // 0-indexed line 8
+        let line6 = p2Lines[5] // 0-indexed line 6
+        let line7 = p2Lines[6] // 0-indexed line 7
+        let line8 = p2Lines[7] // 0-indexed line 8
 
         let line6Ayah7Words = line6.words.filter { $0.surah == 1 && $0.ayah == 7 }
         let line7Ayah7Words = line7.words.filter { $0.surah == 1 && $0.ayah == 7 }
@@ -182,14 +186,14 @@ final class QuranIntegrityTests: XCTestCase {
         let juz1 = juzs.first
         XCTAssertEqual(juz1?.id, 1)
         XCTAssertEqual(juz1?.nameTransliteration, "Alif Lam Meem")
-        XCTAssertEqual(juz1?.startPage, 1)
+        XCTAssertEqual(juz1?.startPage, 2)
         XCTAssertEqual(juz1?.startSurahId, 1)
         XCTAssertEqual(juz1?.startVerseNumber, 1)
 
         let juz30 = juzs.last
         XCTAssertEqual(juz30?.id, 30)
         XCTAssertEqual(juz30?.nameTransliteration, "'Amma Yatasa'aloon")
-        XCTAssertEqual(juz30?.startPage, 818)
+        XCTAssertEqual(juz30?.startPage, 819)
         XCTAssertEqual(juz30?.startSurahId, 78)
         XCTAssertEqual(juz30?.startVerseNumber, 1)
 
@@ -220,7 +224,7 @@ final class QuranIntegrityTests: XCTestCase {
         let results = try await repository.search(query: "Merciful", limit: 5)
         XCTAssertFalse(results.isEmpty)
         guard let first = results.first else { return }
-        XCTAssertEqual(first.pageNumber, 1, "Al-Fatihah 1:1 match must indicate page 1 directly from FTS5 index")
+        XCTAssertEqual(first.pageNumber, 2, "Al-Fatihah 1:1 match must indicate page 2 directly from FTS5 index")
     }
 
     func testFinalPageAndSurahAnNas() async throws {
@@ -229,15 +233,15 @@ final class QuranIntegrityTests: XCTestCase {
 
         let surahs = try await repository.fetchSurahs()
         let surah114 = surahs.first { $0.id == 114 }
-        XCTAssertEqual(surah114?.startPage, 849, "Surah An-Nas must start on page 849 in the 13-line Qudratullah edition")
+        XCTAssertEqual(surah114?.startPage, 848, "Surah An-Nas must start on page 848 in the 13-line Taj Company edition")
 
-        let p849Lines = try await repository.fetchLines(forPage: 849)
-        XCTAssertEqual(p849Lines.count, 13, "Page 849 must contain exactly 13 lines")
+        let p848Lines = try await repository.fetchLines(forPage: 848)
+        XCTAssertEqual(p848Lines.count, 13, "Page 848 must contain exactly 13 lines")
 
-        // Final Ayah of the Quran (6236) must be on Page 849
+        // Final Ayah of the Quran (6236) must be on Page 848
         let lastAyah = anNas.last
         XCTAssertEqual(lastAyah?.id, 6236, "Final Ayah global ID must be 6236")
-        XCTAssertEqual(lastAyah?.pageNumber, 849, "Final Ayah of the Quran (114:6) must reside on Page 849")
+        XCTAssertEqual(lastAyah?.pageNumber, 848, "Final Ayah of the Quran (114:6) must reside on Page 848")
     }
 }
 

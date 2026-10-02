@@ -191,7 +191,7 @@ public struct MushafReaderView: View {
                     .lineLimit(1)
 
                 let subtitle: String = {
-                    let totalCount = viewModel.displayMode == .enhancedVector ? 849 : 847
+                    let totalCount = viewModel.totalPages
                     if let ordinal = viewModel.currentPageSummary?.quranOrdinal {
                         return "Juz \(viewModel.currentJuzNumber) • Page \(ordinal) of \(totalCount)"
                     } else if let title = viewModel.currentPageSummary?.title {

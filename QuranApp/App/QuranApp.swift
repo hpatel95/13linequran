@@ -29,7 +29,7 @@ struct ThirteenLineQuranApp: App {
               let index = CommandLine.arguments.firstIndex(of: "-mushafInitialPage"),
               CommandLine.arguments.indices.contains(index + 1),
               let page = Int(CommandLine.arguments[index + 1]),
-              (1...849).contains(page) else { return nil }
+              (1...848).contains(page) else { return nil }
         return page
     }
 

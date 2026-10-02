@@ -17,7 +17,7 @@ public struct Surah: Identifiable, Hashable, Sendable, Codable {
     public let englishMeaning: String    // e.g. "The Opener"
     public let revelationType: RevelationType
     public let totalVerses: Int          // e.g. 7
-    public let startPage: Int            // Starting 13-line page (1 ... 849)
+    public let startPage: Int            // Starting 13-line page (1 ... 848)
     public let juzNumber: Int            // Starting Juz (1 ... 30)
 
     public enum RevelationType: String, Sendable, Codable {
@@ -53,7 +53,7 @@ public struct Ayah: Identifiable, Hashable, Sendable, Codable {
     public let id: Int                   // Canonical global verse index: 1 ... 6236
     public let surahId: Int              // 1 ... 114
     public let verseNumber: Int          // 1 ... N (relative to Surah)
-    public let pageNumber: Int           // 1 ... 849 (13-line page)
+    public let pageNumber: Int           // 1 ... 848 (13-line page)
     public let juzNumber: Int            // 1 ... 30
     public let hizbQuarter: Int          // 1 ... 240
     public let sajdah: Bool              // True if verse contains Sajdah
@@ -110,7 +110,7 @@ public struct MushafWord: Identifiable, Hashable, Sendable, Codable {
 // MARK: - Mushaf Line (13-Line Physical Page Structure)
 public struct MushafLine: Identifiable, Hashable, Sendable, Codable {
     public let id: Int
-    public let pageNumber: Int           // 1 ... 849
+    public let pageNumber: Int           // 1 ... 848
     public let lineNumber: Int           // 1 ... 13
     public let lineType: LineType
     public let surahId: Int?
@@ -192,7 +192,7 @@ public struct Juz: Identifiable, Hashable, Sendable, Codable {
     public let nameTransliteration: String // e.g. "Alif Lam Meem", "Sayaqool"
     public let startSurahId: Int
     public let startVerseNumber: Int
-    public let startPage: Int            // 13-line start page (1 ... 849)
+    public let startPage: Int            // 13-line start page (1 ... 848)
     public let firstVerseId: Int
     public let lastVerseId: Int
     public let totalVerses: Int

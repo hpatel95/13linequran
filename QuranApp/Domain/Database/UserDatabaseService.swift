@@ -357,7 +357,7 @@ public actor UserDatabaseService: UserDatabaseServiceProtocol {
     }
 
     public func getLastReadPage() async throws -> Int {
-        if let val = try await getPreference(key: "last_read_page"), let page = Int(val), page >= 1 && page <= 849 {
+        if let val = try await getPreference(key: "last_read_page"), let page = Int(val), page >= 1 && page <= 848 {
             return page
         }
         return 1

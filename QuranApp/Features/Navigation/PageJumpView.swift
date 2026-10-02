@@ -2,7 +2,7 @@
 //  PageJumpView.swift
 //  QuranApp
 //
-//  Direct page navigation view enabling quick jump to any 13-line Mushaf page (1–849)
+//  Direct page navigation view enabling quick jump to any 13-line Mushaf page (1–848)
 //  via direct numeric input or 30-Juz rapid milestone jumping.
 //
 
@@ -16,7 +16,7 @@ public struct PageJumpView: View {
     @State private var inputPageText: String = ""
     @State private var inputErrorMessage: String?
 
-    public init(juzs: [Juz], maxPage: Int = 847, onSelectPage: @escaping (Int) -> Void) {
+    public init(juzs: [Juz], maxPage: Int = 848, onSelectPage: @escaping (Int) -> Void) {
         self.juzs = juzs
         self.maxPage = maxPage
         self.onSelectPage = onSelectPage

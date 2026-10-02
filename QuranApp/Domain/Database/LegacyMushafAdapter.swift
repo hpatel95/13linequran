@@ -2,7 +2,7 @@
 //  LegacyMushafAdapter.swift
 //  QuranApp
 //
-//  Bridges the legacy 849-page Qudratullah Core Text engine to the unified
+//  Bridges the legacy 848-page Qudratullah/Taj Company Core Text engine to the unified
 //  MushafEditionRepositoryProtocol and ReaderLocation navigation models.
 //  Thread-safe and strictly compliant with Swift 6 concurrency.
 //
@@ -23,11 +23,11 @@ public final class LegacyMushafAdapter: MushafEditionRepositoryProtocol, @unchec
                 id: defaultEditionId,
                 contentVersion: 1,
                 displayName: "IndoPak 13-Line (Accessible Text)",
-                publisher: "Qudratullah",
+                publisher: "Taj Company",
                 rendererKind: .legacyText,
                 approvalStatus: .approved,
-                quranPageCount: 849,
-                navigationPageCount: 849,
+                quranPageCount: 848,
+                navigationPageCount: 848,
                 noticePath: nil
             )
         ]
@@ -40,7 +40,7 @@ public final class LegacyMushafAdapter: MushafEditionRepositoryProtocol, @unchec
 
     public func fetchPages(editionId: String) async throws -> [MushafPageSummary] {
         guard editionId == defaultEditionId else { return [] }
-        return (1...849).map { page in
+        return (1...848).map { page in
             MushafPageSummary(
                 id: String(format: "p%04d", page),
                 editionId: defaultEditionId,
@@ -61,14 +61,14 @@ public final class LegacyMushafAdapter: MushafEditionRepositoryProtocol, @unchec
     public func fetchPage(editionId: String, pageId: String) async throws -> MushafPageContent? {
         guard editionId == defaultEditionId else { return nil }
         guard let numStr = pageId.components(separatedBy: CharacterSet.decimalDigits.inverted).last,
-              let page = Int(numStr), (1...849).contains(page) else {
+              let page = Int(numStr), (1...848).contains(page) else {
             return nil
         }
         return try await fetchPageByNavigationIndex(editionId: editionId, index: page)
     }
 
     public func fetchPageByNavigationIndex(editionId: String, index: Int) async throws -> MushafPageContent? {
-        guard editionId == defaultEditionId, (1...849).contains(index) else { return nil }
+        guard editionId == defaultEditionId, (1...848).contains(index) else { return nil }
         let ayahs = try await quranService.fetchAyahs(forPage: index)
         let summary = MushafPageSummary(
             id: String(format: "p%04d", index),
@@ -156,7 +156,7 @@ public final class LegacyMushafAdapter: MushafEditionRepositoryProtocol, @unchec
     }
 
     public func fetchPageForQuranOrdinal(editionId: String, ordinal: Int) async throws -> ReaderLocation? {
-        guard editionId == defaultEditionId, (1...849).contains(ordinal) else { return nil }
+        guard editionId == defaultEditionId, (1...848).contains(ordinal) else { return nil }
         let ayahs = try await quranService.fetchAyahs(forPage: ordinal)
         return ReaderLocation(
             editionId: defaultEditionId,

@@ -23,7 +23,7 @@ public protocol QuranRepositoryProtocol: Sendable {
     /// Fetches a dictionary of Surah ID to Juz span string (e.g. [2: "Juz 1–3", 1: "Juz 1"])
     func fetchSurahJuzSpans() async throws -> [Int: String]
     
-    /// Fetches the exactly 13 physical lines for an Indo-Pak Mushaf page (1 ... 849)
+    /// Fetches the exactly 13 physical lines for an Indo-Pak Mushaf page (1 ... 848)
     func fetchLines(forPage pageNumber: Int) async throws -> [MushafLine]
     
     /// Fetches all verses belonging to a specific Surah

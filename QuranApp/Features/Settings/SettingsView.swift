@@ -133,14 +133,14 @@ public struct SettingsView: View {
                     HStack {
                         Text("Layout Type")
                         Spacer()
-                        Text("Indo-Pak 13-Line (Qudratullah)")
+                        Text("Indo-Pak 13-Line (Taj Company)")
                             .foregroundStyle(palette.sepiaMuted)
                     }
 
                     HStack {
                         Text("Total Pages")
                         Spacer()
-                        Text("849 Pages")
+                        Text("848 Pages")
                             .foregroundStyle(palette.sepiaMuted)
                     }
 

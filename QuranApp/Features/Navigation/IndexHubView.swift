@@ -327,7 +327,7 @@ public struct IndexHubView: View {
         switch tab {
         case .surahs: return "\(viewModel.surahs.count)"
         case .juz: return "\(viewModel.juzs.count)"
-        case .pages: return "849"
+        case .pages: return "848"
         }
     }
 

@@ -27,7 +27,7 @@ public final class MushafReaderViewModel {
 
     public var totalPages: Int {
         if displayMode == .enhancedVector {
-            return 849
+            return 848
         }
         return pages.isEmpty ? 848 : pages.count
     }
@@ -509,7 +509,7 @@ public final class MushafReaderViewModel {
 
         // 2. Load ayahs and lines for text mode
         let currentOrdinal = currentPageSummary?.quranOrdinal ?? centerIndex
-        let textTargets = [currentOrdinal, currentOrdinal - 1, currentOrdinal + 1].filter { (1...849).contains($0) }
+        let textTargets = [currentOrdinal, currentOrdinal - 1, currentOrdinal + 1].filter { (1...848).contains($0) }
 
         for p in textTargets {
             if pageAyahsCache[p] == nil {
@@ -555,22 +555,6 @@ public final class MushafReaderViewModel {
     }
 
     public func summaryForIndex(_ index: Int) -> MushafPageSummary? {
-        if index == 849 && displayMode == .enhancedVector {
-            return MushafPageSummary(
-                id: "p0849",
-                editionId: activeEditionId,
-                navigationIndex: 849,
-                quranOrdinal: 849,
-                printedLabel: "849",
-                kind: .quran,
-                title: "Page 849",
-                sourceAssetId: "849",
-                sourceWidth: nil,
-                sourceHeight: nil,
-                imagePath: nil,
-                imageSha256: nil
-            )
-        }
         guard index >= 1 && index <= pages.count else { return nil }
         return pages[index - 1]
     }

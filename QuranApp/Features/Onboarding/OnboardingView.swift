@@ -91,7 +91,7 @@ public struct OnboardingView: View {
 
             // Description Box
             VStack(spacing: 12) {
-                Text("Rendered directly in the classical 13-line format used across South Asia, Turkey, and worldwide. 849 pages of verified calligraphic text with instant ayah lookup.")
+                Text("Rendered directly in the classical 13-line format used across South Asia, Turkey, and worldwide. 848 pages of verified calligraphic text with instant ayah lookup.")
                     .font(AppTypography.bodyEnglish)
                     .foregroundStyle(palette.sepiaMuted)
                     .multilineTextAlignment(.center)

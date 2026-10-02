@@ -122,9 +122,9 @@ final class UserDatabaseTests: XCTestCase {
         let page55 = try await userDatabase.getLastReadPage()
         XCTAssertEqual(page55, 55)
 
-        try await userDatabase.saveLastReadPage(849)
-        let page849 = try await userDatabase.getLastReadPage()
-        XCTAssertEqual(page849, 849)
+        try await userDatabase.saveLastReadPage(848)
+        let page848 = try await userDatabase.getLastReadPage()
+        XCTAssertEqual(page848, 848)
     }
 
     func testAppPreferences() async throws {
