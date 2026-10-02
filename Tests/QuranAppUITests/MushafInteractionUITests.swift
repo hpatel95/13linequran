@@ -76,7 +76,7 @@ final class MushafInteractionUITests: XCTestCase {
     // MARK: - Mixed-Ayah rows (the regression from Test 1)
 
     func testHoldingTheLeftHalfOfASharedRowSelectsTheSecondAyah() {
-        launchReader(page: 2)
+        launchReader(page: 3)
         let first = requireElement("ayah-2:1")
         let second = requireElement("ayah-2:2")
         // Both Ayahs must genuinely share a row: their bounding boxes overlap
@@ -88,13 +88,13 @@ final class MushafInteractionUITests: XCTestCase {
         press(at: CGPoint(x: second.frame.minX + 16, y: sharedRowCenterY))
 
         assertSheetShows(verseKey: "2:2")
-        attachScreenshot("page2-sheet-2-2")
+        attachScreenshot("page3-sheet-2-2")
         dismissSheet()
-        attachScreenshot("page2-glaze-2-2")
+        attachScreenshot("page3-glaze-2-2")
     }
 
     func testHoldingTheRightHalfOfASharedRowSelectsTheFirstAyah() {
-        launchReader(page: 2)
+        launchReader(page: 3)
         let first = requireElement("ayah-2:1")
         requireElement("ayah-2:2")
 
@@ -103,12 +103,12 @@ final class MushafInteractionUITests: XCTestCase {
 
         assertSheetShows(verseKey: "2:1")
         dismissSheet()
-        attachScreenshot("page2-glaze-2-1")
+        attachScreenshot("page3-glaze-2-1")
     }
 
     func testHoldingAMultiRowAyahHighlightsEveryOneOfItsRows() {
-        launchReader(page: 1)
-        // Al-Fatihah 1:7 spans rows 6, 7 and 8 of page 1.
+        launchReader(page: 2)
+        // Al-Fatihah 1:7 spans rows 6, 7 and 8 of page 2.
         let ayahSeven = requireElement("ayah-1:7")
         XCTAssertGreaterThan(ayahSeven.frame.height, 0)
         press(at: CGPoint(x: ayahSeven.frame.midX, y: ayahSeven.frame.midY))
