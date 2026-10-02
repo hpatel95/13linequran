@@ -560,7 +560,22 @@ public final class MushafReaderViewModel {
     }
 
     public func surahForPage(_ page: Int) -> Surah? {
-        if let summary = currentPageSummary,
+        if let ayahs = pageAyahsCache[page],
+           let firstAyah = ayahs.first,
+           let surah = surahsByID[firstAyah.surahId] {
+            return surah
+        }
+        if let lines = pageLinesCache[page] {
+            for line in lines {
+                if let surahId = line.surahId, let surah = surahsByID[surahId] {
+                    return surah
+                }
+                if let firstWord = line.words.first, let surah = surahsByID[firstWord.surah] {
+                    return surah
+                }
+            }
+        }
+        if let summary = summaryForIndex(page),
            let content = pageContentCache[summary.id],
            let firstVerse = content.verses.first?.verseKey,
            let surah = surahsByID[firstVerse.surah] {
@@ -570,6 +585,11 @@ public final class MushafReaderViewModel {
     }
 
     public func juzForPage(_ page: Int) -> Juz? {
+        if let ayahs = pageAyahsCache[page],
+           let firstAyah = ayahs.first,
+           let j = juzs.first(where: { $0.id == firstAyah.juzNumber }) {
+            return j
+        }
         if let j = juzs.last(where: { $0.startPage <= page }) {
             return j
         }

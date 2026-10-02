@@ -81,9 +81,9 @@ final class MushafTextLayoutEngine {
             }
             let preferredSize = target.width / 13
             let rowFit = min(
-                preferredSize * 1.18,
+                preferredSize * 1.08,
                 referenceSize * target.width / reference.ink.width,
-                referenceSize * target.height / reference.ink.height
+                referenceSize * (target.height * 0.96) / reference.ink.height
             ) * 0.995
             if rowFit < minFitSize {
                 minFitSize = rowFit

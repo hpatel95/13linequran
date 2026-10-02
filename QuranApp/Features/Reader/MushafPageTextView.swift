@@ -69,7 +69,7 @@ public struct MushafPageTextView: View {
                 .foregroundStyle(palette.inkUmber)
 
             if let ordinal = summary.quranOrdinal {
-                Text("Page \(ordinal) of 847")
+                Text("Page \(ordinal) of 848")
                     .font(AppTypography.caption)
                     .foregroundStyle(palette.sepiaMuted)
             }
